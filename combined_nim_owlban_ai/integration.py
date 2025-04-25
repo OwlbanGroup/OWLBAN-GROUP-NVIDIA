@@ -6,9 +6,10 @@ from new_products.revenue_optimizer import RevenueOptimizer
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from human_ai_collaboration.collaboration_manager import CollaborationManager
+from combined_nim_owlban_ai.azure_integration_manager import AzureIntegrationManager
 
 class CombinedSystem:
-    def __init__(self):
+    def __init__(self, azure_subscription_id=None, azure_resource_group=None, azure_workspace_name=None):
         self.nim_manager = NimManager()
         self.owlban_ai = OwlbanAI()
         self.infrastructure_optimizer = InfrastructureOptimizer(self.nim_manager)
@@ -18,10 +19,21 @@ class CombinedSystem:
         self.revenue_optimizer = RevenueOptimizer(self.nim_manager, market_data_provider=None)  # Placeholder for market data provider
         self.collaboration_manager = CollaborationManager()
 
+        # Initialize Azure Integration Manager if Azure details provided
+        if azure_subscription_id and azure_resource_group and azure_workspace_name:
+            self.azure_integration_manager = AzureIntegrationManager(
+                azure_subscription_id, azure_resource_group, azure_workspace_name
+            )
+        else:
+            self.azure_integration_manager = None
+
     def initialize(self):
         self.nim_manager.initialize()
         self.owlban_ai.load_models()
         print("Combined NVIDIA NIM and OWLBAN GROUP AI system initialized.")
+
+        if self.azure_integration_manager:
+            print("Azure Integration Manager initialized.")
 
     def start_operations(self):
         print("Starting combined system operations...")
@@ -32,6 +44,18 @@ class CombinedSystem:
         self.model_deployment_manager.scale_model("covid_predictor", 2)
         self.anomaly_detection.detect_anomalies()
         self.revenue_optimizer.optimize_revenue()
+
+        # Example Azure ML usage
+        if self.azure_integration_manager:
+            self.azure_integration_manager.create_compute_cluster("gpu-cluster")
+            self.azure_integration_manager.submit_training_job(
+                job_name="train-revenue-optimizer",
+                command="python train.py",
+                environment_name="AzureML-Minimal",
+                compute_name="gpu-cluster",
+                inputs={"data": "azureml:dataset:1"}
+            )
+            self.azure_integration_manager.deploy_model("revenue_optimizer_model", "revenue-optimizer-endpoint")
 
         # Setup human and AI tasks for collaboration
         human_tasks = ["Review AI recommendations", "Approve model deployments"]
