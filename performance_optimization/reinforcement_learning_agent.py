@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class ReinforcementLearningAgent:
     def __init__(self, actions):
@@ -9,6 +10,9 @@ class ReinforcementLearningAgent:
         self.epsilon = 0.2  # Exploration rate
 
     def get_state_key(self, state):
+        # Support for numpy arrays or tuples as state
+        if isinstance(state, (np.ndarray, list)):
+            return str(tuple(state))
         return str(state)
 
     def choose_action(self, state):
