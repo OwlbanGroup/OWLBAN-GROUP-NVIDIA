@@ -1,9 +1,18 @@
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 
+class DummyMarketDataProvider:
+    def get_current_conditions(self):
+        # Return dummy market conditions for testing
+        return {
+            "base_revenue": 1000,
+            "demand_index": 0.8,
+            "competitor_price": 1.0
+        }
+
 class RevenueOptimizer:
-    def __init__(self, nim_manager, market_data_provider):
+    def __init__(self, nim_manager, market_data_provider=None):
         self.nim_manager = nim_manager
-        self.market_data_provider = market_data_provider
+        self.market_data_provider = market_data_provider or DummyMarketDataProvider()
         self.rl_agent = ReinforcementLearningAgent(actions=["increase_price", "decrease_price", "maintain_price"])
 
     def optimize_revenue(self):
