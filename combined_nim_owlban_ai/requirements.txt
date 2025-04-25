@@ -1,0 +1,2 @@
+# Requirements for combined NVIDIA NIM and OWLBAN AI project
+# Add any necessary dependencies here
