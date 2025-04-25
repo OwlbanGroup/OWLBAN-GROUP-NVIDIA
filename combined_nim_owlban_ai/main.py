@@ -1,6 +1,6 @@
-from nim import NimManager
-from owlban_ai import OwlbanAI
-from integration import IntegrationManager
+from combined_nim_owlban_ai.nim import NimManager
+from combined_nim_owlban_ai.owlban_ai import OwlbanAI
+from combined_nim_owlban_ai.integration import CombinedSystem
 
 def main():
     # Initialize NVIDIA NIM manager
@@ -11,9 +11,10 @@ def main():
     owlban_ai = OwlbanAI()
     owlban_ai.load_models()
 
-    # Initialize integration manager
-    integration_manager = IntegrationManager(nim_manager, owlban_ai)
-    integration_manager.run()
+    # Initialize combined system
+    combined_system = CombinedSystem()
+    combined_system.initialize()
+    combined_system.start_operations()
 
 if __name__ == "__main__":
     main()
