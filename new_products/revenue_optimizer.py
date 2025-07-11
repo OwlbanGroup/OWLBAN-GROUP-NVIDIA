@@ -19,7 +19,11 @@ class RevenueOptimizer:
         self.nim_manager = nim_manager
         self.market_data_provider = market_data_provider or MarketDataProvider()
         self.rl_agent = ReinforcementLearningAgent(
-            actions=["increase_price", "decrease_price", "maintain_price"],
+            actions=[
+                "increase_price",
+                "decrease_price",
+                "maintain_price",
+            ],
             learning_rate=0.1,
             discount_factor=0.9,
             epsilon=0.2,
@@ -28,7 +32,9 @@ class RevenueOptimizer:
         logging.basicConfig(level=logging.INFO)
 
     def optimize_revenue(self, iterations=100):
-        self.logger.info("Starting revenue optimization using AI with Reinforcement Learning...")
+        self.logger.info(
+            "Starting revenue optimization using AI with Reinforcement Learning..."
+        )
         for i in range(iterations):
             resource_status = self.nim_manager.get_resource_status()
             market_conditions = self.market_data_provider.get_current_conditions()
@@ -42,9 +48,7 @@ class RevenueOptimizer:
 
             self.rl_agent.learn(state, action, reward, next_state)
             self.logger.info(f"Iteration {i+1}: Reward received: {reward}")
-
-        self.logger.info("Revenue optimization completed.")
-
+        
     def _create_state(self, resource_status, market_conditions):
         # Enhanced state representation combining key metrics
         state_values = []
@@ -97,7 +101,7 @@ class RevenueOptimizer:
             profit *= 0.9  # penalty factor
 
         return profit
-
+            
     def get_current_profit(self):
         """
         Calculate and return the current estimated profit based on the latest market conditions and resource status.
@@ -105,6 +109,8 @@ class RevenueOptimizer:
         resource_status = self.nim_manager.get_resource_status()
         market_conditions = self.market_data_provider.get_current_conditions()
         # Use the reward calculation as a proxy for profit
-        profit = self._calculate_reward("maintain_price", resource_status, market_conditions)
+        profit = self._calculate_reward(
+            "maintain_price", resource_status, market_conditions
+        )
         self.logger.info(f"Current estimated profit: {profit}")
         return profit
