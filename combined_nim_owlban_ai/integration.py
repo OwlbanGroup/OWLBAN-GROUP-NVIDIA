@@ -9,15 +9,23 @@ from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from human_ai_collaboration.collaboration_manager import CollaborationManager
 from combined_nim_owlban_ai.azure_integration_manager import AzureIntegrationManager
 
+
 class CombinedSystem:
-    def __init__(self, azure_subscription_id=None, azure_resource_group=None, azure_workspace_name=None):
+    def __init__(
+        self,
+        azure_subscription_id=None,
+        azure_resource_group=None,
+        azure_workspace_name=None,
+    ):
         self.nim_manager = NimManager()
         self.owlban_ai = OwlbanAI()
         self.infrastructure_optimizer = InfrastructureOptimizer(self.nim_manager)
         self.telehealth_analytics = TelehealthAnalytics(self.nim_manager, self.owlban_ai)
         self.model_deployment_manager = ModelDeploymentManager(self.nim_manager)
         self.anomaly_detection = AnomalyDetection(self.nim_manager, self.owlban_ai)
-        self.revenue_optimizer = RevenueOptimizer(self.nim_manager, market_data_provider=None)  # Placeholder for market data provider
+        self.revenue_optimizer = RevenueOptimizer(
+            self.nim_manager, market_data_provider=None
+        )  # Placeholder for market data provider
         self.stripe_integration = StripeIntegration()
         self.collaboration_manager = CollaborationManager()
 
@@ -41,7 +49,9 @@ class CombinedSystem:
         print("Starting combined system operations...")
         self.infrastructure_optimizer.optimize_resources()
         self.telehealth_analytics.monitor_infrastructure()
-        self.telehealth_analytics.analyze_patient_data({"patient_id": 123, "symptoms": ["cough", "fever"]})
+        self.telehealth_analytics.analyze_patient_data(
+            {"patient_id": 123, "symptoms": ["cough", "fever"]}
+        )
         self.model_deployment_manager.deploy_model("covid_predictor")
         self.model_deployment_manager.scale_model("covid_predictor", 2)
         self.anomaly_detection.detect_anomalies()
@@ -49,10 +59,15 @@ class CombinedSystem:
 
         # Spend profits using Stripe integration
         try:
-            # For demonstration, spend a fixed amount of $10.00 (1000 cents)
-            amount_cents = 1000
-            description = "Spending profits via StripeIntegration"
-            result = self.stripe_integration.spend_profits(amount_cents, description=description)
+            # Get dynamic profit amount from revenue optimizer
+            current_profit = self.revenue_optimizer.get_current_profit()
+            # Convert profit to cents and ensure non-negative integer
+            amount_cents = max(int(current_profit * 100), 0)
+            description = "Spending profits for Oscar Broome via StripeIntegration"
+            result = self.stripe_integration.spend_profits(
+                amount_cents,
+                description=description,
+            )
             print(f"Stripe spend_profits result: {result}")
         except Exception as e:
             print(f"Error during Stripe spend_profits: {e}")
@@ -65,13 +80,21 @@ class CombinedSystem:
                 command="python train.py",
                 environment_name="AzureML-Minimal",
                 compute_name="gpu-cluster",
-                inputs={"data": "azureml:dataset:1"}
+                inputs={"data": "azureml:dataset:1"},
             )
-            self.azure_integration_manager.deploy_model("revenue_optimizer_model", "revenue-optimizer-endpoint")
+            self.azure_integration_manager.deploy_model(
+                "revenue_optimizer_model",
+                "revenue-optimizer-endpoint",
+            )
 
         # Setup human and AI tasks for collaboration
         human_tasks = ["Review AI recommendations", "Approve model deployments"]
-        ai_tasks = ["Optimize resources", "Analyze patient data", "Detect anomalies", "Optimize revenue"]
+        ai_tasks = [
+            "Optimize resources",
+            "Analyze patient data",
+            "Detect anomalies",
+            "Optimize revenue",
+        ]
         resources = {"compute_cluster": "NVIDIA DGX", "data_storage": "Cloud Storage"}
 
         self.collaboration_manager.assign_tasks(human_tasks, ai_tasks)
