@@ -24,7 +24,8 @@ class CombinedSystem:
         self.model_deployment_manager = ModelDeploymentManager(self.nim_manager)
         self.anomaly_detection = AnomalyDetection(self.nim_manager, self.owlban_ai)
         self.revenue_optimizer = RevenueOptimizer(
-            self.nim_manager, market_data_provider=None
+            self.nim_manager,
+            market_data_provider=None,
         )  # Placeholder for market data provider
         self.stripe_integration = StripeIntegration()
         self.collaboration_manager = CollaborationManager()
@@ -32,11 +33,13 @@ class CombinedSystem:
         # Initialize Azure Integration Manager if Azure details provided
         if azure_subscription_id and azure_resource_group and azure_workspace_name:
             self.azure_integration_manager = AzureIntegrationManager(
-                azure_subscription_id, azure_resource_group, azure_workspace_name
+                azure_subscription_id,
+                azure_resource_group,
+                azure_workspace_name,
             )
         else:
             self.azure_integration_manager = None
-
+        
     def initialize(self):
         self.nim_manager.initialize()
         self.owlban_ai.load_models()
@@ -50,7 +53,13 @@ class CombinedSystem:
         self.infrastructure_optimizer.optimize_resources()
         self.telehealth_analytics.monitor_infrastructure()
         self.telehealth_analytics.analyze_patient_data(
-            {"patient_id": 123, "symptoms": ["cough", "fever"]}
+            {
+                "patient_id": 123,
+                "symptoms": [
+                    "cough",
+                    "fever",
+                ],
+            }
         )
         self.model_deployment_manager.deploy_model("covid_predictor")
         self.model_deployment_manager.scale_model("covid_predictor", 2)
@@ -88,14 +97,20 @@ class CombinedSystem:
             )
 
         # Setup human and AI tasks for collaboration
-        human_tasks = ["Review AI recommendations", "Approve model deployments"]
+        human_tasks = [
+            "Review AI recommendations",
+            "Approve model deployments",
+        ]
         ai_tasks = [
             "Optimize resources",
             "Analyze patient data",
             "Detect anomalies",
             "Optimize revenue",
         ]
-        resources = {"compute_cluster": "NVIDIA DGX", "data_storage": "Cloud Storage"}
+        resources = {
+            "compute_cluster": "NVIDIA DGX",
+            "data_storage": "Cloud Storage",
+        }
 
         self.collaboration_manager.assign_tasks(human_tasks, ai_tasks)
         self.collaboration_manager.allocate_resources(resources)
