@@ -19,10 +19,20 @@ class CombinedSystem:
     ):
         self.nim_manager = NimManager()
         self.owlban_ai = OwlbanAI()
-        self.infrastructure_optimizer = InfrastructureOptimizer(self.nim_manager)
-        self.telehealth_analytics = TelehealthAnalytics(self.nim_manager, self.owlban_ai)
-        self.model_deployment_manager = ModelDeploymentManager(self.nim_manager)
-        self.anomaly_detection = AnomalyDetection(self.nim_manager, self.owlban_ai)
+        self.infrastructure_optimizer = InfrastructureOptimizer(
+            self.nim_manager
+        )
+        self.telehealth_analytics = TelehealthAnalytics(
+            self.nim_manager,
+            self.owlban_ai,
+        )
+        self.model_deployment_manager = ModelDeploymentManager(
+            self.nim_manager
+        )
+        self.anomaly_detection = AnomalyDetection(
+            self.nim_manager,
+            self.owlban_ai,
+        )
         self.revenue_optimizer = RevenueOptimizer(
             self.nim_manager,
             market_data_provider=None,

@@ -48,7 +48,7 @@ class RevenueOptimizer:
 
             self.rl_agent.learn(state, action, reward, next_state)
             self.logger.info(f"Iteration {i+1}: Reward received: {reward}")
-        
+
     def _create_state(self, resource_status, market_conditions):
         # Enhanced state representation combining key metrics
         state_values = []
@@ -101,7 +101,7 @@ class RevenueOptimizer:
             profit *= 0.9  # penalty factor
 
         return profit
-            
+
     def get_current_profit(self):
         """
         Calculate and return the current estimated profit based on the latest market conditions and resource status.
