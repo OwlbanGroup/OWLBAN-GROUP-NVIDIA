@@ -3,6 +3,7 @@ from new_products.telehealth_analytics import TelehealthAnalytics
 from new_products.model_deployment_manager import ModelDeploymentManager
 from new_products.anomaly_detection import AnomalyDetection
 from new_products.revenue_optimizer import RevenueOptimizer
+from new_products.stripe_integration import StripeIntegration
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from human_ai_collaboration.collaboration_manager import CollaborationManager
@@ -17,6 +18,7 @@ class CombinedSystem:
         self.model_deployment_manager = ModelDeploymentManager(self.nim_manager)
         self.anomaly_detection = AnomalyDetection(self.nim_manager, self.owlban_ai)
         self.revenue_optimizer = RevenueOptimizer(self.nim_manager, market_data_provider=None)  # Placeholder for market data provider
+        self.stripe_integration = StripeIntegration()
         self.collaboration_manager = CollaborationManager()
 
         # Initialize Azure Integration Manager if Azure details provided
@@ -44,6 +46,16 @@ class CombinedSystem:
         self.model_deployment_manager.scale_model("covid_predictor", 2)
         self.anomaly_detection.detect_anomalies()
         self.revenue_optimizer.optimize_revenue()
+
+        # Spend profits using Stripe integration
+        try:
+            # For demonstration, spend a fixed amount of $10.00 (1000 cents)
+            amount_cents = 1000
+            description = "Spending profits via StripeIntegration"
+            result = self.stripe_integration.spend_profits(amount_cents, description=description)
+            print(f"Stripe spend_profits result: {result}")
+        except Exception as e:
+            print(f"Error during Stripe spend_profits: {e}")
 
         # Example Azure ML usage
         if self.azure_integration_manager:
