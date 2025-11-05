@@ -155,11 +155,11 @@ class OwlbanAI:
 
                     if engine:
                         self.tensorrt_engines[model_name] = engine
-                        self.logger.info(f"TensorRT engine created for {model_name}")
+                        self.logger.info("TensorRT engine created for %s", model_name)
 
             self.logger.info("Models optimized for TensorRT inference.")
         except Exception as e:
-            self.logger.error(f"TensorRT optimization failed: {e}")
+            self.logger.error("TensorRT optimization failed: %s", e)
 
     def _setup_multi_gpu(self):
         """Setup multi-GPU support using NVIDIA NCCL"""

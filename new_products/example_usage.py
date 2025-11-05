@@ -1,7 +1,7 @@
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from new_products.infrastructure_optimizer import InfrastructureOptimizer
-from new_products.telehealth_analytics import TelehealthAnalytics
+from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
 from new_products.model_deployment_manager import ModelDeploymentManager
 from new_products.anomaly_detection import AnomalyDetection
 
@@ -17,7 +17,7 @@ def main():
     optimizer.optimize_resources()
 
     # Telehealth Analytics
-    telehealth = TelehealthAnalytics(nim_manager, owlban_ai)
+    telehealth = NVIDIATelehealthAnalytics(nim_manager, owlban_ai)
     telehealth.monitor_infrastructure()
     telehealth.analyze_patient_data({"patient_id": 123, "symptoms": ["cough", "fever"]})
 

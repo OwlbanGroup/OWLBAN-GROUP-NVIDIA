@@ -4,21 +4,41 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import logging
+from typing import Dict, List, Optional, Tuple
 
-class DQNNetwork(nn.Module):
-    """Deep Q-Network for NVIDIA GPU-accelerated RL"""
+# NVIDIA-specific imports
+try:
+    import cupy as cp
+    cupy_available = True
+except ImportError:
+    cp = None
+    cupy_available = False
+
+try:
+    import tensorrt as trt
+    tensorrt_available = True
+except ImportError:
+    trt = None
+    tensorrt_available = False
+
+class OptimizedDQNNetwork(nn.Module):
+    """NVIDIA-optimized Deep Q-Network with cuDNN acceleration"""
     def __init__(self, state_size, action_size, hidden_size=128):
-        super(DQNNetwork, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, action_size)
-        self.relu = nn.ReLU()
+        super(OptimizedDQNNetwork, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(state_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),  # cuDNN optimized
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_size, action_size)
+        )
 
     def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        return self.layers(x)
 
 class ReinforcementLearningAgent:
     def __init__(self, actions, learning_rate=0.001, discount_factor=0.99, epsilon=0.2,
@@ -40,9 +60,13 @@ class ReinforcementLearningAgent:
 
         # Initialize Deep Q-Network for GPU acceleration
         self.state_size = 10  # Default, will be updated dynamically
-        self.dqn = DQNNetwork(self.state_size, self.action_size).to(self.device)
-        self.target_dqn = DQNNetwork(self.state_size, self.action_size).to(self.device)
+        self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
+        self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
         self.target_dqn.load_state_dict(self.dqn.state_dict())
+
+        # Enable cuDNN optimization
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
 
         self.optimizer = optim.Adam(self.dqn.parameters(), lr=learning_rate)
         self.criterion = nn.MSELoss()
@@ -72,8 +96,8 @@ class ReinforcementLearningAgent:
             self.state_size = new_size
             self.logger.info(f"Updating DQN state size to {self.state_size}")
             # Reinitialize networks with new state size
-            self.dqn = DQNNetwork(self.state_size, self.action_size).to(self.device)
-            self.target_dqn = DQNNetwork(self.state_size, self.action_size).to(self.device)
+            self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
+            self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
             self.target_dqn.load_state_dict(self.dqn.state_dict())
             self.optimizer = optim.Adam(self.dqn.parameters(), lr=self.learning_rate)
 

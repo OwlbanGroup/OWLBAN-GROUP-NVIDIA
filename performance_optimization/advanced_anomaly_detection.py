@@ -2,19 +2,41 @@ import numpy as np
 import torch
 import torch.nn as nn
 import logging
+from typing import Dict, List, Optional, Tuple
 
-class Autoencoder(nn.Module):
-    """NVIDIA GPU-accelerated Autoencoder for anomaly detection"""
+# NVIDIA-specific imports
+try:
+    import cupy as cp
+    cupy_available = True
+except ImportError:
+    cp = None
+    cupy_available = False
+
+try:
+    import tensorrt as trt
+    tensorrt_available = True
+except ImportError:
+    trt = None
+    tensorrt_available = False
+
+class OptimizedAutoencoder(nn.Module):
+    """NVIDIA-optimized Autoencoder with cuDNN acceleration for anomaly detection"""
     def __init__(self, input_size, hidden_size=64):
-        super(Autoencoder, self).__init__()
+        super(OptimizedAutoencoder, self).__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),  # cuDNN optimized
             nn.ReLU(),
-            nn.Linear(hidden_size, hidden_size//2)
+            nn.Dropout(0.1),
+            nn.Linear(hidden_size, hidden_size//2),
+            nn.BatchNorm1d(hidden_size//2),
+            nn.ReLU()
         )
         self.decoder = nn.Sequential(
             nn.Linear(hidden_size//2, hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(hidden_size, input_size)
         )
 
@@ -31,9 +53,13 @@ class AdvancedAnomalyDetection:
         if model is None:
             # Create default autoencoder model
             self.input_size = 10  # Will be updated dynamically
-            self.model = Autoencoder(self.input_size).to(self.device)
+            self.model = OptimizedAutoencoder(self.input_size).to(self.device)
         else:
             self.model = model.to(self.device)
+
+        # Enable cuDNN optimization
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
 
         self.model.eval()  # Set to evaluation mode
         self.logger.info(f"NVIDIA GPU-accelerated anomaly detection using device: {self.device}")
@@ -71,7 +97,7 @@ class AdvancedAnomalyDetection:
         # Update model input size if needed
         if processed_data.shape[0] != self.input_size:
             self.input_size = processed_data.shape[0]
-            self.model = Autoencoder(self.input_size).to(self.device)
+            self.model = OptimizedAutoencoder(self.input_size).to(self.device)
             self.logger.info(f"Updated autoencoder input size to {self.input_size}")
 
         # Convert to tensor and move to GPU

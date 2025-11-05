@@ -167,7 +167,7 @@ class NVIDIAInfrastructureOptimizer:
                 return actions[action_idx]
 
         except Exception as e:
-            self.logger.error(f"TensorRT optimization failed: {e}")
+            self.logger.error("TensorRT optimization failed: %s", e)
             return "maintain"
 
     def _run_tensorrt_inference(self, input_tensor):

@@ -54,7 +54,7 @@ except ImportError:
     cuda = None
     numba_available = False
 from new_products.infrastructure_optimizer import InfrastructureOptimizer
-from new_products.telehealth_analytics import TelehealthAnalytics
+from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
 from new_products.model_deployment_manager import ModelDeploymentManager
 from new_products.anomaly_detection import AnomalyDetection
 from new_products.revenue_optimizer import RevenueOptimizer
@@ -64,6 +64,12 @@ from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from human_ai_collaboration.collaboration_manager import CollaborationManager
 from combined_nim_owlban_ai.azure_integration_manager import AzureQuantumIntegrationManager
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
+
+# Advanced NVIDIA integrations
+from combined_nim_owlban_ai.triton_inference_server import TritonInferenceServer, TritonModelManager
+from combined_nim_owlban_ai.rapids_integration import RAPIDSDataProcessor
+from combined_nim_owlban_ai.dcgm_monitor import DCGMMonitor
+from combined_nim_owlban_ai.energy_optimizer import EnergyOptimizer
 
 
 class QuantumIntegratedSystem:
@@ -84,7 +90,7 @@ class QuantumIntegratedSystem:
 
         # Initialize quantum-integrated AI products
         self.infrastructure_optimizer = InfrastructureOptimizer(self.nim_manager)
-        self.telehealth_analytics = TelehealthAnalytics(self.nim_manager, self.owlban_ai)
+        self.telehealth_analytics = NVIDIATelehealthAnalytics(self.nim_manager, self.owlban_ai)
         self.model_deployment_manager = ModelDeploymentManager(self.nim_manager)
         self.anomaly_detection = AnomalyDetection(self.nim_manager, self.owlban_ai)
         self.revenue_optimizer = RevenueOptimizer(self.nim_manager, market_data_provider=None)
@@ -105,6 +111,12 @@ class QuantumIntegratedSystem:
         self.quantum_orchestrator = ReinforcementLearningAgent(
             actions=["optimize_quantum_circuit", "balance_classical_quantum", "scale_quantum_resources", "quantum_error_correction"]
         )
+
+        # Initialize advanced NVIDIA components
+        self.triton_server = TritonInferenceServer()
+        self.rapids_processor = RAPIDSDataProcessor()
+        self.dcgm_monitor = DCGMMonitor()
+        self.energy_optimizer = EnergyOptimizer(self.dcgm_monitor)
         
     def initialize(self):
         self.logger.info("Initializing Quantum-Integrated NVIDIA NIM and OWLBAN GROUP AI system...")
@@ -162,110 +174,154 @@ class QuantumIntegratedSystem:
         # Set up continuous quantum data sync threads
         self._start_quantum_sync_threads()
 
+    def _quantum_sync_resource_status(self):
+        """Background thread function for resource status synchronization"""
+        while self.quantum_enabled:
+            try:
+                status = self.nim_manager.get_resource_status()
+                processed_status_dict = self._process_gpu_tensor_data(
+                    status,
+                    lambda x: self._gpu_process_data(x)
+                )
+                self.quantum_data_buffers["resource_status"].append(processed_status_dict)
+                self._sync_to_entangled_components("resource_status", processed_status_dict)
+                time.sleep(0.1)  # Faster sync with NVIDIA tech
+            except Exception as e:
+                self.logger.error("NVIDIA-accelerated resource status sync error: %s", e)
+
+    def _process_gpu_tensor_data(self, data_dict, process_fn):
+        """Process dictionary data through GPU tensor operations"""
+        try:
+            # Convert to GPU tensor for processing
+            tensor_data = torch.tensor(list(data_dict.values()), dtype=torch.float32).cuda()
+            # Process on GPU
+            processed_data = process_fn(tensor_data)
+            # Convert back to dict
+            return dict(zip(data_dict.keys(), processed_data.cpu().numpy()))
+        except Exception as e:
+            self.logger.error("GPU tensor processing error: %s", e)
+            return data_dict
+
     def _start_quantum_sync_threads(self):
         """Start background threads for continuous E2E NVIDIA-accelerated quantum data synchronization"""
-
-        def sync_resource_status():
-            while self.quantum_enabled:
-                try:
-                    # NVIDIA CUDA-accelerated data collection
-                    status = self.nim_manager.get_resource_status()
-                    # Convert to GPU tensor for processing
-                    status_tensor = torch.tensor(list(status.values()), dtype=torch.float32).cuda()
-                    # Process on GPU
-                    processed_status = self._gpu_process_data(status_tensor)
-                    # Convert back to dict
-                    processed_status_dict = dict(zip(status.keys(), processed_status.cpu().numpy()))
-
-                    self.quantum_data_buffers["resource_status"].append(processed_status_dict)
-                    # Sync to entangled components with NVIDIA NVLink
-                    self._sync_to_entangled_components("resource_status", processed_status_dict)
-                    time.sleep(0.1)  # Faster sync with NVIDIA tech
-                except Exception as e:
-                    self.logger.error("NVIDIA-accelerated resource status sync error: %s", e)
-
-        def sync_model_predictions():
-            while self.quantum_enabled:
-                try:
-                    if hasattr(self.owlban_ai, 'get_latest_prediction'):
-                        prediction = self.owlban_ai.get_latest_prediction()
-                        if prediction:
-                            # NVIDIA TensorRT optimized inference
-                            prediction_tensor = torch.tensor(prediction, dtype=torch.float32).cuda()
-                            optimized_prediction = self._tensorrt_optimize_prediction(prediction_tensor)
-                            optimized_prediction_dict = optimized_prediction.cpu().numpy().tolist()
-
-                            self.quantum_data_buffers["model_predictions"].append(optimized_prediction_dict)
-                            self._sync_to_entangled_components("model_predictions", optimized_prediction_dict)
-                    time.sleep(0.2)  # Faster with TensorRT
-                except Exception as e:
-                    self.logger.error("NVIDIA TensorRT prediction sync error: %s", e)
-
-        def sync_financial_data():
-            while self.quantum_enabled:
-                try:
-                    profit = self.revenue_optimizer.get_current_profit()
-                    # NVIDIA cuDNN accelerated financial processing
-                    financial_tensor = torch.tensor([profit, time.time()], dtype=torch.float32).cuda()
-                    processed_financial = self._cudnn_process_financial(financial_tensor)
-                    processed_financial_dict = {
-                        "profit": processed_financial[0].item(),
-                        "timestamp": processed_financial[1].item()
-                    }
-
-                    self.quantum_data_buffers["financial_data"].append(processed_financial_dict)
-                    self._sync_to_entangled_components("financial_data", processed_financial_dict)
-                    time.sleep(1)  # Optimized sync interval
-                except Exception as e:
-                    self.logger.error("NVIDIA cuDNN financial sync error: %s", e)
-
-        def sync_anomaly_alerts():
-            while self.quantum_enabled:
-                try:
-                    if hasattr(self.anomaly_detection, 'get_latest_anomaly'):
-                        anomaly = self.anomaly_detection.get_latest_anomaly()
-                        if anomaly:
-                            # NVIDIA GPU-accelerated anomaly processing
-                            anomaly_tensor = torch.tensor(anomaly, dtype=torch.float32).cuda()
-                            gpu_processed_anomaly = self._gpu_anomaly_processing(anomaly_tensor)
-                            gpu_processed_anomaly_dict = gpu_processed_anomaly.cpu().numpy().tolist()
-
-                            self.quantum_data_buffers["anomaly_alerts"].append(gpu_processed_anomaly_dict)
-                            self._sync_to_entangled_components("anomaly_alerts", gpu_processed_anomaly_dict)
-                    time.sleep(0.3)  # Faster anomaly detection
-                except Exception as e:
-                    self.logger.error(f"NVIDIA GPU anomaly sync error: {e}")
-
-        def sync_collaboration_updates():
-            while self.quantum_enabled:
-                try:
-                    if hasattr(self.collaboration_manager, 'get_latest_update'):
-                        update = self.collaboration_manager.get_latest_update()
-                        if update:
-                            # NVIDIA multi-GPU collaboration processing
-                            update_tensor = torch.tensor(update, dtype=torch.float32).cuda()
-                            multi_gpu_update = self._multi_gpu_collaboration_processing(update_tensor)
-                            multi_gpu_update_dict = multi_gpu_update.cpu().numpy().tolist()
-
-                            self.quantum_data_buffers["collaboration_updates"].append(multi_gpu_update_dict)
-                            self._sync_to_entangled_components("collaboration_updates", multi_gpu_update_dict)
-                    time.sleep(0.4)  # Optimized collaboration sync
-                except Exception as e:
-                    self.logger.error(f"NVIDIA multi-GPU collaboration sync error: {e}")
-
-        # Start NVIDIA-accelerated sync threads
-        threads = [
-            threading.Thread(target=sync_resource_status, daemon=True),
-            threading.Thread(target=sync_model_predictions, daemon=True),
-            threading.Thread(target=sync_financial_data, daemon=True),
-            threading.Thread(target=sync_anomaly_alerts, daemon=True),
-            threading.Thread(target=sync_collaboration_updates, daemon=True),
+        sync_threads = [
+            ("resource_status", self._quantum_sync_resource_status),
+            ("model_predictions", self._quantum_sync_model_predictions),
+            ("financial_data", self._quantum_sync_financial_data),
+            ("anomaly_alerts", self._quantum_sync_anomaly_alerts),
+            ("collaboration_updates", self._quantum_sync_collaboration_updates)
         ]
+        
+        self.logger.info("Starting quantum sync threads...")
+        for thread_name, target_fn in sync_threads:
+            self.logger.debug("Starting %s sync thread", thread_name)
+            self._start_sync_thread(target_fn, thread_name)
 
-        for thread in threads:
-            thread.start()
+    def _start_sync_thread(self, target_fn, thread_name):
+        """Helper method to start and track a sync thread"""
+        thread = threading.Thread(
+            target=target_fn,
+            name=f"quantum_sync_{thread_name}",
+            daemon=True
+        )
+        thread.start()
+        return thread
 
-        self.logger.info("E2E NVIDIA-accelerated quantum data synchronization threads started.")
+    def _quantum_sync_model_predictions(self):
+        """Background thread function for model predictions synchronization"""
+        while self.quantum_enabled:
+            try:
+                if hasattr(self.owlban_ai, 'get_latest_prediction'):
+                    prediction = self.owlban_ai.get_latest_prediction()
+                    if prediction:
+                        optimized_prediction_dict = self._process_prediction_with_tensorrt(prediction)
+                        self.quantum_data_buffers["model_predictions"].append(optimized_prediction_dict)
+                        self._sync_to_entangled_components("model_predictions", optimized_prediction_dict)
+                time.sleep(0.2)  # Faster with TensorRT
+            except Exception as e:
+                self.logger.error("NVIDIA TensorRT prediction sync error: %s", e)
+
+    def _process_prediction_with_tensorrt(self, prediction):
+        """Process prediction data using TensorRT optimization"""
+        try:
+            prediction_tensor = torch.tensor(prediction, dtype=torch.float32).cuda()
+            optimized_prediction = self._tensorrt_optimize_prediction(prediction_tensor)
+            return optimized_prediction.cpu().numpy().tolist()
+        except Exception as e:
+            self.logger.error("TensorRT prediction processing error: %s", e)
+            return prediction
+
+    def _quantum_sync_financial_data(self):
+        """Background thread function for financial data synchronization"""
+        while self.quantum_enabled:
+            try:
+                profit = self.revenue_optimizer.get_current_profit()
+                processed_financial_dict = self._process_financial_with_cudnn(profit)
+                self.quantum_data_buffers["financial_data"].append(processed_financial_dict)
+                self._sync_to_entangled_components("financial_data", processed_financial_dict)
+                time.sleep(0.2)
+            except Exception as e:
+                self.logger.error("NVIDIA cuDNN financial sync error: %s", e)
+
+    def _process_financial_with_cudnn(self, profit):
+        """Process financial data using cuDNN acceleration"""
+        try:
+            financial_tensor = torch.tensor([profit, time.time()], dtype=torch.float32).cuda()
+            processed_financial = self._cudnn_process_financial(financial_tensor)
+            return {
+                "profit": processed_financial[0].item(),
+                "timestamp": processed_financial[1].item()
+            }
+        except Exception as e:
+            self.logger.error("cuDNN financial processing error: %s", e)
+            return {"profit": profit, "timestamp": time.time()}
+    def _quantum_sync_anomaly_alerts(self):
+        """Background thread function for anomaly alerts synchronization"""
+        while self.quantum_enabled:
+            try:
+                if hasattr(self.anomaly_detection, 'get_latest_anomaly'):
+                    anomaly = self.anomaly_detection.get_latest_anomaly()
+                    if anomaly:
+                        processed_anomaly_dict = self._process_anomaly_with_gpu(anomaly)
+                        self.quantum_data_buffers["anomaly_alerts"].append(processed_anomaly_dict)
+                        self._sync_to_entangled_components("anomaly_alerts", processed_anomaly_dict)
+                time.sleep(0.3)  # Faster anomaly detection
+            except Exception as e:
+                self.logger.error("NVIDIA GPU anomaly sync error: %s", e)
+
+    def _process_anomaly_with_gpu(self, anomaly):
+        """Process anomaly data using GPU acceleration"""
+        try:
+            anomaly_tensor = torch.tensor(anomaly, dtype=torch.float32).cuda()
+            gpu_processed_anomaly = self._gpu_anomaly_processing(anomaly_tensor)
+            return gpu_processed_anomaly.cpu().numpy().tolist()
+        except Exception as e:
+            self.logger.error("GPU anomaly processing error: %s", e)
+            return anomaly
+
+    def _quantum_sync_collaboration_updates(self):
+        """Background thread function for collaboration updates synchronization"""
+        while self.quantum_enabled:
+            try:
+                if hasattr(self.collaboration_manager, 'get_latest_update'):
+                    update = self.collaboration_manager.get_latest_update()
+                    if update:
+                        processed_update_dict = self._process_collaboration_with_multi_gpu(update)
+                        self.quantum_data_buffers["collaboration_updates"].append(processed_update_dict)
+                        self._sync_to_entangled_components("collaboration_updates", processed_update_dict)
+                time.sleep(0.4)  # Optimized collaboration sync
+            except Exception as e:
+                self.logger.error("NVIDIA multi-GPU collaboration sync error: %s", e)
+
+    def _process_collaboration_with_multi_gpu(self, update):
+        """Process collaboration data using multi-GPU acceleration"""
+        try:
+            update_tensor = torch.tensor(update, dtype=torch.float32).cuda()
+            multi_gpu_update = self._multi_gpu_collaboration_processing(update_tensor)
+            return multi_gpu_update.cpu().numpy().tolist()
+        except Exception as e:
+            self.logger.error("Multi-GPU collaboration processing error: %s", e)
+            return update
 
     def _gpu_process_data(self, data_tensor):
         """Process data using NVIDIA CUDA acceleration with real GPU operations"""
@@ -278,7 +334,7 @@ class QuantumIntegratedSystem:
             processed = scaled * 0.01  # Scale down for processing
             return torch.from_numpy(cp.asnumpy(processed)).cuda()
         except Exception as e:
-            self.logger.warning(f"CuPy processing failed, falling back to CPU: {e}")
+            self.logger.warning("CuPy processing failed, falling back to CPU: %s", e)
             return data_tensor * 0.01
 
     def _quantum_financial_processing(self, financial_data):
@@ -318,7 +374,7 @@ class QuantumIntegratedSystem:
             return financial_data
 
         except Exception as e:
-            self.logger.error(f"Quantum financial processing failed: {e}")
+            self.logger.error("Quantum financial processing failed: %s", e)
             return financial_data
 
     def _tensorrt_optimize_prediction(self, prediction_tensor):
@@ -362,7 +418,7 @@ class QuantumIntegratedSystem:
                         return result * 1.1  # Additional scaling
 
         except Exception as e:
-            self.logger.warning(f"TensorRT optimization failed, using fallback: {e}")
+            self.logger.warning("TensorRT optimization failed, using fallback: %s", e)
             return prediction_tensor * 1.1
 
     def _cudnn_process_financial(self, financial_tensor):
@@ -375,7 +431,7 @@ class QuantumIntegratedSystem:
             processed = conv(reshaped)
             return processed.squeeze() * 1.05
         except Exception as e:
-            self.logger.warning(f"cuDNN processing failed, using fallback: {e}")
+            self.logger.warning("cuDNN processing failed, using fallback: %s", e)
             return financial_tensor * 1.05
 
     def _gpu_anomaly_processing(self, anomaly_tensor):
@@ -390,7 +446,7 @@ class QuantumIntegratedSystem:
             processed = normalized * 0.9
             return torch.from_numpy(cp.asnumpy(processed)).cuda()
         except Exception as e:
-            self.logger.warning(f"GPU anomaly processing failed, using fallback: {e}")
+            self.logger.warning("GPU anomaly processing failed, using fallback: %s", e)
             return anomaly_tensor * 0.9
 
     def _multi_gpu_collaboration_processing(self, update_tensor):
@@ -410,60 +466,79 @@ class QuantumIntegratedSystem:
                 # Fallback to single GPU processing
                 return update_tensor * 1.2
         except Exception as e:
-            self.logger.warning(f"Multi-GPU processing failed, using fallback: {e}")
+            self.logger.warning("Multi-GPU processing failed, using fallback: %s", e)
             return update_tensor * 1.2
+
+    def _sync_resource_status(self, data):
+        """Sync resource status to relevant components"""
+        components = {
+            self.infrastructure_optimizer: 'update_resource_status',
+            self.telehealth_analytics: 'update_resource_status'
+        }
+        self._sync_to_components(components, data)
+
+    def _sync_model_predictions(self, data):
+        """Sync model predictions to relevant components"""
+        components = {
+            self.anomaly_detection: 'update_predictions',
+            self.revenue_optimizer: 'update_predictions'
+        }
+        self._sync_to_components(components, data)
+
+    def _sync_financial_data(self, data):
+        """Sync financial data to Stripe integration"""
+        components = {
+            self.stripe_integration: 'update_financial_data'
+        }
+        self._sync_to_components(components, data)
+
+    def _sync_anomaly_alerts(self, data):
+        """Sync anomaly alerts to collaboration manager"""
+        components = {
+            self.collaboration_manager: 'update_anomaly_alerts'
+        }
+        self._sync_to_components(components, data)
+
+    def _sync_to_components(self, components: Dict, data):
+        """Helper method to sync data to components with specified method names"""
+        for component, method_name in components.items():
+            if hasattr(component, method_name):
+                try:
+                    getattr(component, method_name)(data)
+                except Exception as e:
+                    self.logger.error("Failed to sync to %s using %s: %s", 
+                                    component.__class__.__name__, method_name, e)
 
     def _sync_to_entangled_components(self, data_type, data):
         """Sync data to quantum-entangled components instantly"""
-        self.logger.debug(f"Syncing {data_type} to entangled components: {data}")
+        self.logger.debug("Syncing %s to entangled components: %s", data_type, data)
 
-        # Quantum entanglement ensures instant synchronization
-        # In practice, this would use quantum communication protocols
-        if data_type == "resource_status":
-            # Sync to infrastructure optimizer and telehealth
-            if hasattr(self.infrastructure_optimizer, 'update_resource_status'):
-                self.infrastructure_optimizer.update_resource_status(data)
-            if hasattr(self.telehealth_analytics, 'update_resource_status'):
-                self.telehealth_analytics.update_resource_status(data)
+        # Mapping of data types to their sync handlers
+        sync_handlers = {
+            "resource_status": self._sync_resource_status,
+            "model_predictions": self._sync_model_predictions,
+            "financial_data": self._sync_financial_data,
+            "anomaly_alerts": self._sync_anomaly_alerts,
+            "collaboration_updates": self._broadcast_collaboration_update
+        }
 
-        elif data_type == "model_predictions":
-            # Sync to anomaly detection and revenue optimizer
-            if hasattr(self.anomaly_detection, 'update_predictions'):
-                self.anomaly_detection.update_predictions(data)
-            if hasattr(self.revenue_optimizer, 'update_predictions'):
-                self.revenue_optimizer.update_predictions(data)
-
-        elif data_type == "financial_data":
-            # Sync to Stripe integration
-            if hasattr(self.stripe_integration, 'update_financial_data'):
-                self.stripe_integration.update_financial_data(data)
-
-        elif data_type == "anomaly_alerts":
-            # Sync to collaboration manager
-            if hasattr(self.collaboration_manager, 'update_anomaly_alerts'):
-                self.collaboration_manager.update_anomaly_alerts(data)
-
-        elif data_type == "collaboration_updates":
-            # Sync to all components for coordinated response
-            self._broadcast_collaboration_update(data)
+        handler = sync_handlers.get(data_type)
+        if handler:
+            handler(data)
+        else:
+            self.logger.warning("Unknown data type for quantum sync: %s", data_type)
 
     def _broadcast_collaboration_update(self, update):
         """Broadcast collaboration updates to all quantum-entangled components"""
-        components = [
-            self.infrastructure_optimizer,
-            self.telehealth_analytics,
-            self.model_deployment_manager,
-            self.anomaly_detection,
-            self.revenue_optimizer,
-            self.stripe_integration,
-        ]
-
-        for component in components:
-            if hasattr(component, 'receive_collaboration_update'):
-                try:
-                    component.receive_collaboration_update(update)
-                except Exception as e:
-                    self.logger.error(f"Failed to sync collaboration update to {component.__class__.__name__}: {e}")
+        components = {
+            self.infrastructure_optimizer: 'receive_collaboration_update',
+            self.telehealth_analytics: 'receive_collaboration_update',
+            self.model_deployment_manager: 'receive_collaboration_update',
+            self.anomaly_detection: 'receive_collaboration_update',
+            self.revenue_optimizer: 'receive_collaboration_update',
+            self.stripe_integration: 'receive_collaboration_update'
+        }
+        self._sync_to_components(components, update)
 
     def get_quantum_sync_status(self):
         """Get the current status of E2E quantum data synchronization"""

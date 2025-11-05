@@ -220,8 +220,89 @@ class NVIDIARevenueOptimizer:
         adjusted_revenue = (
             base_revenue
             * price_factor
+            * demand_index
+            * seasonality_factor
+            * economic_index
+        )
+        adjusted_cost = cost * cost_factor
+
+        profit = adjusted_revenue - adjusted_cost
+
+        # Apply NVIDIA GPU efficiency bonus
+        if torch.cuda.is_available():
+            profit *= 1.1  # 10% bonus for GPU acceleration
+
+        # Penalize if competitor price is lower and price is increased
+        if competitor_price < price_factor and action == "increase_price":
+            profit *= 0.9
 
         return profit
+
+    def get_current_profit(self):
+        """Calculate current profit using NVIDIA GPU processing"""
+        resource_status = self.nim_manager.get_resource_status()
+        market_conditions = self.market_data_provider.get_current_conditions()
+
+        profit = self._calculate_reward("maintain_price", resource_status, market_conditions)
+        self.logger.info(f"Current estimated profit (NVIDIA GPU calculated): ${profit:.2f}")
+
+        return profit
+
+    def predict_revenue_with_tensorrt(self, market_data: Dict) -> float:
+        """Predict revenue using NVIDIA TensorRT"""
+        if not tensorrt_available:
+            return self.get_current_profit()
+
+        try:
+            # Convert market data to tensor features
+            features = self._create_state(self.nim_manager.get_resource_status(), market_data)
+            input_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0).to(self.device)
+
+            # Use TensorRT for inference if available
+            with torch.no_grad():
+                if hasattr(self, 'trt_engine'):
+                    # Use TensorRT engine
+                    prediction = self._run_tensorrt_revenue_inference(input_tensor)
+                else:
+                    # Use PyTorch model
+                    prediction = self.revenue_prediction_model(input_tensor)
+
+                return prediction.item()
+
+        except Exception as e:
+            self.logger.error(f"TensorRT revenue prediction failed: {e}")
+            return self.get_current_profit()
+
+    def _run_tensorrt_revenue_inference(self, input_tensor):
+        """Run revenue inference using TensorRT engine"""
+        # Placeholder for TensorRT inference implementation
+        return self.revenue_prediction_model(input_tensor)
+
+    def parallel_revenue_optimization(self, market_scenarios: List[Dict]) -> List[float]:
+        """Optimize revenue across multiple market scenarios in parallel"""
+        if self.gpu_count <= 1:
+            return [self.predict_revenue_with_tensorrt(scenario) for scenario in market_scenarios]
+
+        try:
+            results = []
+            batch_size = len(market_scenarios)
+            gpu_batch_size = batch_size // self.gpu_count
+
+            for gpu_id in range(self.gpu_count):
+                start_idx = gpu_id * gpu_batch_size
+                end_idx = start_idx + gpu_batch_size if gpu_id < self.gpu_count - 1 else batch_size
+
+                gpu_scenarios = market_scenarios[start_idx:end_idx]
+
+                with torch.cuda.device(gpu_id):
+                    gpu_results = [self.predict_revenue_with_tensorrt(scenario) for scenario in gpu_scenarios]
+                    results.extend(gpu_results)
+
+            return results
+
+        except Exception as e:
+            self.logger.error(f"Parallel revenue optimization failed: {e}")
+            return [self.predict_revenue_with_tensorrt(scenario) for scenario in market_scenarios]
 
     def optimize_quantum_portfolio(self):
         """Optimize portfolio using quantum annealing"""
@@ -275,9 +356,18 @@ class NVIDIARevenueOptimizer:
         return {
             "rl_gpu_status": self.rl_agent.get_gpu_status(),
             "device": str(self.device),
+            "gpu_count": self.gpu_count,
+            "tensorrt_available": tensorrt_available,
+            "cupy_available": cupy_available,
             "current_profit": self.get_current_profit(),
             "quantum_portfolio": self.quantum_optimizer.get_portfolio_summary(),
             "quantum_risk_factors": self.quantum_risk_analyzer.get_risk_factor_summary(),
             "quantum_predictor": self.quantum_predictor.get_model_status(),
             "nim_capabilities": self.nim_manager.get_nvidia_capabilities() if hasattr(self.nim_manager, 'get_nvidia_capabilities') else {}
         }
+
+
+# Backward compatibility
+class RevenueOptimizer(NVIDIARevenueOptimizer):
+    """Backward compatible wrapper for NVIDIARevenueOptimizer"""
+    pass
