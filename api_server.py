@@ -3,45 +3,48 @@ OWLBAN GROUP AI API Server
 FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 """
 
+import logging
+from datetime import datetime
+import secrets
+import time
+from typing import Dict, List, Optional, Any
+
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
-from typing import Dict, List, Optional, Any
-import logging
-import json
-from datetime import datetime
-import secrets
-import time
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import AI systems
 try:
     from combined_nim_owlban_ai import CombinedSystem
-    combined_system_available = True
+    COMBINED_SYSTEM_AVAILABLE = True
 except ImportError:
-    combined_system_available = False
+    COMBINED_SYSTEM_AVAILABLE = False
 
 try:
     from new_products.revenue_optimizer import NVIDIARevenueOptimizer
     from combined_nim_owlban_ai.nim import NimManager
-    revenue_optimizer_available = True
+    REVENUE_OPTIMIZER_AVAILABLE = True
 except ImportError:
-    revenue_optimizer_available = False
+    REVENUE_OPTIMIZER_AVAILABLE = False
 
 try:
     from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
-    rl_agent_available = True
+    RL_AGENT_AVAILABLE = True
 except ImportError:
-    rl_agent_available = False
+    RL_AGENT_AVAILABLE = False
 
 # Import database manager
 try:
     from database_manager import DatabaseManager
-    db_manager_available = True
+    DB_MANAGER_AVAILABLE = True
 except ImportError:
-    db_manager_available = False
+    DB_MANAGER_AVAILABLE = False
+
+# Constants
+REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 
 # Security
 security = HTTPBasic()
@@ -128,11 +131,12 @@ combined_system = None
 nim_manager = None
 revenue_optimizer = None
 rl_agent = None
+db_manager = None
 
 # Initialize systems
 @app.on_event("startup")
 async def startup_event():
-    global combined_system, nim_manager, revenue_optimizer, rl_agent
+    global combined_system, nim_manager, revenue_optimizer, rl_agent, db_manager
 
     logger.info("Initializing AI systems...")
 
@@ -158,6 +162,13 @@ async def startup_event():
             logger.info("RL agent initialized")
         except Exception as e:
             logger.error(f"Failed to initialize RL agent: {e}")
+
+    if db_manager_available:
+        try:
+            db_manager = DatabaseManager()
+            logger.info("Database manager initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize database manager: {e}")
 
 # Pydantic models
 class RevenueOptimizationRequest(BaseModel):
@@ -196,7 +207,8 @@ async def get_system_status():
         "combined_system": combined_system is not None,
         "revenue_optimizer": revenue_optimizer is not None,
         "rl_agent": rl_agent is not None,
-        "nim_manager": nim_manager is not None
+        "nim_manager": nim_manager is not None,
+        "db_manager": db_manager is not None
     }
 
     gpu_status = None
