@@ -1,0 +1,56 @@
+{
+    "prometheus_port": 9090,
+    "monitor_intervals": {
+        "quantum": 1,
+        "gpu": 1,
+        "financial": 1
+    },
+    "alert_channels": {
+        "slack": {
+            "token": "YOUR_SLACK_TOKEN",
+            "channels": {
+                "critical": "quantum-alerts-critical",
+                "warning": "quantum-alerts-warning",
+                "info": "quantum-alerts-info"
+            }
+        },
+        "teams": {
+            "client_id": "YOUR_TEAMS_CLIENT_ID",
+            "client_secret": "YOUR_TEAMS_CLIENT_SECRET",
+            "channels": {
+                "ops": "Quantum Operations",
+                "dev": "Quantum Development",
+                "finance": "Financial Operations"
+            }
+        }
+    },
+    "metrics": {
+        "quantum_circuit": {
+            "latency_threshold": 1.0,
+            "error_rate_threshold": 0.01,
+            "circuit_types": ["optimization", "prediction", "risk-analysis"]
+        },
+        "gpu_performance": {
+            "utilization_threshold": 90.0,
+            "memory_threshold": 85.0,
+            "temperature_threshold": 80.0
+        },
+        "financial": {
+            "sharpe_ratio_min": 1.5,
+            "var_threshold": 0.02,
+            "liquidity_threshold": 1000000
+        }
+    },
+    "alerting": {
+        "cooldown_periods": {
+            "critical": 300,
+            "warning": 900,
+            "info": 1800
+        },
+        "aggregation_windows": {
+            "quantum": 60,
+            "gpu": 300,
+            "financial": 300
+        }
+    }
+}

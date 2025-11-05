@@ -1,0 +1,22 @@
+{
+    "bloomberg": {
+        "host": "localhost",
+        "port": 8194,
+        "auth_token": "YOUR_BLOOMBERG_TOKEN",
+        "service_uri": "//blp/mktdata",
+        "timeout": 5000
+    },
+    "refinitiv": {
+        "app_key": "YOUR_REFINITIV_APP_KEY",
+        "workspace_id": "YOUR_WORKSPACE_ID",
+        "environment": "prod",
+        "auth_url": "https://api.refinitiv.com",
+        "timeout": 5000
+    },
+    "market_data": {
+        "alpha_vantage_key": "YOUR_ALPHA_VANTAGE_KEY",
+        "iex_token": "YOUR_IEX_TOKEN",
+        "polygon_key": "YOUR_POLYGON_KEY",
+        "tiingo_token": "YOUR_TIINGO_TOKEN"
+    }
+}
