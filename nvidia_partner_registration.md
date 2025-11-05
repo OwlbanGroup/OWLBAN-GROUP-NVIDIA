@@ -4,7 +4,7 @@
 
 - **Legal Company Name:** OWLBAN GROUP
 - **Business Address:** 123 Innovation Drive, Santa Clara, CA 95054, USA
-- **Website URL:** https://github.com/OWLBAN-GROUP-NVIDIA
+- **Website URL:** <https://github.com/OWLBAN-GROUP-NVIDIA>
 - **Business Type/Industry:** Technology and AI Development
 - **Tax ID/EIN:** 12-3456789
 - **Number of Employees:** 5
@@ -13,7 +13,7 @@
 ## Primary Contact Person
 
 - **Full Name:** Sean B
-- **Email:** sean.b@owlban.com
+- **Email:** <sean.b@owlban.com>
 - **Phone Number:** +1 (408) 555-1234
 - **Title:** Founder/CEO
 
@@ -28,4 +28,4 @@
 
 OWLBAN GROUP is a United States incorporated company with $3.0 Quadrillion in combined revenue across its subsidiaries. As a strategic technology partner with NVIDIA for GPU infrastructure and AI acceleration, we request enrollment in NVIDIA's partner benefits program to access health insurance, life insurance, and payroll services for our team. Our NVIDIA INTEGRATION PROJECTS include quantum-integrated NVIDIA NIM and OWLBAN GROUP AI systems for advanced infrastructure optimization.
 
-To complete the registration, visit https://www.nvidia.com/en-us/benefits/ and submit this information through the partner enrollment form. Please provide confirmation of enrollment and access to the partner benefits portal.
+To complete the registration, visit <https://www.nvidia.com/en-us/benefits/> and submit this information through the partner enrollment form. Please provide confirmation of enrollment and access to the partner benefits portal.
