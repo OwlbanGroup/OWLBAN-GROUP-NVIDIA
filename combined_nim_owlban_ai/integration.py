@@ -6,7 +6,7 @@ OWLBAN GROUP - Enterprise Quantum Infrastructure with Multi-Vendor Integration
 import logging
 import threading
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
 # Core ML & Quantum
@@ -93,12 +93,11 @@ except ImportError:
     nccl_available = False
 
 # Financial Integration
-# Financial Integration
 try:
-    import bloombergl
-    import refinitiv.data as rd
-    from jpmorgan.quorum import QuantumBridge
-    from stripe.quantum import SecureProcessor
+    import bloombergl  # type: ignore
+    import refinitiv.data as rd  # type: ignore
+    from jpmorgan.quorum import QuantumBridge  # type: ignore
+    from stripe.quantum import SecureProcessor  # type: ignore
     financial_integrations_available = True
 except ImportError:
     logging.warning("Some financial integration packages not available")
@@ -437,6 +436,7 @@ class QuantumIntegratedSystem:
         except Exception as e:
             self.logger.error("cuDNN financial processing error: %s", e)
             return {"profit": profit, "timestamp": time.time()}
+
     def _quantum_sync_anomaly_alerts(self):
         """Background thread function for anomaly alerts synchronization"""
         while self.quantum_enabled:

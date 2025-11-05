@@ -4,13 +4,12 @@ Real-time collective intelligence platform using quantum entanglement simulation
 """
 
 import logging
+from datetime import datetime
+from typing import Dict, List, Any, Optional, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime
-import threading
-import time
 
 class GlobalConsciousnessNetwork:
     """Real-time collective intelligence platform"""
@@ -56,7 +55,7 @@ class GlobalConsciousnessNetwork:
                 'consciousness_level': self._calculate_consciousness_level()
             }
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.logger.error("Thought processing failed: %s", e)
             return {'error': str(e)}
 
@@ -107,7 +106,7 @@ class GlobalConsciousnessNetwork:
             self.global_insights.append(insight)
             return insight
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught,unused-variable
             self.logger.error("Collective intelligence update failed: %s", e)
             return {'error': str(e)}
 
@@ -152,8 +151,8 @@ class GlobalConsciousnessNetwork:
             # Social predictions
             predictions.extend(self._predict_social_changes())
 
-        except Exception as e:
-            self.logger.error("Global prediction generation failed: %s", e)
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.logger.error("Global prediction generation failed")
 
         return predictions
 
@@ -164,24 +163,24 @@ class GlobalConsciousnessNetwork:
                 return 0.0
 
             # Factors for consciousness level
-            connectivity = len(self.thought_patterns) / 1000000  # Scale to billions
+            connectivity = len(self.thought_patterns) / 1000000.0  # Scale to billions
             complexity = np.mean([data.get('complexity', 0.5) for data in self.thought_patterns.values()])
             coherence = self._measure_thought_coherence()
 
             consciousness = (connectivity * 0.4) + (complexity * 0.3) + (coherence * 0.3)
             return min(1.0, consciousness)
 
-        except Exception as e:
+        except Exception:  # pylint: disable=broad-exception-caught
             return 0.0
 
     def _analyze_emotions(self) -> str:
         """Analyze dominant emotions in collective consciousness"""
-        emotions = {}
+        emotions: Dict[str, int] = {}
         for data in self.thought_patterns.values():
             emotion = data.get('emotional_state', 'neutral')
             emotions[emotion] = emotions.get(emotion, 0) + 1
 
-        return max(emotions, key=emotions.get) if emotions else 'neutral'
+        return max(emotions, key=lambda k: emotions[k]) if emotions else 'neutral'
 
     def _calculate_global_mood(self) -> float:
         """Calculate global mood index (-1 to 1)"""
@@ -191,7 +190,7 @@ class GlobalConsciousnessNetwork:
             'neutral': 0.0
         }
 
-        total_weight = 0
+        total_weight = 0.0
         total_count = 0
 
         for data in self.thought_patterns.values():
@@ -205,7 +204,7 @@ class GlobalConsciousnessNetwork:
     def _detect_trends(self) -> List[str]:
         """Detect emerging trends in collective thought"""
         # Simple trend detection - in practice would use ML
-        trends = []
+        trends: List[str] = []
         recent_thoughts = list(self.thought_patterns.values())[-100:]  # Last 100 thoughts
 
         if recent_thoughts:
@@ -223,8 +222,10 @@ class GlobalConsciousnessNetwork:
         try:
             # Analyze emotional indicators
             global_mood = self._calculate_global_mood()
-            fear_count = sum(1 for data in self.thought_patterns.values()
-                           if data.get('emotional_state') == 'fear')
+            fear_count = sum(
+                1 for data in self.thought_patterns.values()
+                if data.get('emotional_state') == 'fear'
+            )
 
             fear_ratio = fear_count / len(self.thought_patterns) if self.thought_patterns else 0
 
@@ -232,7 +233,7 @@ class GlobalConsciousnessNetwork:
             crisis_score = (abs(global_mood) * 0.5) + (fear_ratio * 0.5)
             return min(1.0, crisis_score)
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught,unused-variable
             return 0.0
 
     def _generate_crisis_response(self) -> List[str]:
@@ -267,17 +268,17 @@ class GlobalConsciousnessNetwork:
         """Analyze social indicators from collective consciousness"""
         # Here we would analyze real social indicators from thought patterns
         # For now using placeholder logic
-        trends = []
+        trends: List[Tuple[str, float]] = []
         trend_data = [
             ('sustainable_tech', 'Growing interest in sustainable technologies', 0.82),
             ('remote_work', 'Continued evolution of remote work culture', 0.75),
             ('digital_privacy', 'Increasing focus on digital privacy', 0.78)
         ]
-        
+
         for topic, desc, base_confidence in trend_data:
             if topic in str(self.thought_patterns):  # Simple check for trend relevance
                 trends.append((desc, base_confidence))
-        
+
         return trends
 
     def _predict_social_changes(self) -> List[Dict[str, Any]]:
@@ -305,7 +306,7 @@ class GlobalConsciousnessNetwork:
 
             return coherence.item()
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return 0.0
 
 
@@ -326,4 +327,5 @@ class CollectiveBrainNetwork(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass through the neural network"""
         return self.layers(x)
