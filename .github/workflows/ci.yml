@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint-and-test:
@@ -16,19 +16,29 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           # Install project requirements if present
           if [ -f combined_nim_owlban_ai/requirements.txt ]; then pip install -r combined_nim_owlban_ai/requirements.txt; fi
-          pip install flake8 pytest
+          pip install flake8 pytest pylint mypy
 
       - name: Run flake8 (project scope)
         run: |
           # Limit linting to main python packages to avoid third-party recursion issues
           flake8 combined_nim_owlban_ai new_products || true
+
+      - name: Run pylint (project scope)
+        run: |
+          # Run pylint on main packages with reasonable settings
+          pylint --disable=C0103,C0114,C0115,C0116,W0613,R0903,R0913,R0914,R0915 combined_nim_owlban_ai new_products || true
+
+      - name: Run mypy (project scope)
+        run: |
+          # Run mypy on main packages with reasonable settings
+          mypy --ignore-missing-imports combined_nim_owlban_ai new_products || true
 
       - name: Run tests (if present)
         run: |

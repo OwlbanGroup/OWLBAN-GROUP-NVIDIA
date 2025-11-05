@@ -42,15 +42,15 @@ class NVIDIADeploymentManager:
 
     def deploy_model(self, model_name):
         """Deploy model using NVIDIA GPU acceleration and resource awareness"""
-    self.logger.info("Deploying model: %s with NVIDIA GPU resource awareness...", model_name)
+        self.logger.info("Deploying model: %s with NVIDIA GPU resource awareness...", model_name)
 
         # Get real-time NVIDIA resource status
         resource_status = self.nim_manager.get_resource_status()
-    self.logger.info("NVIDIA resource status during deployment: %s", resource_status)
+        self.logger.info("NVIDIA resource status during deployment: %s", resource_status)
 
         # Check GPU memory availability
         gpu_memory_available = self._check_gpu_memory_availability()
-    self.logger.info("GPU memory available: %.1fGB", gpu_memory_available)
+        self.logger.info("GPU memory available: %.1fGB", gpu_memory_available)
 
         # Deploy model with NVIDIA optimizations
         deployment_config = self._create_nvidia_deployment_config(model_name, resource_status)
@@ -66,11 +66,11 @@ class NVIDIADeploymentManager:
             'timestamp': time.time()
         }
 
-    self.logger.info("Model %s deployed successfully with NVIDIA optimizations.", model_name)
+        self.logger.info("Model %s deployed successfully with NVIDIA optimizations.", model_name)
 
     def scale_model(self, model_name, scale_factor):
         """Scale model using NVIDIA GPU resources"""
-    self.logger.info("Scaling model: %s by factor %s using NVIDIA GPU resources...", model_name, scale_factor)
+        self.logger.info("Scaling model: %s by factor %s using NVIDIA GPU resources...", model_name, scale_factor)
 
         if model_name not in self.deployed_models:
             self.logger.error("Model %s not found in deployed models", model_name)
@@ -113,7 +113,7 @@ class NVIDIADeploymentManager:
 
     def _deploy_with_tensorrt(self, model_name, config):
         """Deploy model with NVIDIA TensorRT optimization"""
-    self.logger.info("Deploying %s with NVIDIA TensorRT optimization...", model_name)
+        self.logger.info("Deploying %s with NVIDIA TensorRT optimization...", model_name)
         # In practice, this would convert the model to TensorRT engine
         # For now, simulate the deployment
         time.sleep(0.1)  # Simulate deployment time
@@ -126,7 +126,7 @@ class NVIDIADeploymentManager:
 
     def _scale_with_nvidia_gpu(self, model_name, new_instances):
         """Scale model across NVIDIA GPUs"""
-    self.logger.info("Scaling %s across %d NVIDIA GPU instances...", model_name, new_instances)
+        self.logger.info("Scaling %s across %d NVIDIA GPU instances...", model_name, new_instances)
         # In practice, this would distribute the model across multiple GPUs
         time.sleep(0.05)  # Simulate scaling time
 

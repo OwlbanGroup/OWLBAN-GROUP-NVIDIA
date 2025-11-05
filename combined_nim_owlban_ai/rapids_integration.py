@@ -142,7 +142,6 @@ class RAPIDSDataProcessor:
             return data_with_anomalies
 
         except Exception as e:
-        except Exception as e:
             self.logger.error("Anomaly prediction failed: %s", e)
             return data
 

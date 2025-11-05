@@ -48,7 +48,7 @@ class NVIDIAAnomalyDetection:
 
         # Get real-time NVIDIA resource status
         resource_status = self.nim_manager.get_resource_status()
-    self.logger.debug("Resource status for anomaly detection: %s", resource_status)
+        self.logger.debug("Resource status for anomaly detection: %s", resource_status)
 
         # Ensure OWLBAN AI models are loaded with GPU support
         if not self.owlban_ai.models_loaded:
@@ -69,7 +69,7 @@ class NVIDIAAnomalyDetection:
         if len(self.anomaly_history) > 1000:
             self.anomaly_history = self.anomaly_history[-1000:]
 
-    self.logger.info("NVIDIA GPU anomaly detection result: anomaly=%s, score=%.4f", is_anomaly, score)
+        self.logger.info("NVIDIA GPU anomaly detection result: anomaly=%s, score=%.4f", is_anomaly, score)
 
         # Trigger alerts if anomaly detected
         if is_anomaly:
@@ -79,8 +79,8 @@ class NVIDIAAnomalyDetection:
 
     def _trigger_anomaly_alert(self, score, resource_status):
         """Trigger alerts for detected anomalies using NVIDIA monitoring"""
-    self.logger.warning("🚨 NVIDIA GPU Anomaly Alert: Score %.4f", score)
-    self.logger.warning("Affected resources: %s", resource_status)
+        self.logger.warning("🚨 NVIDIA GPU Anomaly Alert: Score %.4f", score)
+        self.logger.warning("Affected resources: %s", resource_status)
 
         # In practice, this would integrate with NVIDIA monitoring systems
         # and trigger automated remediation actions

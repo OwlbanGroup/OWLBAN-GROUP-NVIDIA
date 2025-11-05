@@ -185,7 +185,7 @@ class NVIDIAPartnerRegistration:
         }
 
         self.registration_status = enrollment_status
-    self.logger.info("Registration completed successfully. Confirmation: %s", confirmation_number)
+        self.logger.info("Registration completed successfully. Confirmation: %s", confirmation_number)
 
         return enrollment_status
 
@@ -253,7 +253,7 @@ class NVIDIAPartnerRegistration:
 
                 # Generate and save report
                 report = self.generate_registration_report()
-                with open('nvidia_registration_completion_report.md', 'w') as f:
+                with open('nvidia_registration_completion_report.md', 'w', encoding='utf-8') as f:
                     f.write(report)
 
                 self.logger.info("Registration report saved to 'nvidia_registration_completion_report.md'")

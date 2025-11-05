@@ -131,7 +131,7 @@ class NVIDIARevenueOptimizer:
 
     def optimize_revenue(self, iterations=100):
         """Optimize revenue using NVIDIA GPU-accelerated RL"""
-    self.logger.info("Starting revenue optimization using NVIDIA GPU-accelerated AI with Reinforcement Learning...")
+        self.logger.info("Starting revenue optimization using NVIDIA GPU-accelerated AI with Reinforcement Learning...")
 
         for i in range(iterations):
             # Get real-time NVIDIA resource status
@@ -244,7 +244,7 @@ class NVIDIARevenueOptimizer:
         market_conditions = self.market_data_provider.get_current_conditions()
 
         profit = self._calculate_reward("maintain_price", resource_status, market_conditions)
-    self.logger.info("Current estimated profit (NVIDIA GPU calculated): $%.2f", profit)
+        self.logger.info("Current estimated profit (NVIDIA GPU calculated): $%.2f", profit)
 
         return profit
 
@@ -306,30 +306,30 @@ class NVIDIARevenueOptimizer:
 
     def optimize_quantum_portfolio(self):
         """Optimize portfolio using quantum annealing"""
-    self.logger.info("Running quantum portfolio optimization...")
+        self.logger.info("Running quantum portfolio optimization...")
 
         # Run quantum portfolio optimization
         result = self.quantum_optimizer.optimize_portfolio(method="quantum")
-    self.logger.info("Quantum portfolio optimization complete. Sharpe ratio: %.4f", result.sharpe_ratio)
+        self.logger.info("Quantum portfolio optimization complete. Sharpe ratio: %.4f", result.sharpe_ratio)
 
         return result
 
     def analyze_quantum_risk(self):
         """Analyze risk using quantum Monte Carlo"""
-    self.logger.info("Running quantum risk analysis...")
+        self.logger.info("Running quantum risk analysis...")
 
         # Get current portfolio values
         portfolio_values = np.array([asset.current_price * asset.quantity for asset in self.quantum_optimizer.assets])
 
         # Run quantum risk analysis
         risk_result = self.quantum_risk_analyzer.analyze_risk(portfolio_values, method="quantum")
-    self.logger.info("Quantum risk analysis complete. VaR: %.4f", risk_result.value_at_risk)
+        self.logger.info("Quantum risk analysis complete. VaR: %.4f", risk_result.value_at_risk)
 
         return risk_result
 
     def predict_market_with_quantum(self, symbol: str = "TECH_STOCK"):
         """Predict market movement using quantum AI"""
-    self.logger.info("Running quantum market prediction for %s...", symbol)
+        self.logger.info("Running quantum market prediction for %s...", symbol)
 
         # Create sample market data
         prices = np.random.uniform(100, 200, 100).astype(float)
@@ -347,7 +347,7 @@ class NVIDIARevenueOptimizer:
         self.quantum_predictor.train_quantum_model(symbol, epochs=10)  # Quick training for demo
 
         prediction = self.quantum_predictor.predict_market_movement(symbol)
-    self.logger.info("Quantum prediction: %s to $%.2f", prediction.direction, prediction.predicted_price)
+        self.logger.info("Quantum prediction: %s to $%.2f", prediction.direction, prediction.predicted_price)
 
         return prediction
 
