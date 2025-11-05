@@ -111,34 +111,46 @@ class GlobalConsciousnessNetwork:
             self.logger.error("Collective intelligence update failed: %s", e)
             return {'error': str(e)}
 
+    def _get_crisis_prediction(self, crisis_risk: float) -> Optional[Dict[str, Any]]:
+        """Generate crisis prediction if risk is high enough"""
+        if crisis_risk > 0.7:
+            return {
+                'type': 'crisis',
+                'description': 'High probability of global crisis detected',
+                'confidence': crisis_risk,
+                'recommended_actions': self._generate_crisis_response()
+            }
+        return None
+
+    def _get_economic_prediction(self, forecast: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Generate economic prediction if confidence is high enough"""
+        if forecast['confidence'] > 0.8:
+            return {
+                'type': 'economic',
+                'description': forecast['forecast'],
+                'confidence': forecast['confidence']
+            }
+        return None
+
     def _generate_global_predictions(self) -> List[Dict[str, Any]]:
         """Generate predictions for global events"""
         predictions = []
 
         try:
-            # Analyze patterns for crisis prediction
+            # Crisis predictions
             crisis_risk = self._calculate_crisis_risk()
-
-            if crisis_risk > 0.7:
-                predictions.append({
-                    'type': 'crisis',
-                    'description': 'High probability of global crisis detected',
-                    'confidence': crisis_risk,
-                    'recommended_actions': self._generate_crisis_response()
-                })
+            crisis_pred = self._get_crisis_prediction(crisis_risk)
+            if crisis_pred:
+                predictions.append(crisis_pred)
 
             # Economic predictions
             economic_forecast = self._predict_economic_trends()
-            if economic_forecast['confidence'] > 0.8:
-                predictions.append({
-                    'type': 'economic',
-                    'description': economic_forecast['forecast'],
-                    'confidence': economic_forecast['confidence']
-                })
+            economic_pred = self._get_economic_prediction(economic_forecast)
+            if economic_pred:
+                predictions.append(economic_pred)
 
             # Social predictions
-            social_trends = self._predict_social_changes()
-            predictions.extend(social_trends)
+            predictions.extend(self._predict_social_changes())
 
         except Exception as e:
             self.logger.error("Global prediction generation failed: %s", e)
@@ -233,21 +245,49 @@ class GlobalConsciousnessNetwork:
             "Prepare humanitarian response teams"
         ]
 
+    def _analyze_economic_data(self) -> Tuple[str, float]:
+        """Analyze economic indicators from collective consciousness"""
+        # Here we would analyze real economic indicators from thought patterns
+        # For now using placeholder logic
+        avg_sentiment = np.mean([data.get('sentiment', 0.5) for data in self.thought_patterns.values()])
+        forecast = 'Stable growth with moderate volatility'
+        confidence = min(1.0, avg_sentiment + 0.25)  # Adjust confidence based on sentiment
+        return forecast, confidence
+
     def _predict_economic_trends(self) -> Dict[str, Any]:
         """Predict economic trends from collective consciousness"""
+        forecast, confidence = self._analyze_economic_data()
         return {
-            'forecast': 'Stable growth with moderate volatility',
-            'confidence': 0.75,
+            'forecast': forecast,
+            'confidence': confidence,
             'timeframe': '3-6 months'
         }
 
+    def _analyze_social_indicators(self) -> List[Tuple[str, float]]:
+        """Analyze social indicators from collective consciousness"""
+        # Here we would analyze real social indicators from thought patterns
+        # For now using placeholder logic
+        trends = []
+        trend_data = [
+            ('sustainable_tech', 'Growing interest in sustainable technologies', 0.82),
+            ('remote_work', 'Continued evolution of remote work culture', 0.75),
+            ('digital_privacy', 'Increasing focus on digital privacy', 0.78)
+        ]
+        
+        for topic, desc, base_confidence in trend_data:
+            if topic in str(self.thought_patterns):  # Simple check for trend relevance
+                trends.append((desc, base_confidence))
+        
+        return trends
+
     def _predict_social_changes(self) -> List[Dict[str, Any]]:
         """Predict social changes and movements"""
+        trends = self._analyze_social_indicators()
         return [{
             'type': 'social',
-            'description': 'Growing interest in sustainable technologies',
-            'confidence': 0.82
-        }]
+            'description': desc,
+            'confidence': conf
+        } for desc, conf in trends]
 
     def _measure_thought_coherence(self) -> float:
         """Measure coherence of collective thought patterns"""
