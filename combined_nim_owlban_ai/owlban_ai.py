@@ -47,7 +47,7 @@ class OwlbanAI:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.cuda_available = torch.cuda.is_available()
         self.gpu_count = torch.cuda.device_count() if self.cuda_available else 0
-        self.logger.info(f"Using device: {self.device}, GPU count: {self.gpu_count}")
+        self.logger.info("Using device: %s, GPU count: %d", self.device, self.gpu_count)
 
     def load_models(self):
         self.logger.info("Loading OWLBAN AI models with NVIDIA GPU acceleration...")
@@ -74,13 +74,16 @@ class OwlbanAI:
             self.logger.info("Models loaded successfully with NVIDIA GPU acceleration.")
             print("OWLBAN AI models loaded with NVIDIA GPU support.")
         except Exception as e:
-            self.logger.error(f"Error loading models: {e}")
+            self.logger.error("Error loading models: %s", e)
             self.models_loaded = False
 
     def run_inference(self, data):
-        """Run inference using NVIDIA GPU acceleration"""
+        """Run inference using NVIDIA GPU acceleration with health checks"""
         if not self.models_loaded:
-            raise Exception("Models not loaded.")
+            self.logger.warning("Models not loaded, attempting to reload...")
+            self.load_models()
+            if not self.models_loaded:
+                raise Exception("Models not loaded and reload failed.")
 
         try:
             # Convert data to tensor
@@ -91,6 +94,22 @@ class OwlbanAI:
                 input_data = torch.tensor(data, dtype=torch.float32).to(self.device)
             else:
                 input_data = torch.tensor([data], dtype=torch.float32).to(self.device)
+
+            # Check GPU health before inference
+            if self.cuda_available:
+                try:
+                    # Check for GPU memory issues
+                    memory_used = torch.cuda.memory_allocated() / torch.cuda.get_device_properties(0).total_memory
+                    if memory_used > 0.95:
+                        self.logger.warning("GPU memory critical, clearing cache")
+                        torch.cuda.empty_cache()
+                except Exception as gpu_error:
+                    self.logger.error("GPU health check failed: %s", gpu_error)
+                    # Fallback to CPU
+                    self.device = torch.device("cpu")
+                    input_data = input_data.to(self.device)
+                    for model in self.models.values():
+                        model.to(self.device)
 
             # Run inference on prediction model
             with torch.no_grad():
@@ -104,11 +123,25 @@ class OwlbanAI:
                 "device_used": str(self.device)
             }
 
-            self.logger.info(f"NVIDIA GPU inference completed: {result}")
+            self.logger.info("NVIDIA GPU inference completed: %s", result)
             return result
 
         except Exception as e:
-            self.logger.error(f"Inference error: {e}")
+            self.logger.error("Inference error: %s", e)
+            # Attempt recovery
+            try:
+                self.logger.info("Attempting inference recovery...")
+                # Clear GPU cache if available
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                # Retry with CPU fallback
+                if self.cuda_available:
+                    self.device = torch.device("cpu")
+                    self.logger.info("Switching to CPU for recovery")
+                    return self.run_inference(data)
+            except Exception as recovery_error:
+                self.logger.error("Recovery failed: %s", recovery_error)
+
             return {"prediction": "error", "confidence": 0.0, "error": str(e)}
 
     def get_latest_prediction(self):
@@ -172,9 +205,9 @@ class OwlbanAI:
             for model_name in self.models:
                 self.models[model_name] = DDP(self.models[model_name])
 
-            self.logger.info(f"Multi-GPU setup completed with {self.gpu_count} GPUs")
+            self.logger.info("Multi-GPU setup completed with %d GPUs", self.gpu_count)
         except Exception as e:
-            self.logger.error(f"Multi-GPU setup failed: {e}")
+            self.logger.error("Multi-GPU setup failed: %s", e)
 
     def run_parallel_inference(self, data_batch: List[Dict]) -> List[Dict]:
         """Run parallel inference across multiple GPUs"""
@@ -204,7 +237,7 @@ class OwlbanAI:
             return results
 
         except Exception as e:
-            self.logger.error(f"Parallel inference failed: {e}")
+            self.logger.error("Parallel inference failed: %s", e)
             return [self.run_inference(data) for data in data_batch]
 
     def get_gpu_memory_usage(self) -> Dict[str, float]:
@@ -225,6 +258,6 @@ class OwlbanAI:
                         "utilization_percent": (allocated / total) * 100
                     }
                 except Exception as e:
-                    self.logger.error(f"Error getting GPU {i} memory: {e}")
+                    self.logger.error("Error getting GPU %d memory: %s", i, e)
 
         return memory_usage

@@ -27,14 +27,14 @@ class TritonInferenceServer:
             self.client = httpclient.InferenceServerClient(url=server_url)
 
         self.models = {}
-        self.logger.info(f"Triton Inference Server initialized at {server_url}")
+        self.logger.info("Triton Inference Server initialized at %s", server_url)
 
     def load_model(self, model_name: str, model_version: str = "1") -> bool:
         """Load model into Triton server"""
         try:
             # Check if model is available
             if not self.client.is_model_ready(model_name, model_version):
-                self.logger.error(f"Model {model_name}:{model_version} not ready")
+                self.logger.error("Model %s:%s not ready", model_name, model_version)
                 return False
 
             self.models[model_name] = {
@@ -43,11 +43,11 @@ class TritonInferenceServer:
                 'config': self.client.get_model_config(model_name, model_version)
             }
 
-            self.logger.info(f"Model {model_name}:{model_version} loaded successfully")
+            self.logger.info("Model %s:%s loaded successfully", model_name, model_version)
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to load model {model_name}: {e}")
+            self.logger.error("Failed to load model %s: %s", model_name, e)
             return False
 
     def infer(self, model_name: str, inputs: Dict[str, np.ndarray],
@@ -93,7 +93,7 @@ class TritonInferenceServer:
             return output_data
 
         except Exception as e:
-            self.logger.error(f"Inference failed for model {model_name}: {e}")
+            self.logger.error("Inference failed for model %s: %s", model_name, e)
             return {}
 
     def unload_model(self, model_name: str) -> bool:
@@ -102,11 +102,11 @@ class TritonInferenceServer:
             # Note: Triton doesn't have direct unload, but we can remove from our tracking
             if model_name in self.models:
                 del self.models[model_name]
-                self.logger.info(f"Model {model_name} unloaded from tracking")
+                self.logger.info("Model %s unloaded from tracking", model_name)
                 return True
             return False
         except Exception as e:
-            self.logger.error(f"Failed to unload model {model_name}: {e}")
+            self.logger.error("Failed to unload model %s: %s", model_name, e)
             return False
 
     def get_server_status(self) -> Dict[str, Any]:
@@ -123,7 +123,7 @@ class TritonInferenceServer:
                 'loaded_models': list(self.models.keys())
             }
         except Exception as e:
-            self.logger.error(f"Failed to get server status: {e}")
+            self.logger.error("Failed to get server status: %s", e)
             return {'error': str(e)}
 
 class TritonModelManager:
@@ -143,25 +143,25 @@ class TritonModelManager:
             'output_specs': output_specs,
             'loaded': False
         }
-        self.logger.info(f"Registered model {model_name} for {product_name}")
+        self.logger.info("Registered model %s for %s", model_name, product_name)
 
     def load_product_models(self, product_name: str) -> bool:
         """Load all models for a specific AI product"""
         if product_name not in self.model_registry:
-            self.logger.error(f"Product {product_name} not registered")
+            self.logger.error("Product %s not registered", product_name)
             return False
 
         model_name = self.model_registry[product_name]['model_name']
         if self.triton.load_model(model_name):
             self.model_registry[product_name]['loaded'] = True
-            self.logger.info(f"Loaded models for {product_name}")
+            self.logger.info("Loaded models for %s", product_name)
             return True
         return False
 
     def infer_product(self, product_name: str, inputs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """Perform inference for a specific AI product"""
         if product_name not in self.model_registry or not self.model_registry[product_name]['loaded']:
-            self.logger.error(f"Product {product_name} models not loaded")
+            self.logger.error("Product %s models not loaded", product_name)
             return {}
 
         model_name = self.model_registry[product_name]['model_name']

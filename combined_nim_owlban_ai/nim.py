@@ -44,7 +44,7 @@ class NimManager:
                     "memory_gb": gpu_memory,
                     "compute_capability": torch.cuda.get_device_capability(i)
                 }
-            self.logger.info(f"NVIDIA GPUs discovered: {len(self.gpu_devices)} devices")
+            self.logger.info("NVIDIA GPUs discovered: %d devices", len(self.gpu_devices))
         else:
             self.logger.warning("CUDA not available, falling back to CPU mode")
 
@@ -57,7 +57,7 @@ class NimManager:
             "NVIDIA_Container_Runtime": "Available" if self.nvidia_container_runtime else "N/A"
         })
 
-        print(f"NVIDIA NIM Resources initialized: {self.resources}")
+        self.logger.info("NVIDIA NIM Resources initialized: %s", self.resources)
 
     def get_resource_status(self):
         """Get real-time NVIDIA resource status with GPU metrics"""
@@ -88,10 +88,10 @@ class NimManager:
                             status[f"GPU_{i}_Temperature"] = f"{temp}°C"
                             status[f"GPU_{i}_Power_Usage"] = f"{power:.1f}W"
                         except Exception as e:
-                            self.logger.warning(f"NVML metrics unavailable for GPU {i}: {e}")
+                            self.logger.warning("NVML metrics unavailable for GPU %d: %s", i, e)
 
                 except Exception as e:
-                    self.logger.error(f"Error getting GPU {i} status: {e}")
+                    self.logger.error("Error getting GPU %d status: %s", i, e)
                     status[f"GPU_{i}_Usage"] = "N/A"
         else:
             status["GPU_Usage"] = "N/A (CPU mode)"
@@ -132,17 +132,17 @@ class NimManager:
                 reserved = torch.cuda.memory_reserved(i) / 1024**3
                 peak_allocated = torch.cuda.max_memory_allocated(i) / 1024**3
 
-                self.logger.info(f"GPU {i}: {allocated:.1f}GB allocated, {reserved:.1f}GB reserved, {peak_allocated:.1f}GB peak")
+                self.logger.info("GPU %d: %.1fGB allocated, %.1fGB reserved, %.1fGB peak", i, allocated, reserved, peak_allocated)
 
                 # If memory usage is high, attempt garbage collection
                 if allocated / torch.cuda.get_device_properties(i).total_memory * 1024**3 > 0.8:
                     import gc
                     gc.collect()
                     torch.cuda.empty_cache()
-                    self.logger.info(f"GPU {i}: Performed garbage collection and cache clearing")
+                    self.logger.info("GPU %d: Performed garbage collection and cache clearing", i)
 
             except Exception as e:
-                self.logger.error(f"Error optimizing GPU {i}: {e}")
+                self.logger.error("Error optimizing GPU %d: %s", i, e)
 
     def deploy_nvidia_container(self, image_name: str, container_name: str, gpu_devices: Optional[List[int]] = None) -> bool:
         """Deploy NVIDIA GPU-accelerated container"""
@@ -156,14 +156,14 @@ class NimManager:
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             if result.returncode == 0:
-                self.logger.info(f"NVIDIA container {container_name} deployed successfully")
+                self.logger.info("NVIDIA container %s deployed successfully", container_name)
                 return True
             else:
-                self.logger.error(f"Failed to deploy NVIDIA container: {result.stderr}")
+                self.logger.error("Failed to deploy NVIDIA container: %s", result.stderr)
                 return False
 
         except Exception as e:
-            self.logger.error(f"Error deploying NVIDIA container: {e}")
+            self.logger.error("Error deploying NVIDIA container: %s", e)
             return False
 
     def monitor_gpu_health(self) -> Dict[str, any]:
@@ -187,7 +187,7 @@ class NimManager:
                         "fan_speed_percent": fan_speed
                     }
             except Exception as e:
-                self.logger.error(f"Error monitoring GPU health: {e}")
+                self.logger.error("Error monitoring GPU health: %s", e)
 
         return health_status
 

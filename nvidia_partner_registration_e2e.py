@@ -144,7 +144,7 @@ class NVIDIAPartnerRegistration:
         # Step 4: Simulate data entry
         self.logger.info("Simulating form data entry...")
         for section, data in registration_data.items():
-            self.logger.info(f"Submitting {section} section...")
+            self.logger.info("Submitting %s section...", section)
             time.sleep(0.5)  # Simulate form filling
 
         # Step 5: Simulate benefits selection
@@ -185,7 +185,7 @@ class NVIDIAPartnerRegistration:
         }
 
         self.registration_status = enrollment_status
-        self.logger.info(f"Registration completed successfully. Confirmation: {confirmation_number}")
+    self.logger.info("Registration completed successfully. Confirmation: %s", confirmation_number)
 
         return enrollment_status
 
@@ -271,7 +271,7 @@ class NVIDIAPartnerRegistration:
                 }
 
         except Exception as e:
-            self.logger.error(f"E2E registration failed: {str(e)}")
+            self.logger.error("E2E registration failed: %s", str(e))
             return {
                 "success": False,
                 "message": f"Registration process failed: {str(e)}"

@@ -53,7 +53,7 @@ class ReinforcementLearningAgent:
 
         self.logger = logging.getLogger("RLAgent")
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
-        self.logger.info(f"NVIDIA GPU-accelerated RL using device: {self.device}")
+    self.logger.info("NVIDIA GPU-accelerated RL using device: %s", self.device)
 
         # Initialize traditional Q-table as fallback
         self.q_table = {}
@@ -94,7 +94,7 @@ class ReinforcementLearningAgent:
 
         if new_size != self.state_size:
             self.state_size = new_size
-            self.logger.info(f"Updating DQN state size to {self.state_size}")
+            self.logger.info("Updating DQN state size to %d", self.state_size)
             # Reinitialize networks with new state size
             self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
             self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)

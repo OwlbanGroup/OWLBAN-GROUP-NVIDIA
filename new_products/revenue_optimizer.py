@@ -131,7 +131,7 @@ class NVIDIARevenueOptimizer:
 
     def optimize_revenue(self, iterations=100):
         """Optimize revenue using NVIDIA GPU-accelerated RL"""
-        self.logger.info("Starting revenue optimization using NVIDIA GPU-accelerated AI with Reinforcement Learning...")
+    self.logger.info("Starting revenue optimization using NVIDIA GPU-accelerated AI with Reinforcement Learning...")
 
         for i in range(iterations):
             # Get real-time NVIDIA resource status
@@ -140,14 +140,14 @@ class NVIDIARevenueOptimizer:
 
             state = self._create_state(resource_status, market_conditions)
             action = self.rl_agent.choose_action(state)
-            self.logger.info(f"Iteration {i+1}: NVIDIA GPU RL chose action: {action}")
+            self.logger.info("Iteration %d: NVIDIA GPU RL chose action: %s", i+1, action)
 
             reward = self._calculate_reward(action, resource_status, market_conditions)
             next_state = self._create_state(self.nim_manager.get_resource_status(), market_conditions)
 
             # Learn using NVIDIA GPU acceleration
             self.rl_agent.learn(state, action, reward, next_state)
-            self.logger.info(f"Iteration {i+1}: Reward received: {reward:.2f}")
+            self.logger.info("Iteration %d: Reward received: %.2f", i+1, reward)
 
     def _create_state(self, resource_status, market_conditions):
         """Create state representation using NVIDIA GPU processing"""
@@ -244,7 +244,7 @@ class NVIDIARevenueOptimizer:
         market_conditions = self.market_data_provider.get_current_conditions()
 
         profit = self._calculate_reward("maintain_price", resource_status, market_conditions)
-        self.logger.info(f"Current estimated profit (NVIDIA GPU calculated): ${profit:.2f}")
+    self.logger.info("Current estimated profit (NVIDIA GPU calculated): $%.2f", profit)
 
         return profit
 
@@ -270,7 +270,7 @@ class NVIDIARevenueOptimizer:
                 return prediction.item()
 
         except Exception as e:
-            self.logger.error(f"TensorRT revenue prediction failed: {e}")
+            self.logger.error("TensorRT revenue prediction failed: %s", e)
             return self.get_current_profit()
 
     def _run_tensorrt_revenue_inference(self, input_tensor):
@@ -301,35 +301,35 @@ class NVIDIARevenueOptimizer:
             return results
 
         except Exception as e:
-            self.logger.error(f"Parallel revenue optimization failed: {e}")
+            self.logger.error("Parallel revenue optimization failed: %s", e)
             return [self.predict_revenue_with_tensorrt(scenario) for scenario in market_scenarios]
 
     def optimize_quantum_portfolio(self):
         """Optimize portfolio using quantum annealing"""
-        self.logger.info("Running quantum portfolio optimization...")
+    self.logger.info("Running quantum portfolio optimization...")
 
         # Run quantum portfolio optimization
         result = self.quantum_optimizer.optimize_portfolio(method="quantum")
-        self.logger.info(f"Quantum portfolio optimization complete. Sharpe ratio: {result.sharpe_ratio:.4f}")
+    self.logger.info("Quantum portfolio optimization complete. Sharpe ratio: %.4f", result.sharpe_ratio)
 
         return result
 
     def analyze_quantum_risk(self):
         """Analyze risk using quantum Monte Carlo"""
-        self.logger.info("Running quantum risk analysis...")
+    self.logger.info("Running quantum risk analysis...")
 
         # Get current portfolio values
         portfolio_values = np.array([asset.current_price * asset.quantity for asset in self.quantum_optimizer.assets])
 
         # Run quantum risk analysis
         risk_result = self.quantum_risk_analyzer.analyze_risk(portfolio_values, method="quantum")
-        self.logger.info(f"Quantum risk analysis complete. VaR: {risk_result.value_at_risk:.4f}")
+    self.logger.info("Quantum risk analysis complete. VaR: %.4f", risk_result.value_at_risk)
 
         return risk_result
 
     def predict_market_with_quantum(self, symbol: str = "TECH_STOCK"):
         """Predict market movement using quantum AI"""
-        self.logger.info(f"Running quantum market prediction for {symbol}...")
+    self.logger.info("Running quantum market prediction for %s...", symbol)
 
         # Create sample market data
         prices = np.random.uniform(100, 200, 100).astype(float)
@@ -347,7 +347,7 @@ class NVIDIARevenueOptimizer:
         self.quantum_predictor.train_quantum_model(symbol, epochs=10)  # Quick training for demo
 
         prediction = self.quantum_predictor.predict_market_movement(symbol)
-        self.logger.info(f"Quantum prediction: {prediction.direction} to ${prediction.predicted_price:.2f}")
+    self.logger.info("Quantum prediction: %s to $%.2f", prediction.direction, prediction.predicted_price)
 
         return prediction
 

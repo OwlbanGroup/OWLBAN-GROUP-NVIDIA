@@ -203,7 +203,7 @@ class QuantumIntegratedSystem:
             return data_dict
 
     def _start_quantum_sync_threads(self):
-        """Start background threads for continuous E2E NVIDIA-accelerated quantum data synchronization"""
+        """Start background threads for continuous E2E NVIDIA-accelerated quantum data synchronization with redundancy"""
         sync_threads = [
             ("resource_status", self._quantum_sync_resource_status),
             ("model_predictions", self._quantum_sync_model_predictions),
@@ -211,11 +211,115 @@ class QuantumIntegratedSystem:
             ("anomaly_alerts", self._quantum_sync_anomaly_alerts),
             ("collaboration_updates", self._quantum_sync_collaboration_updates)
         ]
-        
-        self.logger.info("Starting quantum sync threads...")
+
+        self.logger.info("Starting quantum sync threads with redundancy...")
+        self.active_threads = {}
+        self.backup_threads = {}
+
         for thread_name, target_fn in sync_threads:
-            self.logger.debug("Starting %s sync thread", thread_name)
-            self._start_sync_thread(target_fn, thread_name)
+            self.logger.debug("Starting %s sync thread with backup", thread_name)
+            # Start primary thread
+            primary_thread = self._start_sync_thread(target_fn, thread_name)
+            self.active_threads[thread_name] = primary_thread
+
+            # Start backup thread (delayed start)
+            backup_thread = self._start_backup_sync_thread(target_fn, thread_name)
+            self.backup_threads[thread_name] = backup_thread
+
+        # Start health monitoring thread
+        self._start_health_monitor_thread()
+
+    def _start_backup_sync_thread(self, target_fn, thread_name):
+        """Start a backup sync thread with delayed start"""
+        def backup_wrapper():
+            time.sleep(5)  # Delay start by 5 seconds
+            while self.quantum_enabled:
+                try:
+                    # Check if primary thread is still alive
+                    if thread_name in self.active_threads and not self.active_threads[thread_name].is_alive():
+                        self.logger.warning("Primary thread %s failed, activating backup", thread_name)
+                        target_fn()  # Run the sync function
+                    time.sleep(1)  # Check every second
+                except Exception as e:
+                    self.logger.error("Backup thread %s error: %s", thread_name, e)
+
+        backup_thread = threading.Thread(
+            target=backup_wrapper,
+            name=f"backup_quantum_sync_{thread_name}",
+            daemon=True
+        )
+        backup_thread.start()
+        return backup_thread
+
+    def _start_health_monitor_thread(self):
+        """Start health monitoring thread for zero-downtime operations"""
+        def health_monitor():
+            while self.quantum_enabled:
+                try:
+                    self._check_thread_health()
+                    self._check_gpu_health()
+                    self._check_model_health()
+                    time.sleep(10)  # Check every 10 seconds
+                except Exception as e:
+                    self.logger.error("Health monitor error: %s", e)
+
+        health_thread = threading.Thread(
+            target=health_monitor,
+            name="health_monitor",
+            daemon=True
+        )
+        health_thread.start()
+
+    def _check_thread_health(self):
+        """Check health of all sync threads and restart if needed"""
+        for thread_name, thread in self.active_threads.items():
+            if not thread.is_alive():
+                self.logger.warning("Thread %s is dead, restarting...", thread_name)
+                # Find the target function
+                sync_functions = {
+                    "resource_status": self._quantum_sync_resource_status,
+                    "model_predictions": self._quantum_sync_model_predictions,
+                    "financial_data": self._quantum_sync_financial_data,
+                    "anomaly_alerts": self._quantum_sync_anomaly_alerts,
+                    "collaboration_updates": self._quantum_sync_collaboration_updates
+                }
+                if thread_name in sync_functions:
+                    new_thread = self._start_sync_thread(sync_functions[thread_name], thread_name)
+                    self.active_threads[thread_name] = new_thread
+
+    def _check_gpu_health(self):
+        """Check GPU health and switch to CPU if needed"""
+        try:
+            if torch.cuda.is_available():
+                # Check GPU memory usage
+                for i in range(torch.cuda.device_count()):
+                    memory_used = torch.cuda.memory_allocated(i) / torch.cuda.get_device_properties(i).total_memory
+                    if memory_used > 0.95:  # 95% memory usage
+                        self.logger.warning("GPU %d memory usage critical: %.2f%%, switching to CPU mode", i, memory_used * 100)
+                        # Force CPU fallback for critical operations
+                        self._enable_cpu_fallback()
+        except Exception as e:
+            self.logger.error("GPU health check failed: %s", e)
+            self._enable_cpu_fallback()
+
+    def _check_model_health(self):
+        """Check AI model health and reload if needed"""
+        try:
+            if hasattr(self.owlban_ai, 'get_model_status'):
+                status = self.owlban_ai.get_model_status()
+                if not status.get('models_loaded', False):
+                    self.logger.warning("AI models not loaded, reloading...")
+                    self.owlban_ai.load_models()
+        except Exception as e:
+            self.logger.error("Model health check failed: %s", e)
+
+    def _enable_cpu_fallback(self):
+        """Enable CPU fallback for critical operations"""
+        self.logger.info("Enabling CPU fallback mode for zero-downtime operation")
+        # Set environment variable to force CPU usage
+        import os
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
+        # Note: In a real implementation, this would gracefully switch processing to CPU
 
     def _start_sync_thread(self, target_fn, thread_name):
         """Helper method to start and track a sync thread"""
@@ -555,8 +659,7 @@ class QuantumIntegratedSystem:
 
         # Quantum-orchestrated operations
         self._quantum_orchestrate_operations()
-
-        print("Quantum-integrated system operations completed.")
+        self.logger.info("Quantum-integrated system operations completed.")
 
     def _quantum_orchestrate_operations(self):
         """Orchestrate operations using quantum-enhanced decision making"""
@@ -565,7 +668,7 @@ class QuantumIntegratedSystem:
 
         # Use quantum orchestrator to choose optimal operation sequence
         action = self.quantum_orchestrator.choose_action(system_state)
-        self.logger.info(f"Quantum orchestrator chose action: {action}")
+        self.logger.info("Quantum orchestrator chose action: %s", action)
 
         # Execute operations based on quantum decision
         if action == "optimize_quantum_circuit":
@@ -665,9 +768,9 @@ class QuantumIntegratedSystem:
                 amount_cents,
                 description=description,
             )
-            self.logger.info(f"Quantum Stripe spend_profits result: {result}")
+            self.logger.info("Quantum Stripe spend_profits result: %s", result)
         except Exception as e:
-            self.logger.error(f"Error during quantum Stripe spend_profits: {e}")
+            self.logger.error("Error during quantum Stripe spend_profits: %s", e)
 
     def _execute_quantum_azure_operations(self):
         """Execute quantum-enhanced Azure operations"""

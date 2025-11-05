@@ -62,7 +62,7 @@ class AdvancedAnomalyDetection:
             torch.backends.cudnn.benchmark = True
 
         self.model.eval()  # Set to evaluation mode
-        self.logger.info(f"NVIDIA GPU-accelerated anomaly detection using device: {self.device}")
+    self.logger.info("NVIDIA GPU-accelerated anomaly detection using device: %s", self.device)
 
     def preprocess(self, data):
         """Preprocess data for NVIDIA GPU processing"""
@@ -98,7 +98,7 @@ class AdvancedAnomalyDetection:
         if processed_data.shape[0] != self.input_size:
             self.input_size = processed_data.shape[0]
             self.model = OptimizedAutoencoder(self.input_size).to(self.device)
-            self.logger.info(f"Updated autoencoder input size to {self.input_size}")
+            self.logger.info("Updated autoencoder input size to %d", self.input_size)
 
         # Convert to tensor and move to GPU
         data_tensor = torch.tensor(processed_data, dtype=torch.float32).unsqueeze(0).to(self.device)
@@ -113,7 +113,7 @@ class AdvancedAnomalyDetection:
         threshold = self._calculate_dynamic_threshold(processed_data)
 
         is_anomaly = reconstruction_error > threshold
-        self.logger.debug(f"NVIDIA GPU anomaly detection: error={reconstruction_error:.4f}, threshold={threshold:.4f}, anomaly={is_anomaly}")
+    self.logger.debug("NVIDIA GPU anomaly detection: error=%.4f, threshold=%.4f, anomaly=%s", reconstruction_error, threshold, is_anomaly)
 
         return is_anomaly, reconstruction_error
 

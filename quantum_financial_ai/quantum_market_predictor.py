@@ -83,12 +83,12 @@ class QuantumMarketPredictor:
         self.market_data: Dict[str, MarketData] = {}
         self.is_trained = False
 
-        self.logger.info(f"Initialized Quantum Market Predictor on device: {self.device}")
+    self.logger.info("Initialized Quantum Market Predictor on device: %s", self.device)
 
     def add_market_data(self, market_data: MarketData):
         """Add market data for training/prediction"""
         self.market_data[market_data.symbol] = market_data
-        self.logger.info(f"Added market data for {market_data.symbol}: {len(market_data.prices)} data points")
+    self.logger.info("Added market data for %s: %d data points", market_data.symbol, len(market_data.prices))
 
     def _preprocess_data(self, symbol: str) -> Tuple[torch.Tensor, torch.Tensor]:
         """Preprocess market data for quantum model"""
@@ -187,7 +187,7 @@ class QuantumMarketPredictor:
 
     def train_quantum_model(self, symbol: str, epochs: int = 100, batch_size: int = 32):
         """Train the quantum model on market data"""
-        self.logger.info(f"Training quantum model for {symbol}")
+    self.logger.info("Training quantum model for %s", symbol)
 
         if symbol not in self.market_data:
             raise ValueError(f"No market data available for {symbol}")
@@ -233,10 +233,10 @@ class QuantumMarketPredictor:
 
             if (epoch + 1) % 10 == 0:
                 avg_loss = epoch_loss / n_batches
-                self.logger.info(f"Epoch {epoch+1}/{epochs}, Average Loss: {avg_loss:.6f}")
+                self.logger.info("Epoch %d/%d, Average Loss: %.6f", epoch+1, epochs, avg_loss)
 
         self.is_trained = True
-        self.logger.info("Quantum model training completed")
+    self.logger.info("Quantum model training completed")
 
     def predict_market_movement(self, symbol: str, prediction_horizon: int = 1) -> QuantumPredictionResult:
         """
@@ -255,7 +255,7 @@ class QuantumMarketPredictor:
         if symbol not in self.market_data:
             raise ValueError(f"No market data available for {symbol}")
 
-        self.logger.info(f"Predicting market movement for {symbol} ({prediction_horizon} days ahead)")
+    self.logger.info("Predicting market movement for %s (%d days ahead)", symbol, prediction_horizon)
 
         # Prepare input data (use most recent sequence)
         data = self.market_data[symbol]
@@ -308,8 +308,7 @@ class QuantumMarketPredictor:
             feature_importance=feature_importance
         )
 
-        self.logger.info(f"Prediction: {direction} to ${predicted_price:.2f} "
-                        f"(confidence: {confidence:.2%})")
+    self.logger.info("Prediction: %s to $%.2f (confidence: %.2f%%)", direction, predicted_price, confidence*100)
 
         return result
 

@@ -54,7 +54,7 @@ class EnergyOptimizer:
     def set_power_mode(self, mode: PowerMode):
         """Set GPU power management mode"""
         self.power_mode = mode
-        self.logger.info(f"Power mode set to: {mode.value}")
+        self.logger.info("Power mode set to: %s", mode.value)
 
         # Apply power settings based on mode
         self._apply_power_settings(mode)
@@ -75,7 +75,7 @@ class EnergyOptimizer:
                 # Adaptive based on workload
                 self._set_adaptive_mode()
         except Exception as e:
-            self.logger.error(f"Failed to apply power settings: {e}")
+            self.logger.error("Failed to apply power settings: %s", e)
 
     def _set_max_performance_mode(self):
         """Configure for maximum performance"""
@@ -132,7 +132,7 @@ class EnergyOptimizer:
 
                 time.sleep(interval)
             except Exception as e:
-                self.logger.error(f"Energy monitoring error: {e}")
+                self.logger.error("Energy monitoring error: %s", e)
                 time.sleep(interval)
 
     def get_energy_stats(self) -> Dict[str, Any]:
@@ -189,7 +189,7 @@ class EnergyOptimizer:
             return energy_stats
 
         except Exception as e:
-            self.logger.error(f"Energy stats calculation failed: {e}")
+            self.logger.error("Energy stats calculation failed: %s", e)
             return {'error': str(e)}
 
     def _calculate_gpu_efficiency(self, gpu_data: Dict[str, Any]) -> float:
@@ -208,7 +208,7 @@ class EnergyOptimizer:
             return efficiency
 
         except Exception as e:
-            self.logger.error(f"GPU efficiency calculation failed: {e}")
+            self.logger.error("GPU efficiency calculation failed: %s", e)
             return 50.0
 
     def _calculate_system_efficiency(self, gpu_stats: Dict[str, Any]) -> float:
@@ -226,7 +226,7 @@ class EnergyOptimizer:
             return total_efficiency / gpu_count if gpu_count > 0 else 0.0
 
         except Exception as e:
-            self.logger.error(f"System efficiency calculation failed: {e}")
+            self.logger.error("System efficiency calculation failed: %s", e)
             return 50.0
 
     def _generate_energy_recommendations(self, energy_stats: Dict[str, Any]) -> List[str]:
@@ -268,7 +268,7 @@ class EnergyOptimizer:
                     recommendations.append(f"GPU {gpu_id} has very low efficiency - consider maintenance or replacement")
 
         except Exception as e:
-            self.logger.error(f"Recommendation generation failed: {e}")
+            self.logger.error("Recommendation generation failed: %s", e)
 
         return recommendations
 
@@ -309,7 +309,7 @@ class EnergyOptimizer:
             return optimized_placement
 
         except Exception as e:
-            self.logger.error(f"Workload placement optimization failed: {e}")
+            self.logger.error("Workload placement optimization failed: %s", e)
             return {'error': str(e)}
 
     def predict_energy_consumption(self, workload_profile: Dict[str, Any], duration_hours: float = 1.0) -> Dict[str, Any]:
@@ -346,7 +346,7 @@ class EnergyOptimizer:
             }
 
         except Exception as e:
-            self.logger.error(f"Energy consumption prediction failed: {e}")
+            self.logger.error("Energy consumption prediction failed: %s", e)
             return {'error': str(e)}
 
     def get_energy_report(self, time_range_hours: float = 24.0) -> Dict[str, Any]:
@@ -395,5 +395,5 @@ class EnergyOptimizer:
             }
 
         except Exception as e:
-            self.logger.error(f"Energy report generation failed: {e}")
+            self.logger.error("Energy report generation failed: %s", e)
             return {'error': str(e)}

@@ -52,11 +52,11 @@ class RAPIDSDataProcessor:
             else:
                 gpu_df = cudf.DataFrame(data)
 
-            self.logger.info(f"Loaded data to GPU: {gpu_df.shape}")
+            self.logger.info("Loaded data to GPU: %s", gpu_df.shape)
             return gpu_df
 
         except Exception as e:
-            self.logger.error(f"Failed to load data to GPU: {e}")
+            self.logger.error("Failed to load data to GPU: %s", e)
             return data
 
     def preprocess_financial_data(self, data: Any) -> Any:
@@ -109,11 +109,11 @@ class RAPIDSDataProcessor:
             data_with_clusters['cluster'] = clusters
 
             self.models['market_clusters'] = kmeans
-            self.logger.info(f"Market data clustering completed: {n_clusters} clusters")
+            self.logger.info("Market data clustering completed: %d clusters", n_clusters)
             return data_with_clusters, kmeans
 
         except Exception as e:
-            self.logger.error(f"Market data clustering failed: {e}")
+            self.logger.error("Market data clustering failed: %s", e)
             return data, None
 
     def predict_anomalies(self, data: Any, contamination: float = 0.1) -> Any:
@@ -138,11 +138,12 @@ class RAPIDSDataProcessor:
             data_with_anomalies['is_anomaly'] = (anomaly_scores == -1)
 
             self.models['anomaly_detector'] = iso_forest
-            self.logger.info(f"Anomaly detection completed: {data_with_anomalies['is_anomaly'].sum()} anomalies detected")
+            self.logger.info("Anomaly detection completed: %d anomalies detected", int(data_with_anomalies['is_anomaly'].sum()))
             return data_with_anomalies
 
         except Exception as e:
-            self.logger.error(f"Anomaly prediction failed: {e}")
+        except Exception as e:
+            self.logger.error("Anomaly prediction failed: %s", e)
             return data
 
     def optimize_portfolio_gpu(self, returns_data: Any, risk_free_rate: float = 0.02) -> Dict[str, Any]:
@@ -189,11 +190,11 @@ class RAPIDSDataProcessor:
                 'asset_names': list(mean_returns.index)
             }
 
-            self.logger.info(f"Portfolio optimization completed on GPU: Sharpe ratio {optimal_sharpe:.4f}")
+            self.logger.info("Portfolio optimization completed on GPU: Sharpe ratio %.4f", float(optimal_sharpe))
             return result
 
         except Exception as e:
-            self.logger.error(f"Portfolio optimization failed: {e}")
+            self.logger.error("Portfolio optimization failed: %s", e)
             return {}
 
     def process_telehealth_data(self, patient_data: Any) -> Any:
@@ -228,7 +229,7 @@ class RAPIDSDataProcessor:
             return processed_data
 
         except Exception as e:
-            self.logger.error(f"Telehealth data processing failed: {e}")
+            self.logger.error("Telehealth data processing failed: %s", e)
             return patient_data
 
     def _calculate_health_score(self, vital_signs: Any) -> float:

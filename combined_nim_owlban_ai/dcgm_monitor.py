@@ -39,7 +39,7 @@ class DCGMMonitor:
 
             # Get GPU count
             self.gpu_count = dcgm.dcgmGetGpuCount(self.dcgm_handle)
-            self.logger.info(f"DCGM initialized: monitoring {self.gpu_count} GPUs")
+            self.logger.info("DCGM initialized: monitoring %d GPUs", self.gpu_count)
 
             # Initialize monitoring groups
             self.group_id = dcgm.dcgmGroupCreate(self.dcgm_handle, dcgm_structs.DCGM_GROUP_DEFAULT, "owlban_group")
@@ -50,7 +50,7 @@ class DCGMMonitor:
             self._setup_field_watch()
 
         except Exception as e:
-            self.logger.error(f"DCGM initialization failed: {e}")
+            self.logger.error("DCGM initialization failed: %s", e)
             dcgm_available = False
 
     def _setup_field_watch(self):
@@ -82,7 +82,7 @@ class DCGMMonitor:
             self.logger.info("DCGM field watching configured")
 
         except Exception as e:
-            self.logger.error(f"Field watch setup failed: {e}")
+            self.logger.error("Field watch setup failed: %s", e)
 
     def start_monitoring(self, callback: Optional[Callable] = None):
         """Start continuous GPU monitoring"""
@@ -93,14 +93,14 @@ class DCGMMonitor:
         self.monitor_thread = threading.Thread(target=self._monitor_loop, args=(callback,))
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
-        self.logger.info("DCGM monitoring started")
+    self.logger.info("DCGM monitoring started")
 
     def stop_monitoring(self):
         """Stop GPU monitoring"""
         self.monitoring_active = False
         if self.monitor_thread:
             self.monitor_thread.join()
-        self.logger.info("DCGM monitoring stopped")
+    self.logger.info("DCGM monitoring stopped")
 
     def _monitor_loop(self, callback: Optional[Callable]):
         """Main monitoring loop"""
@@ -111,7 +111,7 @@ class DCGMMonitor:
                     callback(gpu_stats)
                 time.sleep(self.update_interval)
             except Exception as e:
-                self.logger.error(f"Monitoring loop error: {e}")
+                self.logger.error("Monitoring loop error: %s", e)
                 time.sleep(self.update_interval)
 
     def get_gpu_stats(self) -> Dict[str, Any]:
@@ -134,7 +134,7 @@ class DCGMMonitor:
             return gpu_stats
 
         except Exception as e:
-            self.logger.error(f"Failed to get GPU stats: {e}")
+            self.logger.error("Failed to get GPU stats: %s", e)
             return {'error': str(e)}
 
     def _extract_gpu_metrics(self, field_values, gpu_id: int) -> Dict[str, Any]:
@@ -173,7 +173,7 @@ class DCGMMonitor:
             metrics['health_score'] = self._calculate_gpu_health(metrics)
 
         except Exception as e:
-            self.logger.error(f"Failed to extract metrics for GPU {gpu_id}: {e}")
+            self.logger.error("Failed to extract metrics for GPU %d: %s", gpu_id, e)
             metrics['error'] = str(e)
 
         return metrics
@@ -209,7 +209,7 @@ class DCGMMonitor:
             return max(0.0, health_score)
 
         except Exception as e:
-            self.logger.error(f"Health calculation failed: {e}")
+            self.logger.error("Health calculation failed: %s", e)
             return 50.0  # Neutral health score
 
     def _calculate_system_stats(self, gpu_stats: Dict[str, Any]) -> Dict[str, Any]:
@@ -249,7 +249,7 @@ class DCGMMonitor:
             return system_stats
 
         except Exception as e:
-            self.logger.error(f"System stats calculation failed: {e}")
+            self.logger.error("System stats calculation failed: %s", e)
             return {'error': str(e)}
 
     def get_health_alerts(self) -> List[Dict[str, Any]]:
@@ -318,7 +318,7 @@ class DCGMMonitor:
             return alerts
 
         except Exception as e:
-            self.logger.error(f"Health alerts retrieval failed: {e}")
+            self.logger.error("Health alerts retrieval failed: %s", e)
             return []
 
     def __del__(self):

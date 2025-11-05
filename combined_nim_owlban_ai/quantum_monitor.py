@@ -501,14 +501,21 @@ class QuantumMonitor:
         }
 
     async def start_monitoring(self):
-        """Start all monitoring tasks"""
+        """Start all monitoring tasks with automatic recovery"""
         monitoring_tasks = [
             self.monitor_quantum_performance(),
             self.monitor_gpu_performance(),
             self.monitor_financial_metrics()
         ]
-        
-        await asyncio.gather(*monitoring_tasks)
+
+        # Start monitoring with error recovery
+        while True:
+            try:
+                await asyncio.gather(*monitoring_tasks)
+            except Exception as e:
+                self.logger.error("Monitoring tasks failed, restarting: %s", e)
+                await asyncio.sleep(5)  # Wait before restart
+                continue
 
     def __del__(self):
         """Cleanup monitoring resources"""

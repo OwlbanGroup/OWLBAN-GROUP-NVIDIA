@@ -42,15 +42,15 @@ class NVIDIADeploymentManager:
 
     def deploy_model(self, model_name):
         """Deploy model using NVIDIA GPU acceleration and resource awareness"""
-        self.logger.info(f"Deploying model: {model_name} with NVIDIA GPU resource awareness...")
+    self.logger.info("Deploying model: %s with NVIDIA GPU resource awareness...", model_name)
 
         # Get real-time NVIDIA resource status
         resource_status = self.nim_manager.get_resource_status()
-        self.logger.info(f"NVIDIA resource status during deployment: {resource_status}")
+    self.logger.info("NVIDIA resource status during deployment: %s", resource_status)
 
         # Check GPU memory availability
         gpu_memory_available = self._check_gpu_memory_availability()
-        self.logger.info(f"GPU memory available: {gpu_memory_available:.1f}GB")
+    self.logger.info("GPU memory available: %.1fGB", gpu_memory_available)
 
         # Deploy model with NVIDIA optimizations
         deployment_config = self._create_nvidia_deployment_config(model_name, resource_status)
@@ -66,14 +66,14 @@ class NVIDIADeploymentManager:
             'timestamp': time.time()
         }
 
-        self.logger.info(f"Model {model_name} deployed successfully with NVIDIA optimizations.")
+    self.logger.info("Model %s deployed successfully with NVIDIA optimizations.", model_name)
 
     def scale_model(self, model_name, scale_factor):
         """Scale model using NVIDIA GPU resources"""
-        self.logger.info(f"Scaling model: {model_name} by factor {scale_factor} using NVIDIA GPU resources...")
+    self.logger.info("Scaling model: %s by factor %s using NVIDIA GPU resources...", model_name, scale_factor)
 
         if model_name not in self.deployed_models:
-            self.logger.error(f"Model {model_name} not found in deployed models")
+            self.logger.error("Model %s not found in deployed models", model_name)
             return
 
         # Get current resource status
@@ -88,9 +88,9 @@ class NVIDIADeploymentManager:
             # Perform scaling with NVIDIA GPU distribution
             self._scale_with_nvidia_gpu(model_name, new_instances)
             self.deployed_models[model_name]['instances'] = new_instances
-            self.logger.info(f"Model {model_name} scaled to {new_instances} instances using NVIDIA GPUs.")
+            self.logger.info("Model %s scaled to %d instances using NVIDIA GPUs.", model_name, new_instances)
         else:
-            self.logger.warning(f"Insufficient NVIDIA resources for scaling {model_name}")
+            self.logger.warning("Insufficient NVIDIA resources for scaling %s", model_name)
 
     def _check_gpu_memory_availability(self):
         """Check available GPU memory using NVIDIA APIs"""
@@ -113,7 +113,7 @@ class NVIDIADeploymentManager:
 
     def _deploy_with_tensorrt(self, model_name, config):
         """Deploy model with NVIDIA TensorRT optimization"""
-        self.logger.info(f"Deploying {model_name} with NVIDIA TensorRT optimization...")
+    self.logger.info("Deploying %s with NVIDIA TensorRT optimization...", model_name)
         # In practice, this would convert the model to TensorRT engine
         # For now, simulate the deployment
         time.sleep(0.1)  # Simulate deployment time
@@ -126,7 +126,7 @@ class NVIDIADeploymentManager:
 
     def _scale_with_nvidia_gpu(self, model_name, new_instances):
         """Scale model across NVIDIA GPUs"""
-        self.logger.info(f"Scaling {model_name} across {new_instances} NVIDIA GPU instances...")
+    self.logger.info("Scaling %s across %d NVIDIA GPU instances...", model_name, new_instances)
         # In practice, this would distribute the model across multiple GPUs
         time.sleep(0.05)  # Simulate scaling time
 
@@ -135,7 +135,7 @@ class NVIDIADeploymentManager:
         try:
             return docker.from_env()
         except Exception as e:
-            self.logger.warning(f"Docker client initialization failed: {e}")
+            self.logger.warning("Docker client initialization failed: %s", e)
             return None
 
     def deploy_nvidia_container(self, model_name: str, image_name: str, gpu_devices: Optional[List[int]] = None) -> bool:
@@ -161,11 +161,11 @@ class NVIDIADeploymentManager:
             }
 
             container = self.docker_client.containers.run(**container_config)
-            self.logger.info(f"NVIDIA container for {model_name} deployed successfully")
+            self.logger.info("NVIDIA container for %s deployed successfully", model_name)
             return True
 
         except Exception as e:
-            self.logger.error(f"NVIDIA container deployment failed: {e}")
+            self.logger.error("NVIDIA container deployment failed: %s", e)
             return False
 
     def create_tensorrt_engine(self, model_name: str, model_path: str) -> bool:
@@ -195,11 +195,11 @@ class NVIDIADeploymentManager:
                         f.write(engine)
 
                     self.tensorrt_engines[model_name] = engine
-                    self.logger.info(f"TensorRT engine created for {model_name}")
+                    self.logger.info("TensorRT engine created for %s", model_name)
                     return True
 
         except Exception as e:
-            self.logger.error(f"TensorRT engine creation failed: {e}")
+            self.logger.error("TensorRT engine creation failed: %s", e)
 
         return False
 
@@ -226,7 +226,7 @@ class NVIDIADeploymentManager:
             return results
 
         except Exception as e:
-            self.logger.error(f"Parallel model deployment failed: {e}")
+            self.logger.error("Parallel model deployment failed: %s", e)
             return [False] * len(models_batch)
 
     def get_deployment_status(self):
