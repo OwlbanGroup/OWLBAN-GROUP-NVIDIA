@@ -93,7 +93,7 @@ class QuantumIntegratedSystem:
 
         # Initialize quantum-enhanced Azure Integration Manager
         if azure_subscription_id and azure_resource_group and azure_workspace_name:
-            self.azure_integration_manager = AzureIntegrationManager(
+            self.azure_integration_manager = AzureQuantumIntegrationManager(
                 azure_subscription_id,
                 azure_resource_group,
                 azure_workspace_name
@@ -175,14 +175,14 @@ class QuantumIntegratedSystem:
                     # Process on GPU
                     processed_status = self._gpu_process_data(status_tensor)
                     # Convert back to dict
-                    processed_status_dict = {k: v for k, v in zip(status.keys(), processed_status.cpu().numpy())}
+                    processed_status_dict = dict(zip(status.keys(), processed_status.cpu().numpy()))
 
                     self.quantum_data_buffers["resource_status"].append(processed_status_dict)
                     # Sync to entangled components with NVIDIA NVLink
                     self._sync_to_entangled_components("resource_status", processed_status_dict)
                     time.sleep(0.1)  # Faster sync with NVIDIA tech
                 except Exception as e:
-                    self.logger.error(f"NVIDIA-accelerated resource status sync error: {e}")
+                    self.logger.error("NVIDIA-accelerated resource status sync error: %s", e)
 
         def sync_model_predictions():
             while self.quantum_enabled:
@@ -199,13 +199,12 @@ class QuantumIntegratedSystem:
                             self._sync_to_entangled_components("model_predictions", optimized_prediction_dict)
                     time.sleep(0.2)  # Faster with TensorRT
                 except Exception as e:
-                    self.logger.error(f"NVIDIA TensorRT prediction sync error: {e}")
+                    self.logger.error("NVIDIA TensorRT prediction sync error: %s", e)
 
         def sync_financial_data():
             while self.quantum_enabled:
                 try:
                     profit = self.revenue_optimizer.get_current_profit()
-                    financial_data = {"profit": profit, "timestamp": time.time()}
                     # NVIDIA cuDNN accelerated financial processing
                     financial_tensor = torch.tensor([profit, time.time()], dtype=torch.float32).cuda()
                     processed_financial = self._cudnn_process_financial(financial_tensor)
@@ -218,7 +217,7 @@ class QuantumIntegratedSystem:
                     self._sync_to_entangled_components("financial_data", processed_financial_dict)
                     time.sleep(1)  # Optimized sync interval
                 except Exception as e:
-                    self.logger.error(f"NVIDIA cuDNN financial sync error: {e}")
+                    self.logger.error("NVIDIA cuDNN financial sync error: %s", e)
 
         def sync_anomaly_alerts():
             while self.quantum_enabled:

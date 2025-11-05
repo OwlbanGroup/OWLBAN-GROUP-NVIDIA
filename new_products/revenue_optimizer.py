@@ -1,9 +1,27 @@
 import torch
+import torch.nn as nn
 import logging
+import numpy as np
+from typing import Dict, List, Optional, Tuple
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer, PortfolioAsset
 from quantum_financial_ai.quantum_risk_analyzer import QuantumRiskAnalyzer, RiskFactor
 from quantum_financial_ai.quantum_market_predictor import QuantumMarketPredictor, MarketData
+
+# NVIDIA-specific imports
+try:
+    import cupy as cp
+    cupy_available = True
+except ImportError:
+    cp = None
+    cupy_available = False
+
+try:
+    import tensorrt as trt
+    tensorrt_available = True
+except ImportError:
+    trt = None
+    tensorrt_available = False
 
 class MarketDataProvider:
     def get_current_conditions(self):
@@ -18,7 +36,9 @@ class MarketDataProvider:
             "entanglement_factor": 0.85  # Market correlation strength
         }
 
-class RevenueOptimizer:
+class NVIDIARevenueOptimizer:
+    """NVIDIA-optimized revenue optimizer with GPU acceleration"""
+
     def __init__(self, nim_manager, market_data_provider=None):
         self.nim_manager = nim_manager
         self.market_data_provider = market_data_provider or MarketDataProvider()
@@ -35,9 +55,18 @@ class RevenueOptimizer:
             epsilon=0.2,
             use_gpu=True  # NVIDIA GPU acceleration
         )
-        self.logger = logging.getLogger("RevenueOptimizer")
+        self.logger = logging.getLogger("NVIDIARevenueOptimizer")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.cuda_available = torch.cuda.is_available()
+        self.gpu_count = torch.cuda.device_count() if self.cuda_available else 0
         logging.basicConfig(level=logging.INFO)
+
+        # NVIDIA optimization components
+        self.revenue_prediction_model = self._create_revenue_model()
+
+        # Enable cuDNN optimization
+        if self.cuda_available:
+            torch.backends.cudnn.benchmark = True
 
         # Initialize quantum financial AI components
         self.quantum_optimizer = QuantumPortfolioOptimizer(use_gpu=True)
@@ -47,6 +76,24 @@ class RevenueOptimizer:
         # Initialize with sample portfolio assets
         self._initialize_quantum_portfolio()
         self._initialize_quantum_risk_factors()
+
+    def _create_revenue_model(self):
+        """Create NVIDIA-optimized revenue prediction model"""
+        model = nn.Sequential(
+            nn.Linear(15, 128),
+            nn.BatchNorm1d(128),  # cuDNN optimized
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.Linear(32, 1)  # Revenue prediction
+        ).to(self.device)
+
+        return model
 
     def _initialize_quantum_portfolio(self):
         """Initialize quantum portfolio with sample assets"""
@@ -144,31 +191,6 @@ class RevenueOptimizer:
         economic_index = market_conditions.get("economic_index", 1.0)
 
         # Estimate cost from resource usage
-        gpu_usage = 0
-        for key, value in resource_status.items():
-            if "Usage" in key and "%" in str(value):
-                try:
-                    gpu_usage = max(gpu_usage, float(str(value).strip('%')))
-                except:
-                    pass
-        cost = 500 + (gpu_usage / 100) * 300  # Base cost + GPU usage cost
-
-        # Adjust revenue based on action and market factors
-        if action == "increase_price":
-            price_factor = 1.1
-            cost_factor = 1.05
-        elif action == "decrease_price":
-            price_factor = 0.9
-            cost_factor = 0.95
-        elif action == "optimize_inventory":
-            price_factor = 1.05
-            cost_factor = 0.9  # Reduce costs through optimization
-        elif action == "expand_market":
-            price_factor = 1.0
-            cost_factor = 1.1  # Initial investment
-        else:  # maintain_price
-            price_factor = 1.0
-            cost_factor = 1.0
 
         adjusted_revenue = (
             base_revenue
