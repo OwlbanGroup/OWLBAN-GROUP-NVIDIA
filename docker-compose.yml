@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # API Server
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=all
+    volumes:
+      - ./api_server.log:/app/api_server.log
+      - ./owlban_ai.db:/app/owlban_ai.db
+    depends_on:
+      - database
+      - redis
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Web Dashboard
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api-server:8000
+    depends_on:
+      - api-server
+    networks:
+      - owlban-network
+    restart: unless-stopped
+
+  # Database
+  database:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=owlban_ai
+      - POSTGRES_USER=owlban
+      - POSTGRES_PASSWORD=quantum_secure_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U owlban -d owlban_ai"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB (Optional)
+  mongodb:
+    image: mongo:7-jammy
+    environment:
+      - MONGO_INITDB_DATABASE=owlban_ai
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - owlban-network
+    restart: unless-stopped
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=quantum_secure_2024
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./combined_nim_owlban_ai/grafana:/var/lib/grafana/dashboards
+    networks:
+      - owlban-network
+    restart: unless-stopped
+
+  # NVIDIA Triton Inference Server
+  triton-server:
+    image: nvcr.io/nvidia/tritonserver:23.10-py3
+    ports:
+      - "8001:8001"  # HTTP
+      - "8002:8002"  # gRPC
+    volumes:
+      - ./models:/models
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Quantum Computing Simulator (for development)
+  qiskit-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.qiskit
+    ports:
+      - "8888:8888"
+    networks:
+      - owlban-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongodb_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  owlban-network:
+    driver: bridge

@@ -108,20 +108,40 @@ class QuantumMarketPredictor:
                 features.append(indicator_values)
         else:
             # Basic technical indicators
+            sma5 = self._calculate_sma(prices, 5)
+            sma20 = self._calculate_sma(prices, 20)
+            rsi = self._calculate_rsi(prices, 14)
+            macd = self._calculate_macd(prices)
+            bb = self._calculate_bollinger_bands(prices)
+
+            # Ensure all indicators have same length
+            min_length = min(len(sma5), len(sma20), len(rsi), len(macd), len(bb))
             features.extend([
-                self._calculate_sma(prices, 5),
-                self._calculate_sma(prices, 20),
-                self._calculate_rsi(prices, 14),
-                self._calculate_macd(prices),
-                self._calculate_bollinger_bands(prices)
+                sma5[-min_length:],
+                sma20[-min_length:],
+                rsi[-min_length:],
+                macd[-min_length:],
+                bb[-min_length:]
             ])
 
         # Volume features
         volume_ma = self._calculate_sma(data.volumes, 5)
+        if len(volume_ma) > len(features[0]):
+            volume_ma = volume_ma[-len(features[0]):]
+        elif len(volume_ma) < len(features[0]):
+            # Pad volume_ma if shorter
+            padding = np.full(len(features[0]) - len(volume_ma), np.nan)
+            volume_ma = np.concatenate([padding, volume_ma])
+
         features.append(volume_ma)
 
-        # Combine all features
+        # Combine all features, handling NaN values
         feature_matrix = np.column_stack(features)
+
+        # Fill NaN values with forward fill then backward fill
+        df = pd.DataFrame(feature_matrix)
+        df = df.fillna(method='ffill').fillna(method='bfill').fillna(0)
+        feature_matrix = df.values
 
         # Create sequences
         X, y = [], []

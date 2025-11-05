@@ -1,0 +1,51 @@
+# OWLBAN GROUP Quantum Computing Simulator Dockerfile
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application directory
+WORKDIR /app
+
+# Install Qiskit and quantum dependencies
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir \
+    qiskit \
+    qiskit-aer \
+    qiskit-ibm-runtime \
+    qiskit-optimization \
+    qiskit-finance \
+    qiskit-machine-learning \
+    jupyter \
+    notebook \
+    matplotlib \
+    numpy \
+    scipy
+
+# Copy quantum notebooks and examples
+COPY quantum_financial_ai/ ./quantum_financial_ai/
+COPY combined_nim_owlban_ai/ ./combined_nim_owlban_ai/
+
+# Create quantum workspace
+RUN mkdir -p /app/notebooks /app/results
+
+# Copy example notebooks
+RUN echo 'print("OWLBAN GROUP Quantum Computing Environment Ready")' > /app/notebooks/welcome.py
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import qiskit; print('Qiskit OK')" || exit 1
+
+# Start Jupyter notebook
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]

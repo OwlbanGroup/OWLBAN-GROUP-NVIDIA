@@ -1,0 +1,60 @@
+# OWLBAN GROUP AI API Server Dockerfile
+FROM nvidia/cuda:12.2-runtime-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_VISIBLE_DEVICES=all
+ENV PYTHONPATH=/app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-pip \
+    python3.11-dev \
+    curl \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
+
+# Create application directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+COPY combined_nim_owlban_ai/requirements.txt ./combined_nim_owlban_ai/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r combined_nim_owlban_ai/requirements.txt
+
+# Install additional production dependencies
+RUN pip install --no-cache-dir \
+    uvicorn[standard] \
+    fastapi \
+    pydantic \
+    python-multipart \
+    aiofiles
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/models /app/data
+
+# Set permissions
+RUN chmod +x /app/api_server.py
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Start the API server
+CMD ["python", "api_server.py"]
