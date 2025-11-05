@@ -6,11 +6,20 @@ Unified model serving for all AI products with GPU acceleration
 import logging
 import numpy as np
 import torch
-import tritonclient.http as httpclient
-import tritonclient.grpc as grpcclient
 from typing import Dict, List, Optional, Union, Any
 import json
 import time
+
+# Optional Triton client imports with fallbacks
+try:
+    import tritonclient.http as httpclient
+    import tritonclient.grpc as grpcclient
+    TRITON_AVAILABLE = True
+except ImportError:
+    httpclient = None
+    grpcclient = None
+    TRITON_AVAILABLE = False
+    logging.warning("Triton client not available, using fallback mode")
 
 class TritonInferenceServer:
     """NVIDIA Triton Inference Server for unified model serving"""
@@ -20,11 +29,15 @@ class TritonInferenceServer:
         self.use_grpc = use_grpc
         self.logger = logging.getLogger("TritonInferenceServer")
 
-        # Initialize clients
-        if use_grpc:
-            self.client = grpcclient.InferenceServerClient(url=server_url)
+        # Initialize clients with fallback
+        if TRITON_AVAILABLE:
+            if use_grpc:
+                self.client = grpcclient.InferenceServerClient(url=server_url)
+            else:
+                self.client = httpclient.InferenceServerClient(url=server_url)
         else:
-            self.client = httpclient.InferenceServerClient(url=server_url)
+            self.client = None
+            self.logger.warning("Triton client not available, using mock mode")
 
         self.models = {}
         self.logger.info("Triton Inference Server initialized at %s", server_url)

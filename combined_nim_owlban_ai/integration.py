@@ -103,13 +103,10 @@ except ImportError:
     logging.warning("Some financial integration packages not available")
     financial_integrations_available = False
 
-# Numba / CUDA availability
-try:
-    from numba import cuda  # JIT compilation for NVIDIA GPUs
-    numba_available = True
-except ImportError:
-    cuda = None
-    numba_available = False
+# Numba / CUDA availability - Disabled due to compatibility issues
+numba_available = False
+cuda = None
+logging.warning("Numba CUDA disabled due to compatibility issues")
 from new_products.infrastructure_optimizer import InfrastructureOptimizer
 from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
 from new_products.model_deployment_manager import ModelDeploymentManager
