@@ -5,11 +5,9 @@ OWLBAN GROUP - Worldwide Quantum AI Implementation
 """
 
 import logging
-import json
 import time
-from typing import Dict, List, Any
+from typing import Dict, Any
 from dataclasses import dataclass
-import threading
 import concurrent.futures
 
 # Configure logging
@@ -65,7 +63,7 @@ class QuantumAIGlobalDeployment:
         """Deploy complete quantum AI infrastructure globally"""
         self.logger.info("Starting global quantum AI deployment...")
 
-        deployment_results = {
+        deployment_results: Dict[str, Any] = {
             "quantum_deployment": {},
             "ai_deployment": {},
             "hybrid_systems": {},
@@ -110,7 +108,7 @@ class QuantumAIGlobalDeployment:
 
     def _deploy_single_quantum_center(self, center: QuantumDataCenter) -> Dict[str, Any]:
         """Deploy a single quantum data center"""
-        self.logger.info(f"Deploying quantum center: {center.name}")
+        self.logger.info("Deploying quantum center: %s", center.name)
 
         # Simulate deployment time
         time.sleep(2)
@@ -249,16 +247,16 @@ class QuantumAIGlobalDeployment:
         total_gpus = sum(center.gpu_nodes for center in self.ai_centers)
         total_tpus = sum(center.tpu_nodes for center in self.ai_centers)
 
-        report = f"""
+        report = """
 # Quantum AI Global Deployment Report
 ## OWLBAN GROUP - Worldwide Quantum AI Infrastructure
 
 **Deployment Date:** January 15, 2024
-**Quantum Data Centers:** {len(self.quantum_centers)}
-**AI Data Centers:** {len(self.ai_centers)}
-**Total Qubits:** {total_qubits:,}
-**Total GPUs:** {total_gpus:,}
-**Total TPUs:** {total_tpus:,}
+**Quantum Data Centers:** """ + str(len(self.quantum_centers)) + """
+**AI Data Centers:** """ + str(len(self.ai_centers)) + """
+**Total Qubits:** """ + f"{total_qubits:,}" + """
+**Total GPUs:** """ + f"{total_gpus:,}" + """
+**Total TPUs:** """ + f"{total_tpus:,}" + """
 
 ---
 
@@ -401,26 +399,26 @@ def main():
     # Execute deployment
     results = deployment.deploy_quantum_ai_infrastructure()
 
-    print("
-✅ Quantum Data Centers:"    print(f"   - Deployed: {len(results['quantum_deployment'])} centers")
+    print("\n✅ Quantum Data Centers:")
+    print(f"   - Deployed: {len(results['quantum_deployment'])} centers")
     print(f"   - Total Qubits: {sum(c.qubits for c in deployment.quantum_centers):,}")
 
-    print("
-✅ AI Data Centers:"    print(f"   - Deployed: {len(results['ai_deployment'])} centers")
+    print("\n✅ AI Data Centers:")
+    print(f"   - Deployed: {len(results['ai_deployment'])} centers")
     print(f"   - Total GPUs: {sum(c.gpu_nodes for c in deployment.ai_centers):,}")
     print(f"   - Total TPUs: {sum(c.tpu_nodes for c in deployment.ai_centers):,}")
 
-    print("
-✅ Hybrid Systems:"    print(f"   - Integrated: {len(results['hybrid_systems'])} systems")
+    print("\n✅ Hybrid Systems:")
+    print(f"   - Integrated: {len(results['hybrid_systems'])} systems")
 
-    print("
-✅ Quantum Network:"    print(f"   - Links: {results['network_connectivity']['entangled_links']}")
+    print("\n✅ Quantum Network:")
+    print(f"   - Links: {results['network_connectivity']['entangled_links']}")
     print(f"   - Latency: {results['network_connectivity']['latency_ms']}ms")
 
     # Run global AI demo
     demo_results = deployment.run_global_ai_demo()
-    print("
-🧠 Global AI Demo Results:"    print(f"   - Quantum Circuits: {demo_results['quantum_circuits_executed']:,}")
+    print("\n🧠 Global AI Demo Results:")
+    print(f"   - Quantum Circuits: {demo_results['quantum_circuits_executed']:,}")
     print(f"   - AI Inferences: {demo_results['ai_inferences_performed']:,}")
     print(f"   - Data Processed: {demo_results['data_processed_pb']} PB")
     print(f"   - Global Latency: {demo_results['global_latency_ms']}ms")
