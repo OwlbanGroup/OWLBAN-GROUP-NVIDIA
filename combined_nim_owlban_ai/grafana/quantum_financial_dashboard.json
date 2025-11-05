@@ -1,0 +1,87 @@
+{
+  "id": null,
+  "uid": "quantum-financial-monitoring",
+  "title": "Quantum Financial Monitoring",
+  "tags": ["quantum", "financial", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "5s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Quantum Circuit 95th Percentile Latency (5m)",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(quantum_circuit_latency_seconds_bucket[5m])) by (le, circuit_type, hardware_provider))",
+          "legendFormat": "{{circuit_type}} / {{hardware_provider}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Quantum Circuit Error Rate",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "quantum_error_rate",
+          "legendFormat": "{{circuit_type}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "ratio"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU Utilization by GPU",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "avg by (gpu_id) (gpu_utilization_percent)",
+          "legendFormat": "{{gpu_id}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "percent"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Portfolio Sharpe Ratio",
+      "gridPos": {"x": 12, "y": 6, "w": 12, "h": 4},
+      "targets": [
+        {
+          "expr": "portfolio_performance{metric_type=~\"sharpe_ratio\"}",
+          "legendFormat": "Sharpe",
+          "refId": "A"
+        }
+      ],
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "short"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Trading Volume (increase over 5m)",
+      "gridPos": {"x": 12, "y": 10, "w": 12, "h": 4},
+      "targets": [
+        {
+          "expr": "increase(trading_volume_total[5m])",
+          "legendFormat": "{{asset_type}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "short"}}
+    }
+  ],
+  "annotations": {"list": []},
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "schemaVersion": 27
+}

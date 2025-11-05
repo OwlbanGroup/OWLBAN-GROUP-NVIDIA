@@ -1,16 +1,42 @@
 import torch
+import torch.nn as nn
 import logging
+import numpy as np
+from typing import Dict, List, Optional
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 
-class InfrastructureOptimizer:
+# NVIDIA-specific imports
+try:
+    import cupy as cp
+    cupy_available = True
+except ImportError:
+    cp = None
+    cupy_available = False
+
+try:
+    import tensorrt as trt
+    tensorrt_available = True
+except ImportError:
+    trt = None
+    tensorrt_available = False
+
+class NVIDIAInfrastructureOptimizer:
+    """NVIDIA-optimized infrastructure optimizer with GPU acceleration"""
+
     def __init__(self, nim_manager):
         self.nim_manager = nim_manager
         self.rl_agent = ReinforcementLearningAgent(
             actions=["scale_up", "scale_down", "maintain", "optimize_gpu", "balance_load"],
             use_gpu=True
         )
-        self.logger = logging.getLogger("InfrastructureOptimizer")
+        self.logger = logging.getLogger("NVIDIAInfrastructureOptimizer")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.cuda_available = torch.cuda.is_available()
+        self.gpu_count = torch.cuda.device_count() if self.cuda_available else 0
+
+        # NVIDIA optimization components
+        self.optimization_model = self._create_optimization_model()
+        self.scaler = nn.BatchNorm1d(10)  # For feature normalization
 
     def optimize_resources(self):
         """Optimize infrastructure using NVIDIA GPU-accelerated RL"""
@@ -99,10 +125,95 @@ class InfrastructureOptimizer:
 
         return reward
 
+    def _create_optimization_model(self):
+        """Create NVIDIA-optimized neural network for infrastructure optimization"""
+        model = nn.Sequential(
+            nn.Linear(10, 64),
+            nn.BatchNorm1d(64),  # cuDNN optimized
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.Linear(32, 5)  # 5 actions
+        ).to(self.device)
+
+        # Enable cuDNN optimization
+        if self.cuda_available:
+            torch.backends.cudnn.benchmark = True
+
+        return model
+
+    def optimize_with_tensorrt(self, resource_data: Dict) -> str:
+        """Optimize infrastructure using NVIDIA TensorRT"""
+        if not tensorrt_available:
+            return "maintain"  # Fallback
+
+        try:
+            # Convert resource data to tensor
+            features = torch.tensor(self._extract_state_features(resource_data), dtype=torch.float32).unsqueeze(0).to(self.device)
+
+            # Use TensorRT for inference if available, otherwise PyTorch
+            with torch.no_grad():
+                if hasattr(self, 'trt_engine'):
+                    # Use TensorRT engine
+                    output = self._run_tensorrt_inference(features)
+                else:
+                    # Use PyTorch model
+                    output = self.optimization_model(features)
+
+                action_idx = torch.argmax(output, dim=1).item()
+                actions = ["scale_up", "scale_down", "maintain", "optimize_gpu", "balance_load"]
+                return actions[action_idx]
+
+        except Exception as e:
+            self.logger.error(f"TensorRT optimization failed: {e}")
+            return "maintain"
+
+    def _run_tensorrt_inference(self, input_tensor):
+        """Run inference using TensorRT engine"""
+        # Placeholder for TensorRT inference implementation
+        return self.optimization_model(input_tensor)
+
+    def parallel_gpu_optimization(self, resource_data_batch: List[Dict]) -> List[str]:
+        """Run parallel optimization across multiple GPUs"""
+        if self.gpu_count <= 1:
+            return [self.optimize_with_tensorrt(data) for data in resource_data_batch]
+
+        try:
+            results = []
+            batch_size = len(resource_data_batch)
+            gpu_batch_size = batch_size // self.gpu_count
+
+            for gpu_id in range(self.gpu_count):
+                start_idx = gpu_id * gpu_batch_size
+                end_idx = start_idx + gpu_batch_size if gpu_id < self.gpu_count - 1 else batch_size
+
+                gpu_data = resource_data_batch[start_idx:end_idx]
+
+                with torch.cuda.device(gpu_id):
+                    gpu_results = [self.optimize_with_tensorrt(data) for data in gpu_data]
+                    results.extend(gpu_results)
+
+            return results
+
+        except Exception as e:
+            self.logger.error(f"Parallel GPU optimization failed: {e}")
+            return [self.optimize_with_tensorrt(data) for data in resource_data_batch]
+
     def get_nvidia_optimization_status(self):
         """Get NVIDIA optimization status"""
         return {
             "rl_gpu_status": self.rl_agent.get_gpu_status(),
             "nim_capabilities": self.nim_manager.get_nvidia_capabilities() if hasattr(self.nim_manager, 'get_nvidia_capabilities') else {},
-            "device": str(self.device)
+            "device": str(self.device),
+            "gpu_count": self.gpu_count,
+            "tensorrt_available": tensorrt_available,
+            "cupy_available": cupy_available
         }
+
+
+# Backward compatibility
+class InfrastructureOptimizer(NVIDIAInfrastructureOptimizer):
+    """Backward compatible wrapper for NVIDIAInfrastructureOptimizer"""
+    pass
