@@ -1,2 +1,13 @@
-# Requirements for combined NVIDIA NIM and OWLBAN AI project
-# Add any necessary dependencies here
+# Requirements for combined NVIDIA NIM and OWLBAN GROUP AI project with E2E data sync perfection
+torch>=1.9.0  # PyTorch with CUDA support for NVIDIA GPU acceleration
+numpy>=1.21.0
+cupy>=10.0.0  # NVIDIA CUDA acceleration library
+numba>=0.56.0  # JIT compilation for NVIDIA GPUs
+tensorrt>=8.4.0  # NVIDIA TensorRT for inference optimization
+cudnn>=8.2.0  # NVIDIA cuDNN for deep learning primitives
+azure-identity>=1.7.0  # Azure integration
+azure-ai-ml>=1.0.0  # Azure ML SDK
+azure-storage-blob>=12.8.0  # Azure blob storage
+stripe>=5.0.0  # Stripe payment integration
+logging>=0.5.1.2  # Enhanced logging
+pytest>=7.0.0  # Testing framework
