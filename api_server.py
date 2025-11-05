@@ -36,6 +36,13 @@ try:
 except ImportError:
     rl_agent_available = False
 
+# Import database manager
+try:
+    from database_manager import DatabaseManager
+    db_manager_available = True
+except ImportError:
+    db_manager_available = False
+
 # Security
 security = HTTPBasic()
 API_USERNAME = "owlban_admin"

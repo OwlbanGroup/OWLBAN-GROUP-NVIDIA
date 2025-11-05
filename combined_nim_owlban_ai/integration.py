@@ -124,6 +124,7 @@ from combined_nim_owlban_ai.triton_inference_server import TritonInferenceServer
 from combined_nim_owlban_ai.rapids_integration import RAPIDSDataProcessor
 from combined_nim_owlban_ai.dcgm_monitor import DCGMMonitor
 from combined_nim_owlban_ai.energy_optimizer import EnergyOptimizer
+from combined_nim_owlban_ai.gemini_integration import GeminiIntegration
 
 
 class QuantumIntegratedSystem:

@@ -50,6 +50,7 @@ sentry-sdk>=1.28.0  # Error monitoring
 newrelic>=8.8.0  # Application monitoring
 opentelemetry-distro>=0.40b0  # Observability
 opentelemetry-instrumentation-fastapi>=0.40b0  # FastAPI instrumentation
+gemini-cli>=1.0.0  # Google Gemini AI CLI integration
 # Financial data providers (optional - install as needed)
 # blpapi>=3.18.0  # Bloomberg API (requires separate installation)
 # refinitiv-data>=1.4.0  # Refinitiv Data Platform
