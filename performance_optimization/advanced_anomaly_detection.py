@@ -25,16 +25,13 @@ class OptimizedAutoencoder(nn.Module):
         super(OptimizedAutoencoder, self).__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_size, hidden_size),
-            nn.BatchNorm1d(hidden_size),  # cuDNN optimized
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(hidden_size, hidden_size//2),
-            nn.BatchNorm1d(hidden_size//2),
             nn.ReLU()
         )
         self.decoder = nn.Sequential(
             nn.Linear(hidden_size//2, hidden_size),
-            nn.BatchNorm1d(hidden_size),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(hidden_size, input_size)
@@ -62,7 +59,7 @@ class AdvancedAnomalyDetection:
             torch.backends.cudnn.benchmark = True
 
         self.model.eval()  # Set to evaluation mode
-    self.logger.info("NVIDIA GPU-accelerated anomaly detection using device: %s", self.device)
+        self.logger.info("NVIDIA GPU-accelerated anomaly detection using device: %s", self.device)
 
     def preprocess(self, data):
         """Preprocess data for NVIDIA GPU processing"""
@@ -113,7 +110,7 @@ class AdvancedAnomalyDetection:
         threshold = self._calculate_dynamic_threshold(processed_data)
 
         is_anomaly = reconstruction_error > threshold
-    self.logger.debug("NVIDIA GPU anomaly detection: error=%.4f, threshold=%.4f, anomaly=%s", reconstruction_error, threshold, is_anomaly)
+        self.logger.debug("NVIDIA GPU anomaly detection: error=%.4f, threshold=%.4f, anomaly=%s", reconstruction_error, threshold, is_anomaly)
 
         return is_anomaly, reconstruction_error
 

@@ -15,7 +15,7 @@ import torch
 
 # Optional quantum imports with fallbacks
 try:
-    from qiskit import QuantumCircuit, execute
+    from qiskit import QuantumCircuit, execute  # type: ignore
     QISKIT_AVAILABLE = True
 except ImportError:
     QuantumCircuit = None
@@ -24,7 +24,7 @@ except ImportError:
     logging.warning("Qiskit not available, quantum features disabled")
 
 try:
-    from cirq import Circuit
+    from cirq import Circuit  # type: ignore
     CIRQ_AVAILABLE = True
 except ImportError:
     Circuit = None
@@ -32,7 +32,7 @@ except ImportError:
     logging.warning("Cirq not available")
 
 try:
-    from azure.quantum import Workspace
+    from azure.quantum import Workspace  # type: ignore
     AZURE_QUANTUM_AVAILABLE = True
 except ImportError:
     Workspace = None
@@ -40,7 +40,7 @@ except ImportError:
     logging.warning("Azure Quantum not available")
 
 try:
-    from braket.aws import AwsDevice
+    from braket.aws import AwsDevice  # type: ignore
     BRAKET_AVAILABLE = True
 except ImportError:
     AwsDevice = None
@@ -48,7 +48,7 @@ except ImportError:
     logging.warning("Braket not available")
 
 try:
-    from qsharp import Operation
+    from qsharp import Operation  # type: ignore
     QSHARP_AVAILABLE = True
 except ImportError:
     Operation = None
@@ -775,8 +775,20 @@ class QuantumIntegratedSystem:
         # Penalize high resource usage
         for key, value in resource_status.items():
             if "Usage" in key:
-                usage = float(value.strip('%')) / 100
-                efficiency_score -= usage * 0.1
+                try:
+                    # Handle cases where value might be 'N/A (CPU mode)' or similar
+                    if isinstance(value, str) and '%' in value:
+                        usage = float(value.strip('%')) / 100
+                        efficiency_score -= usage * 0.1
+                    elif isinstance(value, str) and value.replace('.', '').replace('%', '').isdigit():
+                        usage = float(value.strip('%')) / 100
+                        efficiency_score -= usage * 0.1
+                    else:
+                        # Skip non-numeric values like 'N/A (CPU mode)'
+                        continue
+                except (ValueError, AttributeError):
+                    # Skip invalid values
+                    continue
 
         return efficiency_score
 

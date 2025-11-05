@@ -57,12 +57,12 @@ class QuantumRiskAnalyzer:
         self.risk_factors: List[RiskFactor] = []
         self.quantum_model = QuantumNeuralNetwork(input_size=10).to(self.device)  # Initialize with default size
 
-    self.logger.info("Initialized Quantum Risk Analyzer on device: %s", self.device)
+        self.logger.info("Initialized Quantum Risk Analyzer on device: %s", self.device)
 
     def add_risk_factor(self, risk_factor: RiskFactor):
         """Add a risk factor to the analysis"""
         self.risk_factors.append(risk_factor)
-    self.logger.info("Added risk factor: %s", risk_factor.name)
+        self.logger.info("Added risk factor: %s", risk_factor.name)
 
     def _classical_monte_carlo_simulation(self, portfolio_values: np.ndarray,
                                         n_simulations: int = 10000) -> Dict:
@@ -183,7 +183,7 @@ class QuantumRiskAnalyzer:
         Returns:
             QuantumRiskResult with comprehensive risk metrics
         """
-    self.logger.info("Analyzing risk using %s method with %d simulations", method, n_simulations)
+        self.logger.info("Analyzing risk using %s method with %d simulations", method, n_simulations)
 
         if method == "quantum":
             simulation_result = self._quantum_monte_carlo_simulation(portfolio_values, n_simulations)
@@ -207,7 +207,7 @@ class QuantumRiskAnalyzer:
             confidence_level=self.confidence_level
         )
 
-    self.logger.info("Risk analysis complete. VaR: %.4f, CVaR: %.4f, Quantum advantage: %.2fx",
+        self.logger.info("Risk analysis complete. VaR: %.4f, CVaR: %.4f, Quantum advantage: %.2fx",
              result.value_at_risk, result.conditional_var, result.quantum_advantage)
 
         return result

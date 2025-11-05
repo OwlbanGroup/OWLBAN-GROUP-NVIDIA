@@ -40,17 +40,17 @@ class QuantumPortfolioOptimizer:
         self.assets: List[PortfolioAsset] = []
         self.covariance_matrix = None
 
-    self.logger.info("Initialized Quantum Portfolio Optimizer on device: %s", self.device)
+        self.logger.info("Initialized Quantum Portfolio Optimizer on device: %s", self.device)
 
     def add_asset(self, asset: PortfolioAsset):
         """Add an asset to the optimization universe"""
         self.assets.append(asset)
-    self.logger.info("Added asset: %s", asset.symbol)
+        self.logger.info("Added asset: %s", asset.symbol)
 
     def set_covariance_matrix(self, covariance_matrix: np.ndarray):
         """Set the covariance matrix for asset returns"""
         self.covariance_matrix = covariance_matrix
-    self.logger.info("Set covariance matrix shape: %s", covariance_matrix.shape)
+        self.logger.info("Set covariance matrix shape: %s", covariance_matrix.shape)
 
     def _classical_mean_variance_optimization(self, target_return: float = None) -> QuantumPortfolioResult:
         """Classical Markowitz mean-variance optimization as baseline"""
@@ -149,14 +149,14 @@ class QuantumPortfolioOptimizer:
         Returns:
             QuantumPortfolioResult with optimal portfolio
         """
-    self.logger.info("Optimizing portfolio using %s method", method)
+        self.logger.info("Optimizing portfolio using %s method", method)
 
         if method == "quantum":
             result = self._quantum_annealing_optimization(target_return)
         else:
             result = self._classical_mean_variance_optimization(target_return)
 
-    self.logger.info("Optimization complete. Expected return: %.4f, Volatility: %.4f, Sharpe ratio: %.4f",
+        self.logger.info("Optimization complete. Expected return: %.4f, Volatility: %.4f, Sharpe ratio: %.4f",
              result.expected_return, result.portfolio_volatility, result.sharpe_ratio)
 
         return result

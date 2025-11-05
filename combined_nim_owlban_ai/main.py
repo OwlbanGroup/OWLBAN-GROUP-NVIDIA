@@ -1,6 +1,6 @@
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
-from combined_nim_owlban_ai.integration import CombinedSystem
+from combined_nim_owlban_ai import CombinedSystem
 
 
 def main():

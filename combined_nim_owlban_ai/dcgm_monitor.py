@@ -24,10 +24,14 @@ class DCGMMonitor:
     """NVIDIA DCGM-based GPU monitoring and health management"""
 
     def __init__(self, update_interval: float = 1.0):
+        global DCGM_AVAILABLE
         self.logger = logging.getLogger("DCGMMonitor")
         self.update_interval = update_interval
         self.monitoring_active = False
         self.monitor_thread: Optional[threading.Thread] = None
+        self.dcgm_handle = None
+        self.group_id = None
+        self.gpu_count = 0
 
         if not DCGM_AVAILABLE:
             self.logger.warning("DCGM not available, GPU monitoring disabled")

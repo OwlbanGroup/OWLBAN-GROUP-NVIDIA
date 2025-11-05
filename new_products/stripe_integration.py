@@ -6,7 +6,9 @@ class StripeIntegration:
         # Load Stripe API key from environment variable
         self.api_key = os.getenv("STRIPE_API_KEY")
         if not self.api_key:
-            raise ValueError("STRIPE_API_KEY environment variable not set")
+            # Use test key for development/demo purposes
+            self.api_key = "sk_test_dummy_key_for_development"
+            print("WARNING: Using dummy Stripe API key for development. Set STRIPE_API_KEY environment variable for production.")
         stripe.api_key = self.api_key
 
     def spend_profits(self, amount_cents, currency="usd", description="Spending profits for Oscar Broome", destination_account=None):

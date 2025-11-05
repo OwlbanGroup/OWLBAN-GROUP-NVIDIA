@@ -27,11 +27,9 @@ class OptimizedDQNNetwork(nn.Module):
         super(OptimizedDQNNetwork, self).__init__()
         self.layers = nn.Sequential(
             nn.Linear(state_size, hidden_size),
-            nn.BatchNorm1d(hidden_size),  # cuDNN optimized
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(hidden_size, hidden_size),
-            nn.BatchNorm1d(hidden_size),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(hidden_size, action_size)
@@ -53,7 +51,7 @@ class ReinforcementLearningAgent:
 
         self.logger = logging.getLogger("RLAgent")
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
-    self.logger.info("NVIDIA GPU-accelerated RL using device: %s", self.device)
+        self.logger.info("NVIDIA GPU-accelerated RL using device: %s", self.device)
 
         # Initialize traditional Q-table as fallback
         self.q_table = {}
@@ -103,6 +101,20 @@ class ReinforcementLearningAgent:
 
     def choose_action(self, state):
         """Choose action using NVIDIA GPU-accelerated DQN"""
+        # Convert state to numeric if necessary
+        if isinstance(state, (list, tuple)):
+            numeric_state = []
+            for s in state:
+                if isinstance(s, (int, float)):
+                    numeric_state.append(float(s))
+                elif isinstance(s, str):
+                    numeric_state.append(hash(s) % 1000 / 1000.0)  # Simple hash to float
+                elif isinstance(s, bool):
+                    numeric_state.append(1.0 if s else 0.0)
+                else:
+                    numeric_state.append(0.0)
+            state = numeric_state
+
         self.update_state_size(state)
 
         # Epsilon-greedy exploration
