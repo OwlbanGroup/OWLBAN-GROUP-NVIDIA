@@ -191,35 +191,35 @@ class NVIDIARevenueOptimizer:
         economic_index = market_conditions.get("economic_index", 1.0)
 
         # Estimate cost from resource usage
+        gpu_usage = 0
+        for key, value in resource_status.items():
+            if "Usage" in key and "%" in str(value):
+                try:
+                    gpu_usage = max(gpu_usage, float(str(value).strip('%')))
+                except:
+                    pass
+        cost = 500 + (gpu_usage / 100) * 300  # Base cost + GPU usage cost
+
+        # Adjust revenue based on action and market factors
+        if action == "increase_price":
+            price_factor = 1.1
+            cost_factor = 1.05
+        elif action == "decrease_price":
+            price_factor = 0.9
+            cost_factor = 0.95
+        elif action == "optimize_inventory":
+            price_factor = 1.05
+            cost_factor = 0.9  # Reduce costs through optimization
+        elif action == "expand_market":
+            price_factor = 1.0
+            cost_factor = 1.1  # Initial investment
+        else:  # maintain_price
+            price_factor = 1.0
+            cost_factor = 1.0
 
         adjusted_revenue = (
             base_revenue
             * price_factor
-            * demand_index
-            * seasonality_factor
-            * economic_index
-        )
-        adjusted_cost = cost * cost_factor
-
-        profit = adjusted_revenue - adjusted_cost
-
-        # Apply NVIDIA GPU efficiency bonus
-        if torch.cuda.is_available():
-            profit *= 1.1  # 10% bonus for GPU acceleration
-
-        # Penalize if competitor price is lower and price is increased
-        if competitor_price < price_factor and action == "increase_price":
-            profit *= 0.9
-
-        return profit
-
-    def get_current_profit(self):
-        """Calculate current profit using NVIDIA GPU processing"""
-        resource_status = self.nim_manager.get_resource_status()
-        market_conditions = self.market_data_provider.get_current_conditions()
-
-        profit = self._calculate_reward("maintain_price", resource_status, market_conditions)
-        self.logger.info(f"Current estimated profit (NVIDIA GPU calculated): ${profit:.2f}")
 
         return profit
 
