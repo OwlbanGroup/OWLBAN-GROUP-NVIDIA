@@ -273,31 +273,31 @@ class QuantumAIGlobalDeployment:
             report += f"- **Coherence Time:** 100ms\n"
             report += f"- **Gate Fidelity:** 99.99%\n\n"
 
-        report += f"""
+        report += """
 ## AI Infrastructure
 
 """
 
         for center in self.ai_centers:
-            report += f"### {center.name}\n"
-            report += f"- **Location:** {center.location}\n"
-            report += f"- **GPU Nodes:** {center.gpu_nodes:,}\n"
-            report += f"- **TPU Nodes:** {center.tpu_nodes:,}\n"
-            report += f"- **Status:** ✅ {center.status}\n"
-            report += f"- **Total TFLOPS:** {(center.gpu_nodes * 500) + (center.tpu_nodes * 1000):,}\n"
-            report += f"- **Memory:** {(center.gpu_nodes * 4) + (center.tpu_nodes * 8):,} TB\n\n"
+            report += "### " + center.name + "\n"
+            report += "- **Location:** " + center.location + "\n"
+            report += "- **GPU Nodes:** " + f"{center.gpu_nodes:,}" + "\n"
+            report += "- **TPU Nodes:** " + f"{center.tpu_nodes:,}" + "\n"
+            report += "- **Status:** ✅ " + center.status + "\n"
+            report += "- **Total TFLOPS:** " + f"{(center.gpu_nodes * 500) + (center.tpu_nodes * 1000):,}" + "\n"
+            report += "- **Memory:** " + f"{(center.gpu_nodes * 4) + (center.tpu_nodes * 8):,}" + " TB\n\n"
 
-        report += f"""
+        report += """
 ## Hybrid Systems
 
-- **Total Hybrid Systems:** {len(self.quantum_centers) * len(self.ai_centers)}
+- **Total Hybrid Systems:** """ + str(len(self.quantum_centers) * len(self.ai_centers)) + """
 - **Quantum-Classical Integration:** 95% efficiency
 - **Real-time Synchronization:** <1ms latency
 - **Auto-scaling:** Dynamic resource allocation
 
 ## Network Infrastructure
 
-- **Quantum Links:** {len(self.quantum_centers) * (len(self.quantum_centers) - 1) // 2} entangled connections
+- **Quantum Links:** """ + str(len(self.quantum_centers) * (len(self.quantum_centers) - 1) // 2) + """ entangled connections
 - **Quantum Repeaters:** 50 deployed
 - **Global Latency:** 5ms average
 - **Bandwidth:** 1 Tbps per link
@@ -375,9 +375,9 @@ class QuantumAIGlobalDeployment:
 ✅ **Orchestration:** 100% Automated
 
 **Total Global Capacity:**
-- **Quantum Qubits:** {total_qubits:,}
-- **AI Compute:** {(total_gpus * 500) + (total_tpus * 1000):,} PFLOPS
-- **Storage:** {(total_gpus * 4) + (total_tpus * 8) * len(self.ai_centers):,} PB
+- **Quantum Qubits:** """ + f"{total_qubits:,}" + """
+- **AI Compute:** """ + f"{(total_gpus * 500) + (total_tpus * 1000):,}" + """ PFLOPS
+- **Storage:** """ + f"{(total_gpus * 4) + (total_tpus * 8) * len(self.ai_centers):,}" + """ PB
 - **Network:** 1 Tbps global backbone
 
 ---
