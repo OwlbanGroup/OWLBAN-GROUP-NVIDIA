@@ -5,10 +5,20 @@ OWLBAN GROUP - Enterprise Azure Quantum and ML Integration
 
 import logging
 from typing import Dict, List
-from azure.identity import DefaultAzureCredential  # type: ignore
-from azure.ai.ml import MLClient  # type: ignore
-from azure.ai.ml.entities import AmlCompute, CommandJob  # type: ignore
-from azure.core.exceptions import ResourceNotFoundError  # type: ignore
+
+try:
+    from azure.identity import DefaultAzureCredential  # type: ignore
+    from azure.ai.ml import MLClient  # type: ignore
+    from azure.ai.ml.entities import AmlCompute, CommandJob  # type: ignore
+    from azure.core.exceptions import ResourceNotFoundError  # type: ignore
+    AZURE_AVAILABLE = True
+except ImportError:
+    DefaultAzureCredential = None
+    MLClient = None
+    AmlCompute = None
+    CommandJob = None
+    ResourceNotFoundError = None
+    AZURE_AVAILABLE = False
 
 # Optional quantum imports with fallbacks
 try:
@@ -40,18 +50,23 @@ class AzureQuantumIntegrationManager:
         self.logger = logging.getLogger("AzureQuantumIntegrationManager")
 
         # Initialize Azure credentials
-        try:
-            self.credential = DefaultAzureCredential()
-        except Exception as e:
-            self.logger.warning("Azure credential initialization failed: %s", e)
-            self.credential = None
+        if AZURE_AVAILABLE:
+            try:
+                self.credential = DefaultAzureCredential()
+            except Exception as e:
+                self.logger.warning("Azure credential initialization failed: %s", e)
+                self.credential = None
 
-        # Initialize ML client
-        try:
-            self.ml_client = MLClient(self.credential, subscription_id, resource_group, workspace_name)
-        except Exception as e:
-            self.logger.warning("ML client initialization failed: %s", e)
+            # Initialize ML client
+            try:
+                self.ml_client = MLClient(self.credential, subscription_id, resource_group, workspace_name)
+            except Exception as e:
+                self.logger.warning("ML client initialization failed: %s", e)
+                self.ml_client = None
+        else:
+            self.credential = None
             self.ml_client = None
+            self.logger.warning("Azure packages not available, Azure features disabled")
 
         # Initialize Quantum workspace if available
         if QUANTUM_AVAILABLE:
@@ -156,6 +171,10 @@ class AzureQuantumIntegrationManager:
 
     def create_compute_cluster(self, cluster_name, vm_size="STANDARD_NC6", min_nodes=0, max_nodes=4):
         """Create or get Azure ML compute cluster"""
+        if not AZURE_AVAILABLE or not self.ml_client:
+            self.logger.warning("Azure ML not available, cannot create compute cluster")
+            return None
+
         try:
             cluster = self.ml_client.compute.get(cluster_name)
             print("Compute cluster '%s' already exists.", cluster_name)
@@ -173,6 +192,10 @@ class AzureQuantumIntegrationManager:
 
     def submit_training_job(self, job_name, command, environment_name, compute_name, inputs):
         """Submit Azure ML training job"""
+        if not AZURE_AVAILABLE or not self.ml_client:
+            self.logger.warning("Azure ML not available, cannot submit training job")
+            return None
+
         env = self.ml_client.environments.get(environment_name)
         job = CommandJob(
             name=job_name,

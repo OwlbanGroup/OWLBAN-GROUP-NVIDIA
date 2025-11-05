@@ -12,16 +12,74 @@ from concurrent.futures import ThreadPoolExecutor
 # Core ML & Quantum
 import numpy as np
 import torch
-from qiskit import QuantumCircuit, execute
-from cirq import Circuit
-from azure.quantum import Workspace
-from braket.aws import AwsDevice
-from qsharp import Operation
 
-# NVIDIA Acceleration - Core Dependencies
-import cupy as cp
-import tensorrt as trt
-from cuda import cudart
+# Optional quantum imports with fallbacks
+try:
+    from qiskit import QuantumCircuit, execute
+    QISKIT_AVAILABLE = True
+except ImportError:
+    QuantumCircuit = None
+    execute = None
+    QISKIT_AVAILABLE = False
+    logging.warning("Qiskit not available, quantum features disabled")
+
+try:
+    from cirq import Circuit
+    CIRQ_AVAILABLE = True
+except ImportError:
+    Circuit = None
+    CIRQ_AVAILABLE = False
+    logging.warning("Cirq not available")
+
+try:
+    from azure.quantum import Workspace
+    AZURE_QUANTUM_AVAILABLE = True
+except ImportError:
+    Workspace = None
+    AZURE_QUANTUM_AVAILABLE = False
+    logging.warning("Azure Quantum not available")
+
+try:
+    from braket.aws import AwsDevice
+    BRAKET_AVAILABLE = True
+except ImportError:
+    AwsDevice = None
+    BRAKET_AVAILABLE = False
+    logging.warning("Braket not available")
+
+try:
+    from qsharp import Operation
+    QSHARP_AVAILABLE = True
+except ImportError:
+    Operation = None
+    QSHARP_AVAILABLE = False
+    logging.warning("Q# not available")
+
+# NVIDIA Acceleration - Core Dependencies with fallbacks
+try:
+    import cupy as cp
+    CUPY_AVAILABLE = True
+except ImportError:
+    cp = None
+    CUPY_AVAILABLE = False
+    logging.warning("CuPy not available, GPU acceleration disabled")
+
+try:
+    import tensorrt as trt
+    TENSORRT_AVAILABLE = True
+except ImportError:
+    trt = None
+    TENSORRT_AVAILABLE = False
+    logging.warning("TensorRT not available")
+
+try:
+    from cuda import cudart
+    CUDA_AVAILABLE = True
+except ImportError:
+    cudart = None
+    CUDA_AVAILABLE = False
+    logging.warning("CUDA runtime not available")
+
 from torch import nn
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -430,13 +488,17 @@ class QuantumIntegratedSystem:
     def _gpu_process_data(self, data_tensor):
         """Process data using NVIDIA CUDA acceleration with real GPU operations"""
         try:
-            # Use CuPy for GPU array operations
-            gpu_data = cp.asarray(data_tensor.cpu().numpy())
-            # Apply GPU-accelerated normalization and scaling
-            normalized = cp.linalg.norm(gpu_data)
-            scaled = gpu_data / (normalized + 1e-8)  # Avoid division by zero
-            processed = scaled * 0.01  # Scale down for processing
-            return torch.from_numpy(cp.asnumpy(processed)).cuda()
+            if CUPY_AVAILABLE and cp:
+                # Use CuPy for GPU array operations
+                gpu_data = cp.asarray(data_tensor.cpu().numpy())
+                # Apply GPU-accelerated normalization and scaling
+                normalized = cp.linalg.norm(gpu_data)
+                scaled = gpu_data / (normalized + 1e-8)  # Avoid division by zero
+                processed = scaled * 0.01  # Scale down for processing
+                return torch.from_numpy(cp.asnumpy(processed)).cuda()
+            else:
+                self.logger.warning("CuPy not available, using CPU fallback")
+                return data_tensor * 0.01
         except Exception as e:
             self.logger.warning("CuPy processing failed, falling back to CPU: %s", e)
             return data_tensor * 0.01
@@ -541,14 +603,18 @@ class QuantumIntegratedSystem:
     def _gpu_anomaly_processing(self, anomaly_tensor):
         """Process anomaly data using NVIDIA GPU acceleration with real operations"""
         try:
-            # Use GPU for anomaly detection computations
-            gpu_tensor = cp.asarray(anomaly_tensor.cpu().numpy())
-            # Apply GPU-accelerated statistical operations
-            mean = cp.mean(gpu_tensor)
-            std = cp.std(gpu_tensor)
-            normalized = (gpu_tensor - mean) / (std + 1e-8)
-            processed = normalized * 0.9
-            return torch.from_numpy(cp.asnumpy(processed)).cuda()
+            if CUPY_AVAILABLE and cp:
+                # Use GPU for anomaly detection computations
+                gpu_tensor = cp.asarray(anomaly_tensor.cpu().numpy())
+                # Apply GPU-accelerated statistical operations
+                mean = cp.mean(gpu_tensor)
+                std = cp.std(gpu_tensor)
+                normalized = (gpu_tensor - mean) / (std + 1e-8)
+                processed = normalized * 0.9
+                return torch.from_numpy(cp.asnumpy(processed)).cuda()
+            else:
+                self.logger.warning("CuPy not available, using CPU fallback")
+                return anomaly_tensor * 0.9
         except Exception as e:
             self.logger.warning("GPU anomaly processing failed, using fallback: %s", e)
             return anomaly_tensor * 0.9
