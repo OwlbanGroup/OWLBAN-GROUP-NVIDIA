@@ -6,10 +6,6 @@ energy optimization, monitoring, portfolio optimization, risk analysis, and mark
 
 import sys
 import os
-
-# Add the current directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import pytest
 import numpy as np
 
@@ -18,13 +14,22 @@ from combined_nim_owlban_ai import OwlbanAI as OWLBANAI
 from combined_nim_owlban_ai import QuantumFinancialOmniscientSystem
 from combined_nim_owlban_ai import EnergyOptimizer
 from combined_nim_owlban_ai import DCGMMonitor as QuantumMonitor
-from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer
+from quantum_financial_ai.quantum_portfolio_optimizer import (
+    QuantumPortfolioOptimizer, PortfolioAsset
+)
 from quantum_financial_ai.quantum_risk_analyzer import QuantumRiskAnalyzer
-from quantum_financial_ai.quantum_market_predictor import QuantumMarketPredictor, MarketData
+from quantum_financial_ai.quantum_market_predictor import (
+    QuantumMarketPredictor, MarketData
+)
+
+# Add the current directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestQuantumAISystems:
     """Comprehensive tests for all quantum AI systems."""
+
+    rng = np.random.default_rng()
 
     def test_nim_gpu_acceleration(self):
         """Test NIM GPU processing capabilities."""
@@ -44,7 +49,7 @@ class TestQuantumAISystems:
         """Test OWLBAN AI inference pipeline."""
         owlban = OWLBANAI()
         owlban.load_models()
-        sample_input = np.random.rand(50, 20)
+        sample_input = self.rng.random((50, 20))
         result = owlban.run_inference(sample_input)
         assert isinstance(result, dict)
         assert 'prediction' in result
@@ -53,10 +58,23 @@ class TestQuantumAISystems:
         """Test quantum financial omniscient system."""
         # Create mock dependencies
         class MockRAPIDS:
-            def load_data_gpu(self, data): return data
-            def preprocess_financial_data(self, data): return data
-            def optimize_portfolio_gpu(self, data): return {'weights': {'stocks': 0.6, 'bonds': 0.4}}
-            def cluster_market_data(self, data): return data, []
+            """Mock RAPIDS integration for testing."""
+
+            def load_data_gpu(self, _data):
+                """Load data to GPU."""
+                return _data
+
+            def preprocess_financial_data(self, _data):
+                """Preprocess financial data."""
+                return _data
+
+            def optimize_portfolio_gpu(self, _data):
+                """Optimize portfolio on GPU."""
+                return {'weights': {'stocks': 0.6, 'bonds': 0.4}}
+
+            def cluster_market_data(self, _data):
+                """Cluster market data."""
+                return _data, []
 
         class MockTriton:
             pass
@@ -65,7 +83,7 @@ class TestQuantumAISystems:
             pass
 
         qfs = QuantumFinancialOmniscientSystem(MockRAPIDS(), MockTriton(), MockEnergy())
-        market_data = {"stocks": np.random.rand(100, 5)}
+        market_data = {"stocks": self.rng.random((100, 5))}
         result = qfs.process_global_markets(market_data)
         assert isinstance(result, dict)
         assert 'predictions' in result
@@ -73,7 +91,7 @@ class TestQuantumAISystems:
     def test_energy_optimizer(self):
         """Test energy optimization algorithms."""
         eo = EnergyOptimizer()
-        system_load = np.random.rand(24, 10)  # 24 hours, 10 metrics
+        system_load = self.rng.random((24, 10))  # 24 hours, 10 metrics
         result = eo.optimize_energy(system_load)
         assert isinstance(result, dict)
         assert 'optimized_schedule' in result
@@ -90,7 +108,6 @@ class TestQuantumAISystems:
         """Test quantum portfolio optimization."""
         qpo = QuantumPortfolioOptimizer()
         # Add some sample assets first
-        from quantum_financial_ai.quantum_portfolio_optimizer import PortfolioAsset
         qpo.add_asset(PortfolioAsset("AAPL", 0.08, 0.15, 150.0, 100))
         qpo.add_asset(PortfolioAsset("GOOGL", 0.10, 0.18, 2500.0, 50))
         qpo.add_asset(PortfolioAsset("MSFT", 0.09, 0.16, 300.0, 75))
@@ -102,7 +119,7 @@ class TestQuantumAISystems:
     def test_risk_analyzer(self):
         """Test quantum risk analysis."""
         qra = QuantumRiskAnalyzer()
-        positions = np.random.rand(100, 5)
+        positions = self.rng.random((100, 5))
         result = qra.analyze_risk(positions)
         assert hasattr(result, 'value_at_risk')
         assert hasattr(result, 'conditional_var')
@@ -113,8 +130,8 @@ class TestQuantumAISystems:
         qmp = QuantumMarketPredictor()
 
         # Create sample market data
-        prices = np.random.rand(1000) * 100 + 100  # Random prices around 100
-        volumes = np.random.rand(1000) * 1000000  # Random volumes
+        prices = self.rng.random(1000) * 100 + 100  # Random prices around 100
+        volumes = self.rng.random(1000) * 1000000  # Random volumes
         timestamps = np.arange(1000)
 
         market_data = MarketData(

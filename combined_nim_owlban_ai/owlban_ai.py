@@ -89,11 +89,11 @@ class OwlbanAI:
             # Convert data to tensor
             if isinstance(data, dict):
                 # Convert dict values to tensor
-                input_data = torch.tensor(list(data.values()), dtype=torch.float32).to(self.device)
+                input_data = torch.tensor(np.array(list(data.values())), dtype=torch.float32).to(self.device)
             elif isinstance(data, list):
-                input_data = torch.tensor(data, dtype=torch.float32).to(self.device)
+                input_data = torch.tensor(np.array(data), dtype=torch.float32).to(self.device)
             else:
-                input_data = torch.tensor([data], dtype=torch.float32).to(self.device)
+                input_data = torch.tensor(np.array([data]), dtype=torch.float32).to(self.device)
 
             # Check GPU health before inference
             if self.cuda_available:
