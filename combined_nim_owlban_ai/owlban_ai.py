@@ -205,7 +205,8 @@ class OwlbanAI:
 
                 # Create TensorRT engine
                 with trt.Builder(trt.Logger(trt.Logger.WARNING)) as builder:
-                    network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+                    flag = trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH
+                    network = builder.create_network(1 << int(flag))
                     parser = trt.OnnxParser(network, trt.Logger(trt.Logger.WARNING))
 
                     with open(onnx_path, "rb") as f:
@@ -236,7 +237,7 @@ class OwlbanAI:
                 self.models[model_name] = DDP(self.models[model_name])
 
             self.logger.info("Multi-GPU setup completed with %d GPUs", self.gpu_count)
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self.logger.error("Multi-GPU setup failed: %s", e)
 
     def run_parallel_inference(self, data_batch: List[Dict]) -> List[Dict]:
@@ -266,7 +267,7 @@ class OwlbanAI:
 
             return results
 
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             self.logger.error("Parallel inference failed: %s", e)
             return [self.run_inference(data) for data in data_batch]
 
