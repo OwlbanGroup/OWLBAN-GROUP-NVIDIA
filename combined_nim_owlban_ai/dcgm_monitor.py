@@ -143,6 +143,10 @@ class DCGMMonitor:
             self.logger.error("Failed to get GPU stats: %s", e)
             return {'error': str(e)}
 
+    def collect_metrics(self) -> Dict[str, Any]:
+        """Collect comprehensive GPU metrics"""
+        return self.get_gpu_stats()
+
     def _extract_gpu_metrics(self, field_values, gpu_id: int) -> Dict[str, Any]:
         """Extract metrics for a specific GPU"""
         metrics = {}

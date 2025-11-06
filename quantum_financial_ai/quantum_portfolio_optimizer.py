@@ -138,11 +138,12 @@ class QuantumPortfolioOptimizer:
             quantum_advantage=1.15  # Estimated quantum advantage
         )
 
-    def optimize_portfolio(self, method: str = "quantum", target_return: float = None) -> QuantumPortfolioResult:
+    def optimize_portfolio(self, portfolio: np.ndarray = None, method: str = "quantum", target_return: float = None) -> QuantumPortfolioResult:
         """
         Optimize portfolio using specified method
 
         Args:
+            portfolio: Portfolio data (optional, uses self.assets if None)
             method: "classical" or "quantum"
             target_return: Target portfolio return (optional)
 

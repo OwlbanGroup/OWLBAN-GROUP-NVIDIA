@@ -6,9 +6,10 @@ Intelligent power management and energy-efficient GPU operations
 import logging
 import time
 import threading
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+import numpy as np
 
 class PowerMode(Enum):
     MAX_PERFORMANCE = "max_performance"
@@ -38,7 +39,7 @@ class EnergyOptimizer:
 
         # Energy tracking
         self.energy_consumption = {}
-        self.power_history = []
+        self.power_history: List[Dict[str, Any]] = []
         self.efficiency_metrics = {}
 
         # Carbon emission factors (kg CO2 per kWh)
@@ -50,6 +51,16 @@ class EnergyOptimizer:
         }
 
         self.logger.info("Energy optimizer initialized")
+
+    def optimize_energy(self, system_load: np.ndarray) -> Dict[str, Any]:
+        """Optimize energy consumption based on system load"""
+        try:
+            # Simple optimization: reduce load during low-demand periods
+            optimized_schedule = system_load * 0.8  # Reduce by 20%
+            return {'optimized_schedule': optimized_schedule}
+        except Exception as e:
+            self.logger.error("Energy optimization failed: %s", e)
+            return {'error': str(e)}
 
     def set_power_mode(self, mode: PowerMode):
         """Set GPU power management mode"""
@@ -286,7 +297,7 @@ class EnergyOptimizer:
                 gpu_stats = self.dcgm_monitor.get_gpu_stats()
 
                 # Sort GPUs by efficiency
-                gpu_efficiencies = {}
+                gpu_efficiencies: Dict[str, float] = {}
                 for gpu_key, gpu_data in gpu_stats.items():
                     if gpu_key.startswith('gpu_'):
                         efficiency = self._calculate_gpu_efficiency(gpu_data)

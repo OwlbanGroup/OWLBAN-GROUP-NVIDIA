@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import uuid
 from datetime import datetime, timezone
+import requests
 
 # Configure logging
 logging.basicConfig(
