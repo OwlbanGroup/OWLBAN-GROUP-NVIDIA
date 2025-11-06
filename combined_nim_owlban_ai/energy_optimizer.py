@@ -37,7 +37,7 @@ class EnergyOptimizer:
     calculations.
     """
 
-    def __init__(self, dcgm_monitor=None):
+    def __init__(self, dcgm_monitor: Optional[Any] = None) -> None:
         self.logger: logging.Logger = logging.getLogger("EnergyOptimizer")
         self.dcgm_monitor: Any = dcgm_monitor
         self.power_mode: PowerMode = PowerMode.BALANCED
@@ -265,18 +265,15 @@ class EnergyOptimizer:
             # Power consumption recommendations
             if total_power > 1000:  # High power consumption
                 recommendations.append(
-                    "Consider reducing GPU clock speeds or using power saver mode"
-                )
+                    "Consider reducing GPU clock speeds or using power saver mode")
                 recommendations.append("Evaluate workload distribution across GPUs")
 
             # Efficiency recommendations
             if efficiency_score < 30:
                 recommendations.append(
-                    "Low power efficiency detected - consider workload optimization"
-                )
+                    "Low power efficiency detected - consider workload optimization")
                 recommendations.append(
-                    "Evaluate GPU utilization patterns and redistribute workloads"
-                )
+                    "Evaluate GPU utilization patterns and redistribute workloads")
 
             # Peak power recommendations
             peak_power = energy_stats.get('peak_power_watts', 0)

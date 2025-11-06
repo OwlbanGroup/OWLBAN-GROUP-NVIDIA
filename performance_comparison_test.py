@@ -29,12 +29,7 @@ class ClassicalFinancialPredictor:
     def __init__(self):
         self.rf_model = RandomForestRegressor(
             n_estimators=100,
-            random_state=42,
-            min_samples_leaf=1,
-            max_features='sqrt',
-            max_depth=None,
-            min_samples_split=2,
-            bootstrap=True
+            random_state=42
         )
         self.lr_model = LinearRegression()
         self.models_trained = False
@@ -78,7 +73,7 @@ class PerformanceComparisonTest:
         logger.info("Generating %d test samples...", n_samples)
 
         # Generate synthetic market data
-        rng = np.random.default_rng(42)
+        rng = np.random.Generator(np.random.PCG64(42))
 
         # Features: price, volume, volatility, sentiment, etc.
         x = rng.standard_normal((n_samples, 10))
@@ -88,22 +83,22 @@ class PerformanceComparisonTest:
 
         return x, y
 
-    def test_classical_performance(self, X_train: np.ndarray, y_train: np.ndarray,
-                                 X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
+    def test_classical_performance(self, x_train: np.ndarray, y_train: np.ndarray,
+                                 x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
         """Test classical ML performance"""
         logger.info("Testing classical ML performance...")
 
         start_time = time.time()
-        self.classical_predictor.train_models(X_train, y_train)
+        self.classical_predictor.train_models(x_train, y_train)
         training_time = time.time() - start_time
 
         # Predictions
         start_time = time.time()
-        rf_predictions = self.classical_predictor.predict_rf(X_test)
+        rf_predictions = self.classical_predictor.predict_rf(x_test)
         rf_inference_time = time.time() - start_time
 
         start_time = time.time()
-        lr_predictions = self.classical_predictor.predict_lr(X_test)
+        lr_predictions = self.classical_predictor.predict_lr(x_test)
         lr_inference_time = time.time() - start_time
 
         # Calculate metrics
@@ -150,18 +145,18 @@ class PerformanceComparisonTest:
         logger.info("Starting performance comparison test...")
 
         # Generate test data
-        X, y = self.generate_test_data(n_samples)
-        X_train, X_test = X[:8000], X[8000:]
+        x, y = self.generate_test_data(n_samples)
+        x_train, x_test = x[:8000], x[8000:]
         y_train, y_test = y[:8000], y[8000:]
 
         # Test classical performance
-        classical_results = self.test_classical_performance(X_train, y_train, X_test, y_test)
+        classical_results = self.test_classical_performance(x_train, y_train, x_test, y_test)
 
         # Prepare market data for quantum system
         market_data = {
-            'stocks': pd.DataFrame(X_test, columns=[f'feature_{i}' for i in range(10)]),
-            'crypto': pd.DataFrame(X_test * 0.8, columns=[f'feature_{i}' for i in range(10)]),
-            'commodities': pd.DataFrame(X_test * 1.2, columns=[f'feature_{i}' for i in range(10)]),
+            'stocks': pd.DataFrame(x_test, columns=[f'feature_{i}' for i in range(10)]),
+            'crypto': pd.DataFrame(x_test * 0.8, columns=[f'feature_{i}' for i in range(10)]),
+            'commodities': pd.DataFrame(x_test * 1.2, columns=[f'feature_{i}' for i in range(10)]),
             'volatility': np.std(y_test),
             'market_trend': 'bull' if np.mean(y_test) > 0 else 'bear'
         }
@@ -258,7 +253,7 @@ def main():
     print(report)
 
     # Save report to file
-    with open('performance_comparison_report.md', 'w') as f:
+    with open('performance_comparison_report.md', 'w', encoding='utf-8') as f:
         f.write(report)
 
     logger.info("Performance comparison test completed. Report saved to performance_comparison_report.md")
