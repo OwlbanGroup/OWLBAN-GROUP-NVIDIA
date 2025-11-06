@@ -17,6 +17,19 @@ from .rapids_integration import RAPIDSDataProcessor
 from .dcgm_monitor import DCGMMonitor
 from .energy_optimizer import EnergyOptimizer
 
+# Optional imports for advanced features
+try:
+    from .multi_modal_ai import MultiModalAI, MultiModalInput, MultiModalEmbedding
+    _multi_modal_available = True
+except ImportError:
+    _multi_modal_available = False
+
+try:
+    from .quantum_ai_perfection import QuantumAIPerfection, QuantumCircuitOptimizer, QuantumErrorCorrectionSystem
+    _quantum_perfection_available = True
+except ImportError:
+    _quantum_perfection_available = False
+
 __all__ = [
     "QuantumIntegratedSystem",
     "CombinedSystem",
@@ -30,3 +43,9 @@ __all__ = [
     "DCGMMonitor",
     "EnergyOptimizer"
 ]
+
+if _multi_modal_available:
+    __all__.extend(["MultiModalAI", "MultiModalInput", "MultiModalEmbedding"])
+
+if _quantum_perfection_available:
+    __all__.extend(["QuantumAIPerfection", "QuantumCircuitOptimizer", "QuantumErrorCorrectionSystem"])

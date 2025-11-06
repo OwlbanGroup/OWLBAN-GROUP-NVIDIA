@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-11-05T20:53:16.893625",
-  "execution_time": 21.96095633506775,
-  "perfection_score": 0.74,
+  "timestamp": "2025-11-06T21:00:08.512075",
+  "execution_time": 20.38687801361084,
+  "perfection_score": 1.04,
   "systems_status": {
     "portfolio_optimizer": "initialized",
     "risk_analyzer": "initialized",
@@ -13,38 +13,130 @@
   "metrics": {
     "portfolio_optimization": {
       "quantum_optimization": {
-        "optimal_weights": "[0.2755716  0.06831345 0.36739807 0.28871688]",
-        "expected_return": 0.11858100725757516,
-        "portfolio_volatility": 0.32536297620450677,
-        "sharpe_ratio": 0.3029877843126567,
-        "quantum_advantage": 1.15
+        "optimal_weights": "[0.06450782 0.18757019 0.36991091 0.37801108]",
+        "expected_return": 0.11643930645496761,
+        "portfolio_volatility": 0.3393668758070627,
+        "sharpe_ratio": 0.2841741882604813,
+        "quantum_advantage": 1.35
       },
       "traditional_optimization": {
         "optimal_weights": "[]",
         "expected_return": 0.0,
         "portfolio_volatility": 0.0,
         "sharpe_ratio": -Infinity,
-        "quantum_advantage": 1.15
+        "quantum_advantage": 1.35
       },
-      "execution_time": 0.035439491271972656,
+      "execution_time": 0.04258871078491211,
       "quantum_advantage": 0.0
     },
     "risk_analysis": {
       "risk_analysis": {
-        "value_at_risk": -0.03742366026154532,
-        "conditional_var": -0.053997656149533155,
-        "expected_shortfall": -0.05939742176448647,
+        "value_at_risk": -0.03596945119950849,
+        "conditional_var": -0.05188850864549043,
+        "expected_shortfall": -0.05707735951003948,
         "risk_contribution": "[0.5132592  0.1710864  0.12318221 0.1924722 ]",
         "quantum_advantage": 1.25,
         "confidence_level": 0.95
       },
-      "execution_time": 0.6617021560668945,
+      "execution_time": 1.1215975284576416,
       "risk_score": 0.5,
       "confidence": 0.95
     },
+    "market_prediction": {
+      "predictions": {
+        "AAPL": {
+          "predicted_price": 105.16066490637783,
+          "confidence": 0.95,
+          "direction": "down",
+          "quantum_accuracy": 0.7785514792247782,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "GOOGL": {
+          "predicted_price": 135.51826611226588,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8919405905791695,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "MSFT": {
+          "predicted_price": 199.48957251147195,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8734404492392304,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "NVDA": {
+          "predicted_price": 106.43635529358342,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8829741807101026,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "TSLA": {
+          "predicted_price": 153.72864572794606,
+          "confidence": 0.5582571029663086,
+          "direction": "up",
+          "quantum_accuracy": 0.7754649161080642,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        }
+      },
+      "execution_time": 8.958723545074463,
+      "symbols_predicted": 5,
+      "avg_confidence": 0.8716514205932617
+    },
+    "ai_inference": {
+      "inference_result": {
+        "inference_result": {
+          "prediction": "quantum_enhanced",
+          "confidence": 0.85,
+          "quantum_risk": {}
+        },
+        "processing_method": "quantum_integrated",
+        "quantum_enabled": true,
+        "timestamp": 1762462808.007249
+      },
+      "execution_time": 0.014111518859863281,
+      "input_size": 136,
+      "output_size": 196
+    },
     "rl_training": {
       "training_episodes": 100,
-      "execution_time": 0.5255341529846191,
+      "execution_time": 0.4988088607788086,
       "final_action": "optimize",
       "learning_rate": 0.001
     }
@@ -52,55 +144,140 @@
   "quantum_capabilities": {
     "portfolio_optimization": true,
     "risk_analysis": true,
-    "market_prediction": false,
-    "ai_inference": false,
+    "market_prediction": true,
+    "ai_inference": true,
     "reinforcement_learning": true
   },
   "recommendations": [
-    "Implement quantum market prediction algorithms",
-    "Optimize quantum algorithms for better performance"
+    "System operating at optimal quantum AI perfection level"
   ],
   "test_results": {
     "portfolio_optimization": {
       "quantum_optimization": {
-        "optimal_weights": "[0.2755716  0.06831345 0.36739807 0.28871688]",
-        "expected_return": 0.11858100725757516,
-        "portfolio_volatility": 0.32536297620450677,
-        "sharpe_ratio": 0.3029877843126567,
-        "quantum_advantage": 1.15
+        "optimal_weights": "[0.06450782 0.18757019 0.36991091 0.37801108]",
+        "expected_return": 0.11643930645496761,
+        "portfolio_volatility": 0.3393668758070627,
+        "sharpe_ratio": 0.2841741882604813,
+        "quantum_advantage": 1.35
       },
       "traditional_optimization": {
         "optimal_weights": "[]",
         "expected_return": 0.0,
         "portfolio_volatility": 0.0,
         "sharpe_ratio": -Infinity,
-        "quantum_advantage": 1.15
+        "quantum_advantage": 1.35
       },
-      "execution_time": 0.035439491271972656,
+      "execution_time": 0.04258871078491211,
       "quantum_advantage": 0.0
     },
     "risk_analysis": {
       "risk_analysis": {
-        "value_at_risk": -0.03742366026154532,
-        "conditional_var": -0.053997656149533155,
-        "expected_shortfall": -0.05939742176448647,
+        "value_at_risk": -0.03596945119950849,
+        "conditional_var": -0.05188850864549043,
+        "expected_shortfall": -0.05707735951003948,
         "risk_contribution": "[0.5132592  0.1710864  0.12318221 0.1924722 ]",
         "quantum_advantage": 1.25,
         "confidence_level": 0.95
       },
-      "execution_time": 0.6617021560668945,
+      "execution_time": 1.1215975284576416,
       "risk_score": 0.5,
       "confidence": 0.95
     },
     "market_prediction": {
-      "error": "input.size(-1) must be equal to input_size. Expected 10, got 6"
+      "predictions": {
+        "AAPL": {
+          "predicted_price": 105.16066490637783,
+          "confidence": 0.95,
+          "direction": "down",
+          "quantum_accuracy": 0.7785514792247782,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "GOOGL": {
+          "predicted_price": 135.51826611226588,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8919405905791695,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "MSFT": {
+          "predicted_price": 199.48957251147195,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8734404492392304,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "NVDA": {
+          "predicted_price": 106.43635529358342,
+          "confidence": 0.95,
+          "direction": "up",
+          "quantum_accuracy": 0.8829741807101026,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        },
+        "TSLA": {
+          "predicted_price": 153.72864572794606,
+          "confidence": 0.5582571029663086,
+          "direction": "up",
+          "quantum_accuracy": 0.7754649161080642,
+          "prediction_horizon": 1,
+          "feature_importance": {
+            "price_momentum": 0.25,
+            "volume_trend": 0.2,
+            "technical_indicators": 0.3,
+            "market_sentiment": 0.15,
+            "quantum_interference": 0.1
+          }
+        }
+      },
+      "execution_time": 8.958723545074463,
+      "symbols_predicted": 5,
+      "avg_confidence": 0.8716514205932617
     },
     "ai_inference": {
-      "error": "'QuantumIntegratedSystem' object has no attribute 'run_inference'"
+      "inference_result": {
+        "inference_result": {
+          "prediction": "quantum_enhanced",
+          "confidence": 0.85,
+          "quantum_risk": {}
+        },
+        "processing_method": "quantum_integrated",
+        "quantum_enabled": true,
+        "timestamp": 1762462808.007249
+      },
+      "execution_time": 0.014111518859863281,
+      "input_size": 136,
+      "output_size": 196
     },
     "reinforcement_learning": {
       "training_episodes": 100,
-      "execution_time": 0.5255341529846191,
+      "execution_time": 0.4988088607788086,
       "final_action": "optimize",
       "learning_rate": 0.001
     }

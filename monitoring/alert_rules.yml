@@ -1,0 +1,101 @@
+groups:
+  - name: owlban_alerts
+    rules:
+    - alert: APIServerDown
+      expr: up{job="owlban-api"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "API Server is down"
+        description: "API Server has been down for more than 1 minute."
+
+    - alert: APIServerHighCPU
+      expr: rate(container_cpu_usage_seconds_total{job="owlban-api"}[5m]) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "API Server high CPU usage"
+        description: "API Server CPU usage is above 80% for 5 minutes."
+
+    - alert: APIServerHighMemory
+      expr: container_memory_usage_bytes{job="owlban-api"} / container_spec_memory_limit_bytes > 0.9
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "API Server high memory usage"
+        description: "API Server memory usage is above 90% for 5 minutes."
+
+    - alert: DatabaseDown
+      expr: up{job="database"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Database is down"
+        description: "Database has been down for more than 1 minute."
+
+    - alert: RedisDown
+      expr: up{job="redis"} == 0
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Redis is down"
+        description: "Redis cache has been down for more than 1 minute."
+
+    - alert: TritonServerDown
+      expr: up{job="triton-server"} == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Triton Inference Server is down"
+        description: "Triton Inference Server has been down for more than 2 minutes."
+
+    - alert: HighErrorRate
+      expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High error rate detected"
+        description: "Error rate is above 5% for 5 minutes."
+
+    - alert: QuantumCircuitFailure
+      expr: quantum_circuit_failures_total > 0
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Quantum circuit failures detected"
+        description: "Quantum circuit compilation or execution failures detected."
+
+    - alert: GPUUtilizationLow
+      expr: gpu_utilization < 10
+      for: 10m
+      labels:
+        severity: info
+      annotations:
+        summary: "Low GPU utilization"
+        description: "GPU utilization is below 10% for 10 minutes."
+
+    - alert: DiskSpaceLow
+      expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Low disk space"
+        description: "Disk space is below 10% available."
+
+    - alert: MemoryUsageHigh
+      expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.9
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High memory usage"
+        description: "System memory usage is above 90%."
