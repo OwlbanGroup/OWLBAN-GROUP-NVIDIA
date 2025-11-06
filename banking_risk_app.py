@@ -5,7 +5,6 @@ JPMorgan Integration - Risk Management Module
 """
 
 import logging
-import json
 from typing import Dict, List, Any
 from jpmorgan_api_integration import JPMorganAPIIntegration
 
@@ -26,6 +25,42 @@ class BankingRiskApp:
     def authenticate(self) -> bool:
         """Authenticate with JPMorgan"""
         return self.jpmorgan.authenticate()
+
+    def calculate_portfolio_risk(self, portfolio: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Calculate portfolio risk metrics"""
+        self.logger.info(f"Calculating risk for portfolio with {len(portfolio)} assets")
+
+        total_value = sum(item.get("value", 0) for item in portfolio)
+        total_volatility = sum(item.get("volatility", 0) * item.get("value", 0) for item in portfolio) / total_value
+
+        # Simplified VaR calculation (95% confidence)
+        var_95 = total_value * total_volatility * 1.645  # 1.645 is z-score for 95%
+
+        return {
+            "total_risk": total_volatility,
+            "var_95": var_95,
+            "total_value": total_value,
+            "expected_loss": var_95 * 0.05
+        }
+
+    def check_compliance(self, transaction: Dict[str, Any]) -> Dict[str, Any]:
+        """Check transaction compliance"""
+        self.logger.info(f"Checking compliance for transaction: {transaction.get('amount', 0)}")
+
+        amount = transaction.get("amount", 0)
+        sender = transaction.get("sender", "")
+        recipient = transaction.get("recipient", "")
+
+        # Simplified compliance checks
+        aml_clear = amount < 10000  # AML threshold
+        sanctions_check = not any(word in (sender + recipient).upper() for word in ["SANCTIONED", "BLOCKED"])
+
+        return {
+            "aml_clear": aml_clear,
+            "sanctions_check": sanctions_check,
+            "compliance_status": "passed" if aml_clear and sanctions_check else "failed",
+            "checked_amount": amount
+        }
 
     def assess_portfolio_risk(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         """Assess risk for a portfolio"""

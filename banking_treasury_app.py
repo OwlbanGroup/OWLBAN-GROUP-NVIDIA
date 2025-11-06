@@ -28,6 +28,19 @@ class BankingTreasuryApp:
         """Authenticate with JPMorgan"""
         return self.jpmorgan.authenticate()
 
+    def get_treasury_status(self) -> Dict[str, Any]:
+        """Get overall treasury status"""
+        self.logger.info("Retrieving treasury status")
+
+        # Simulate treasury status retrieval
+        return {
+            "cash_position": 1000000.00,
+            "investments": 5000000.00,
+            "liabilities": 2000000.00,
+            "net_liquidity": 6000000.00,
+            "status": "healthy"
+        }
+
     def get_account_balance(self, account_id: str) -> Dict[str, Any]:
         """Get account balance"""
         self.logger.info(f"Retrieving balance for account: {account_id}")

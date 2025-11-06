@@ -1,6 +1,8 @@
+"""
+Comprehensive tests for banking applications.
+"""
+
 import pytest
-import requests
-import json
 from unittest.mock import Mock, patch
 from banking_payment_app import BankingPaymentApp
 from banking_treasury_app import BankingTreasuryApp

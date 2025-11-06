@@ -5,7 +5,7 @@ JPMorgan Integration - Payment Processing Module
 """
 
 import logging
-import json
+import secrets
 from typing import Dict, List, Any
 from jpmorgan_api_integration import JPMorganAPIIntegration, PaymentRequest
 
@@ -30,7 +30,8 @@ class BankingPaymentApp:
     def process_single_payment(self, amount: float, sender: str, recipient: str,
                              currency: str = "USD", description: str = "") -> Dict[str, Any]:
         """Process a single payment"""
-        self.logger.info(f"Processing payment: ${amount} {currency} from {sender} to {recipient}")
+        self.logger.info("Processing payment: $%s %s from %s to %s",
+                        amount, currency, sender, recipient)
 
         payment = PaymentRequest(
             amount=amount,
@@ -43,9 +44,9 @@ class BankingPaymentApp:
         result = self.jpmorgan.process_payment(payment)
 
         if result.get("status") == "completed":
-            self.logger.info(f"Payment completed: {result.get('transactionId')}")
+            self.logger.info("Payment completed: %s", result.get('transactionId'))
         else:
-            self.logger.error(f"Payment failed: {result.get('error')}")
+            self.logger.error("Payment failed: %s", result.get('error'))
 
         return result
 
@@ -80,6 +81,62 @@ class BankingPaymentApp:
             "status": "completed",
             "timestamp": "2024-01-15T10:30:00Z",
             "details": "Payment processed successfully"
+        }
+
+    def process_payment(self, payment_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a payment using the provided data"""
+        amount = payment_data.get("amount", 0)
+        currency = payment_data.get("currency", "USD")
+        recipient = payment_data.get("recipient", "")
+
+        return self.process_single_payment(
+            amount=amount,
+            sender="DEFAULT_SENDER",
+            recipient=recipient,
+            currency=currency,
+            description=f"Payment to {recipient}"
+        )
+
+    def validate_payment(self, payment_data: Dict[str, Any]) -> bool:
+        """Validate payment data"""
+        required_fields = ["amount", "currency", "sender_account", "recipient_account"]
+        if not all(field in payment_data for field in required_fields):
+            return False
+
+        amount = payment_data.get("amount", 0)
+        if amount <= 0:
+            return False
+
+        return True
+
+    def initiate_transfer(self, transfer_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Initiate a fund transfer"""
+        amount = transfer_data.get("amount", 0)
+        currency = transfer_data.get("currency", "USD")
+        sender = transfer_data.get("sender", "")
+        recipient = transfer_data.get("recipient", "")
+
+        return self.process_single_payment(
+            amount=amount,
+            sender=sender,
+            recipient=recipient,
+            currency=currency,
+            description="Transfer"
+        )
+
+    def process_international_transfer(self, transfer_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process international transfer"""
+        # Simulate international transfer processing
+        self.logger.info(f"Processing international transfer: {transfer_data}")
+
+        # Mock response
+        return {
+            "status": "processed",
+            "swift_reference": f"SWIFT{secrets.token_hex(4).upper()}",
+            "estimated_completion": "2024-01-20",
+            "amount": transfer_data.get("amount"),
+            "currency": transfer_data.get("currency"),
+            "recipient_country": transfer_data.get("recipient_country")
         }
 
     def generate_payment_report(self, payments: List[Dict[str, Any]]) -> str:
