@@ -261,8 +261,8 @@ class QuantumPortfolioOptimizer:
         self.logger.info("Starting federated quantum learning across %d data sources", len(distributed_data))
 
         # Aggregate results from distributed quantum optimizers
-        aggregated_weights = []
-        aggregated_returns = []
+        aggregated_weights: List[np.ndarray] = []
+        aggregated_returns: List[float] = []
 
         for data_chunk in distributed_data:
             # Local quantum optimization on each data chunk
@@ -279,7 +279,8 @@ class QuantumPortfolioOptimizer:
         interference_weights = interference_weights / np.sum(interference_weights)
 
         federated_weights = np.average(weights_array, axis=0, weights=interference_weights)
-        federated_return = np.dot(federated_weights, np.array([asset.expected_return for asset in self.assets]))
+        asset_returns = np.array([asset.expected_return for asset in self.assets])
+        federated_return = np.dot(federated_weights, asset_returns)
 
         return {
             "federated_weights": federated_weights,
@@ -298,12 +299,18 @@ class QuantumPortfolioOptimizer:
         quantum_result = self._quantum_annealing_optimization(target_return)
 
         # Phase 2: Classical refinement around quantum solution
-        refined_weights = self._classical_refinement(quantum_result.optimal_weights, target_return)
+        if self.covariance_matrix is not None:
+            refined_weights = self._classical_refinement(quantum_result.optimal_weights, target_return)
+        else:
+            refined_weights = quantum_result.optimal_weights
 
         # Evaluate refined solution
         returns = np.array([asset.expected_return for asset in self.assets])
         portfolio_return = np.dot(refined_weights, returns)
-        portfolio_volatility = np.sqrt(np.dot(refined_weights.T, np.dot(self.covariance_matrix, refined_weights)))
+        if self.covariance_matrix is not None:
+            portfolio_volatility = np.sqrt(np.dot(refined_weights.T, np.dot(self.covariance_matrix, refined_weights)))
+        else:
+            portfolio_volatility = np.std(returns)  # Fallback if no covariance matrix
         sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
 
         return QuantumPortfolioResult(
