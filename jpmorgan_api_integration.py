@@ -5,13 +5,10 @@ OWLBAN GROUP - Enterprise Financial Services Integration
 """
 
 import logging
-import time
-import json
-import requests
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(
@@ -54,7 +51,7 @@ class JPMorganAPIIntegration:
         self.credentials = JPMorganCredentials()
         self.environment = environment
         self.base_url = self.credentials.sandbox_url if environment == "sandbox" else self.credentials.production_url
-        self.access_token = None
+        self.access_token: Optional[str] = None
         self.logger = logger
 
         # Initialize session
