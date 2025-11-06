@@ -6,12 +6,13 @@ Intelligent power management and energy-efficient GPU operations
 import logging
 import time
 import threading
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, cast
 from dataclasses import dataclass
 from enum import Enum
 import numpy as np
 
 class PowerMode(Enum):
+    """Enumeration of available GPU power management modes."""
     MAX_PERFORMANCE = "max_performance"
     BALANCED = "balanced"
     POWER_SAVER = "power_saver"
@@ -19,7 +20,7 @@ class PowerMode(Enum):
 
 @dataclass
 class EnergyProfile:
-    """Energy consumption profile for workloads"""
+    """Energy consumption profile for workloads."""
     workload_type: str
     avg_power_watts: float
     peak_power_watts: float
@@ -27,20 +28,27 @@ class EnergyProfile:
     carbon_footprint_kg_co2: float
 
 class EnergyOptimizer:
-    """NVIDIA GPU energy efficiency and power management optimizer"""
+    """
+    NVIDIA GPU energy efficiency and power management optimizer.
+
+    This class provides comprehensive energy monitoring, optimization,
+    and reporting capabilities for NVIDIA GPU systems. It supports
+    multiple power modes, real-time monitoring, and carbon footprint
+    calculations.
+    """
 
     def __init__(self, dcgm_monitor=None):
-        self.logger = logging.getLogger("EnergyOptimizer")
-        self.dcgm_monitor = dcgm_monitor
-        self.power_mode = PowerMode.BALANCED
-        self.energy_profiles = {}
-        self.monitoring_active = False
-        self.monitor_thread = None
+        self.logger: logging.Logger = logging.getLogger("EnergyOptimizer")
+        self.dcgm_monitor: Any = dcgm_monitor
+        self.power_mode: PowerMode = PowerMode.BALANCED
+        self.energy_profiles: Dict[str, EnergyProfile] = {}
+        self.monitoring_active: bool = False
+        self.monitor_thread: Optional[threading.Thread] = None
 
         # Energy tracking
-        self.energy_consumption = {}
+        self.energy_consumption: Dict[str, Any] = {}
         self.power_history: List[Dict[str, Any]] = []
-        self.efficiency_metrics = {}
+        self.efficiency_metrics: Dict[str, Any] = {}
 
         # Carbon emission factors (kg CO2 per kWh)
         self.carbon_factors = {
@@ -58,7 +66,7 @@ class EnergyOptimizer:
             # Simple optimization: reduce load during low-demand periods
             optimized_schedule = system_load * 0.8  # Reduce by 20%
             return {'optimized_schedule': optimized_schedule}
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Energy optimization failed: %s", e)
             return {'error': str(e)}
 
@@ -85,7 +93,7 @@ class EnergyOptimizer:
             elif mode == PowerMode.ADAPTIVE:
                 # Adaptive based on workload
                 self._set_adaptive_mode()
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Failed to apply power settings: %s", e)
 
     def _set_max_performance_mode(self):
@@ -129,20 +137,21 @@ class EnergyOptimizer:
         while self.monitoring_active:
             try:
                 energy_stats = self.get_energy_stats()
-                self.power_history.append({
+                power_entry = {
                     'timestamp': time.time(),
                     'stats': energy_stats
-                })
+                }
+                self.power_history.append(power_entry)
 
                 # Keep only recent history (last 24 hours)
                 cutoff_time = time.time() - 86400
                 self.power_history = [
                     entry for entry in self.power_history
-                    if entry['timestamp'] > cutoff_time
+                    if cast(float, entry['timestamp']) > cutoff_time
                 ]
 
                 time.sleep(interval)
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError) as e:
                 self.logger.error("Energy monitoring error: %s", e)
                 time.sleep(interval)
 
@@ -153,7 +162,7 @@ class EnergyOptimizer:
 
         try:
             gpu_stats = self.dcgm_monitor.get_gpu_stats()
-            energy_stats = {
+            energy_stats: Dict[str, Any] = {
                 'total_power_watts': 0.0,
                 'average_power_watts': 0.0,
                 'peak_power_watts': 0.0,
@@ -175,7 +184,8 @@ class EnergyOptimizer:
                     total_power += power_watts
                     peak_power = max(peak_power, power_watts)
 
-                    energy_stats['gpu_power_breakdown'][gpu_key] = {
+                    gpu_breakdown = energy_stats['gpu_power_breakdown']
+                    gpu_breakdown[gpu_key] = {
                         'power_watts': power_watts,
                         'efficiency_score': self._calculate_gpu_efficiency(gpu_data)
                     }
@@ -186,10 +196,14 @@ class EnergyOptimizer:
                 energy_stats['peak_power_watts'] = peak_power
 
                 # Calculate energy consumption (kWh) for last hour
-                energy_stats['energy_consumption_kwh'] = (total_power / 1000) * (len(self.power_history) * 5 / 3600)
+                energy_stats['energy_consumption_kwh'] = (
+                    (total_power / 1000) * (len(self.power_history) * 5 / 3600)
+                )
 
                 # Calculate carbon footprint
-                energy_stats['carbon_footprint_kg_co2'] = energy_stats['energy_consumption_kwh'] * self.carbon_factors['us_average']
+                energy_stats['carbon_footprint_kg_co2'] = (
+                    energy_stats['energy_consumption_kwh'] * self.carbon_factors['us_average']
+                )
 
                 # Calculate overall efficiency score
                 energy_stats['power_efficiency_score'] = self._calculate_system_efficiency(gpu_stats)
@@ -199,7 +213,7 @@ class EnergyOptimizer:
 
             return energy_stats
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Energy stats calculation failed: %s", e)
             return {'error': str(e)}
 
@@ -218,7 +232,7 @@ class EnergyOptimizer:
 
             return efficiency
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("GPU efficiency calculation failed: %s", e)
             return 50.0
 
@@ -236,7 +250,7 @@ class EnergyOptimizer:
 
             return total_efficiency / gpu_count if gpu_count > 0 else 0.0
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("System efficiency calculation failed: %s", e)
             return 50.0
 
@@ -250,13 +264,19 @@ class EnergyOptimizer:
 
             # Power consumption recommendations
             if total_power > 1000:  # High power consumption
-                recommendations.append("Consider reducing GPU clock speeds or using power saver mode")
+                recommendations.append(
+                    "Consider reducing GPU clock speeds or using power saver mode"
+                )
                 recommendations.append("Evaluate workload distribution across GPUs")
 
             # Efficiency recommendations
             if efficiency_score < 30:
-                recommendations.append("Low power efficiency detected - consider workload optimization")
-                recommendations.append("Evaluate GPU utilization patterns and redistribute workloads")
+                recommendations.append(
+                    "Low power efficiency detected - consider workload optimization"
+                )
+                recommendations.append(
+                    "Evaluate GPU utilization patterns and redistribute workloads"
+                )
 
             # Peak power recommendations
             peak_power = energy_stats.get('peak_power_watts', 0)
@@ -271,14 +291,17 @@ class EnergyOptimizer:
                 recommendations.append("Implement workload scheduling during off-peak hours")
 
             # GPU-specific recommendations
-            gpu_breakdown = energy_stats.get('gpu_power_breakdown', {})
+            gpu_breakdown = cast(Dict[str, Dict[str, Any]], energy_stats.get('gpu_power_breakdown', {}))
             for gpu_key, gpu_data in gpu_breakdown.items():
                 gpu_efficiency = gpu_data.get('efficiency_score', 50)
                 if gpu_efficiency < 20:
                     gpu_id = gpu_key.split('_')[1]
-                    recommendations.append(f"GPU {gpu_id} has very low efficiency - consider maintenance or replacement")
+                    recommendations.append(
+                        f"GPU {gpu_id} has very low efficiency - "
+                        "consider maintenance or replacement"
+                    )
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Recommendation generation failed: %s", e)
 
         return recommendations
@@ -311,7 +334,8 @@ class EnergyOptimizer:
                         gpu_id = sorted_gpus[i][0]
                         efficiency = sorted_gpus[i][1]
 
-                        optimized_placement['placements'].append({
+                        placements = optimized_placement['placements']
+                        placements.append({  # type: ignore
                             'workload': workload,
                             'assigned_gpu': gpu_id,
                             'expected_efficiency': efficiency
@@ -319,7 +343,7 @@ class EnergyOptimizer:
 
             return optimized_placement
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Workload placement optimization failed: %s", e)
             return {'error': str(e)}
 
@@ -356,8 +380,27 @@ class EnergyOptimizer:
                 }
             }
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Energy consumption prediction failed: %s", e)
+            return {'error': str(e)}
+
+    def get_efficiency_metrics(self) -> Dict[str, Any]:
+        """Get current energy efficiency metrics"""
+        try:
+            current_stats = self.get_energy_stats()
+            if 'error' in current_stats:
+                return {'error': current_stats['error']}
+
+            return {
+                'power_efficiency_score': current_stats.get('power_efficiency_score', 0),
+                'total_power_watts': current_stats.get('total_power_watts', 0),
+                'average_power_watts': current_stats.get('average_power_watts', 0),
+                'peak_power_watts': current_stats.get('peak_power_watts', 0),
+                'carbon_footprint_kg_co2': current_stats.get('carbon_footprint_kg_co2', 0),
+                'recommendations': current_stats.get('recommendations', [])
+            }
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
+            self.logger.error("Efficiency metrics retrieval failed: %s", e)
             return {'error': str(e)}
 
     def get_energy_report(self, time_range_hours: float = 24.0) -> Dict[str, Any]:
@@ -375,21 +418,26 @@ class EnergyOptimizer:
 
             # Calculate statistics
             total_energy_kwh = sum(
-                entry['stats'].get('total_power_watts', 0) / 1000 * 5 / 3600  # 5 second intervals
+                float(entry['stats'].get('total_power_watts', 0)) / 1000 * 5 / 3600  # 5 second intervals
                 for entry in recent_history
             )
 
             avg_power = sum(
-                entry['stats'].get('total_power_watts', 0)
+                float(entry['stats'].get('total_power_watts', 0))
                 for entry in recent_history
             ) / len(recent_history)
 
             peak_power = max(
-                entry['stats'].get('peak_power_watts', 0)
+                float(entry['stats'].get('peak_power_watts', 0))
                 for entry in recent_history
             )
 
             carbon_footprint = total_energy_kwh * self.carbon_factors['us_average']
+
+            recommendations = self._generate_energy_recommendations({
+                'total_power_watts': avg_power,
+                'power_efficiency_score': self._calculate_system_efficiency({})
+            })
 
             return {
                 'time_range_hours': time_range_hours,
@@ -398,13 +446,10 @@ class EnergyOptimizer:
                 'peak_power_watts': peak_power,
                 'carbon_footprint_kg_co2': carbon_footprint,
                 'energy_efficiency_score': self._calculate_system_efficiency({}),
-                'recommendations': self._generate_energy_recommendations({
-                    'total_power_watts': avg_power,
-                    'power_efficiency_score': self._calculate_system_efficiency({})
-                }),
+                'recommendations': recommendations,
                 'data_points': len(recent_history)
             }
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             self.logger.error("Energy report generation failed: %s", e)
             return {'error': str(e)}
