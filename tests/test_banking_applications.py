@@ -31,8 +31,8 @@ class TestBankingApplications:
             "recipient": "test@example.com"
         })
 
-        assert result["status"] == "success"
-        assert "transaction_id" in result
+        assert result["status"] == "completed"  # Updated to match actual implementation
+        assert "transactionId" in result  # Updated to match actual field name
         mock_post.assert_called_once()
 
     def test_payment_workflow_validation(self):

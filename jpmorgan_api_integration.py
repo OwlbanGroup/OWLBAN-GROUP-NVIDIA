@@ -33,9 +33,9 @@ class JPMorganCredentials:
 class PaymentRequest:
     """Payment processing request"""
     amount: float
-    currency: str = "USD"
     recipient_account: str
     sender_account: str
+    currency: str = "USD"
     description: str = "OWLBAN GROUP Payment"
     payment_type: str = "instant"
 
@@ -129,6 +129,7 @@ class JPMorganAPIIntegration:
                 "status": "completed",
                 "amount": payment_request.amount,
                 "currency": payment_request.currency,
+                "exchange_rate": 1.0,  # Mock exchange rate
                 "timestamp": datetime.utcnow().isoformat(),
                 "fee": payment_request.amount * 0.0025,  # 0.25% fee
                 "processing_time_ms": 150
