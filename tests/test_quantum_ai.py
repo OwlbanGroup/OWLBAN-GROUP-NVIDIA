@@ -1,4 +1,4 @@
-IT"""
+"""
 Comprehensive tests for quantum AI systems integration.
 Tests all quantum AI components including NIM, OWLBAN AI, financial systems,
 energy optimization, monitoring, portfolio optimization, risk analysis, and market prediction.
