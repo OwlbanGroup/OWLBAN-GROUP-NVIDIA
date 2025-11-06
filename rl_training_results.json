@@ -1,0 +1,13 @@
+{
+  "episodes": 100,
+  "avg_reward": 30.801,
+  "best_reward": 49.1,
+  "gpu_status": {
+    "device": "cpu",
+    "cuda_available": false,
+    "memory_allocated": 0,
+    "memory_reserved": 0,
+    "experience_buffer_size": 5000
+  },
+  "training_time": 1762468685.5308137
+}

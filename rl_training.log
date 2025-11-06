@@ -1,0 +1,26 @@
+2025-11-06 14:37:05,321 - RLTraining - INFO - OWLBAN GROUP - RL Agent Training Started
+2025-11-06 14:37:05,322 - RLAgent - INFO - NVIDIA GPU-accelerated RL using device: cpu
+2025-11-06 14:37:09,453 - RLTraining - INFO - Starting RL agent training...
+2025-11-06 14:37:09,454 - RLTraining - INFO - Actions: ['increase', 'decrease', 'maintain', 'optimize']
+2025-11-06 14:37:09,455 - RLTraining - INFO - GPU available: cpu
+2025-11-06 14:37:09,459 - RLAgent - INFO - Updating DQN state size to 4
+2025-11-06 14:37:14,430 - RLTraining - INFO - Episode 10/100 - Avg Reward: 11.100
+2025-11-06 14:37:19,034 - RLTraining - INFO - Episode 20/100 - Avg Reward: 32.765
+2025-11-06 14:37:23,804 - RLTraining - INFO - Episode 30/100 - Avg Reward: 36.115
+2025-11-06 14:37:28,366 - RLTraining - INFO - Episode 40/100 - Avg Reward: 38.205
+2025-11-06 14:37:33,125 - RLTraining - INFO - Episode 50/100 - Avg Reward: 36.375
+2025-11-06 14:37:39,227 - RLTraining - INFO - Episode 60/100 - Avg Reward: 29.755
+2025-11-06 14:37:45,259 - RLTraining - INFO - Episode 70/100 - Avg Reward: 30.240
+2025-11-06 14:37:51,604 - RLTraining - INFO - Episode 80/100 - Avg Reward: 28.205
+2025-11-06 14:37:57,038 - RLTraining - INFO - Episode 90/100 - Avg Reward: 31.285
+2025-11-06 14:38:05,495 - RLTraining - INFO - Episode 100/100 - Avg Reward: 33.965
+2025-11-06 14:38:05,515 - RLTraining - INFO - Training completed!
+2025-11-06 14:38:05,518 - RLTraining - INFO - Final average reward: 30.801
+2025-11-06 14:38:05,519 - RLTraining - INFO - Best episode reward: 49.100
+2025-11-06 14:38:05,527 - RLTraining - INFO - GPU Status: {'device': 'cpu', 'cuda_available': False, 'memory_allocated': 0, 'memory_reserved': 0, 'experience_buffer_size': 5000}
+2025-11-06 14:38:05,604 - RLTraining - INFO - Training Results:
+2025-11-06 14:38:05,608 - RLTraining - INFO - - Episodes: 100
+2025-11-06 14:38:05,609 - RLTraining - INFO - - Average Reward: 30.801
+2025-11-06 14:38:05,610 - RLTraining - INFO - - Best Reward: 49.100
+2025-11-06 14:38:05,611 - RLTraining - INFO - - GPU Memory: 0.00 GB
+2025-11-06 14:38:05,645 - RLTraining - INFO - RL training completed successfully!

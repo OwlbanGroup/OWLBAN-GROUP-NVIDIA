@@ -1,0 +1,22 @@
+2025-11-06 14:39:03,381 - AnomalyTraining - INFO - OWLBAN GROUP - Anomaly Detection Training Started
+2025-11-06 14:39:03,384 - AnomalyTraining - INFO - Generating training data...
+2025-11-06 14:39:03,657 - AdvancedAnomalyDetection - INFO - NVIDIA GPU-accelerated anomaly detection using device: cpu
+2025-11-06 14:39:03,657 - AnomalyTraining - INFO - Starting anomaly detection training...
+2025-11-06 14:39:03,684 - AnomalyTraining - INFO - Training autoencoder on normal data...
+2025-11-06 14:39:03,919 - AnomalyTraining - INFO - Epoch 10/50 completed
+2025-11-06 14:39:04,175 - AnomalyTraining - INFO - Epoch 20/50 completed
+2025-11-06 14:39:04,451 - AnomalyTraining - INFO - Epoch 30/50 completed
+2025-11-06 14:39:04,608 - AnomalyTraining - INFO - Epoch 40/50 completed
+2025-11-06 14:39:04,756 - AnomalyTraining - INFO - Epoch 50/50 completed
+2025-11-06 14:39:04,757 - AnomalyTraining - INFO - Testing on normal data...
+2025-11-06 14:39:04,869 - AnomalyTraining - INFO - Testing on anomalous data...
+2025-11-06 14:39:04,947 - AnomalyTraining - INFO - Training completed!
+2025-11-06 14:39:04,948 - AnomalyTraining - INFO - Normal data reconstruction error: 0.3281
+2025-11-06 14:39:04,948 - AnomalyTraining - INFO - Anomalous data reconstruction error: 0.3955
+2025-11-06 14:39:04,949 - AnomalyTraining - INFO - Anomaly detection rate: 0.000
+2025-11-06 14:39:04,950 - AnomalyTraining - INFO - GPU Status: {'device': 'cpu', 'cuda_available': False, 'model_parameters': 5546, 'input_size': 10}
+2025-11-06 14:39:04,951 - AnomalyTraining - INFO - Training Results:
+2025-11-06 14:39:04,952 - AnomalyTraining - INFO - - Normal Reconstruction Error: 0.3281
+2025-11-06 14:39:04,952 - AnomalyTraining - INFO - - Anomaly Reconstruction Error: 0.3955
+2025-11-06 14:39:04,953 - AnomalyTraining - INFO - - Detection Rate: 0.000
+2025-11-06 14:39:04,953 - AnomalyTraining - ERROR - Training failed: 'memory_allocated'
