@@ -3,13 +3,14 @@ Quantum Market Predictor
 OWLBAN GROUP - Quantum Machine Learning for Market Prediction
 """
 
-import numpy as np
-import torch
-import torch.nn as nn
 import logging
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
+
+import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
 
 @dataclass
 class MarketData:
@@ -50,8 +51,9 @@ class QuantumLSTM(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass through the quantum LSTM network."""
         # LSTM processing
-        lstm_out, (h_n, c_n) = self.quantum_lstm(x)
+        lstm_out, (_, _) = self.quantum_lstm(x)
 
         # Quantum attention mechanism
         attn_out, _ = self.quantum_attention(lstm_out.transpose(0, 1),
@@ -74,10 +76,11 @@ class QuantumMarketPredictor:
         self.sequence_length = sequence_length
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
         self.logger = logging.getLogger("QuantumMarketPredictor")
+        self.rng = np.random.default_rng()
 
         # Initialize quantum model
-        self.quantum_model = QuantumLSTM(input_size=10).to(self.device)  # Default input size
-        self.optimizer = torch.optim.Adam(self.quantum_model.parameters(), lr=0.001)
+        self.quantum_model = QuantumLSTM(input_size=6).to(self.device)  # Match actual feature count
+        self.optimizer = torch.optim.Adam(self.quantum_model.parameters(), lr=0.001, weight_decay=1e-4)
         self.criterion = nn.MSELoss()
 
         self.market_data: Dict[str, MarketData] = {}
@@ -104,7 +107,7 @@ class QuantumMarketPredictor:
 
         # Technical indicators
         if data.technical_indicators:
-            for indicator_name, indicator_values in data.technical_indicators.items():
+            for _, indicator_values in data.technical_indicators.items():
                 features.append(indicator_values)
         else:
             # Basic technical indicators
@@ -140,16 +143,16 @@ class QuantumMarketPredictor:
 
         # Fill NaN values with forward fill then backward fill
         df = pd.DataFrame(feature_matrix)
-        df = df.fillna(method='ffill').fillna(method='bfill').fillna(0)
+        df = df.ffill().bfill().fillna(0)
         feature_matrix = df.values
 
         # Create sequences
-        X, y = [], []
+        x_features, y_returns = [], []
         for i in range(len(feature_matrix) - self.sequence_length):
-            X.append(feature_matrix[i:i+self.sequence_length])
-            y.append(returns[i+self.sequence_length])
+            x_features.append(feature_matrix[i:i+self.sequence_length])
+            y_returns.append(returns[i+self.sequence_length])
 
-        return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+        return torch.tensor(x_features, dtype=torch.float32), torch.tensor(y_returns, dtype=torch.float32)
 
     def _calculate_sma(self, data: np.ndarray, period: int) -> np.ndarray:
         """Calculate Simple Moving Average"""
@@ -212,22 +215,22 @@ class QuantumMarketPredictor:
         if symbol not in self.market_data:
             raise ValueError(f"No market data available for {symbol}")
 
-        X, y = self._preprocess_data(symbol)
+        x_features, y_returns = self._preprocess_data(symbol)
 
         # Remove NaN values
-        valid_indices = ~np.isnan(X).any(axis=(1,2)) & ~np.isnan(y)
-        X = X[valid_indices]
-        y = y[valid_indices]
+        valid_indices = ~np.isnan(x_features).any(axis=(1,2)) & ~np.isnan(y_returns)
+        x_features = x_features[valid_indices]
+        y_returns = y_returns[valid_indices]
 
-        if len(X) == 0:
+        if len(x_features) == 0:
             raise ValueError("No valid training data after preprocessing")
 
         # Move to device
-        X, y = X.to(self.device), y.to(self.device)
+        x_features, y_returns = x_features.to(self.device), y_returns.to(self.device)
 
         # Training loop
         self.quantum_model.train()
-        dataset_size = len(X)
+        dataset_size = len(x_features)
 
         for epoch in range(epochs):
             epoch_loss = 0
@@ -235,15 +238,15 @@ class QuantumMarketPredictor:
 
             # Shuffle data
             indices = torch.randperm(dataset_size)
-            X_shuffled = X[indices]
-            y_shuffled = y[indices]
+            x_shuffled = x_features[indices]
+            y_shuffled = y_returns[indices]
 
             for i in range(0, dataset_size, batch_size):
-                batch_X = X_shuffled[i:i+batch_size]
+                batch_x = x_shuffled[i:i+batch_size]
                 batch_y = y_shuffled[i:i+batch_size]
 
                 self.optimizer.zero_grad()
-                outputs = self.quantum_model(batch_X)
+                outputs = self.quantum_model(batch_x)
                 loss = self.criterion(outputs.squeeze(), batch_y)
                 loss.backward()
                 self.optimizer.step()
@@ -253,7 +256,10 @@ class QuantumMarketPredictor:
 
             if (epoch + 1) % 10 == 0:
                 avg_loss = epoch_loss / n_batches
-                self.logger.info("Epoch %d/%d, Average Loss: %.6f", epoch+1, epochs, avg_loss)
+                self.logger.info(
+                    "Epoch %d/%d, Average Loss: %.6f",
+                    epoch + 1, epochs, avg_loss
+                )
 
         self.is_trained = True
         self.logger.info("Quantum model training completed")
@@ -275,17 +281,20 @@ class QuantumMarketPredictor:
         if symbol not in self.market_data:
             raise ValueError(f"No market data available for {symbol}")
 
-        self.logger.info("Predicting market movement for %s (%d days ahead)", symbol, prediction_horizon)
+        self.logger.info(
+            "Predicting market movement for %s (%d days ahead)",
+            symbol, prediction_horizon
+        )
 
         # Prepare input data (use most recent sequence)
         data = self.market_data[symbol]
-        X, _ = self._preprocess_data(symbol)
+        x_features, _ = self._preprocess_data(symbol)
 
-        if len(X) == 0:
+        if len(x_features) == 0:
             raise ValueError("Insufficient data for prediction")
 
         # Use most recent data point
-        latest_data = X[-1:].to(self.device)
+        latest_data = x_features[-1:].to(self.device)
 
         # Make prediction
         self.quantum_model.eval()
@@ -308,7 +317,7 @@ class QuantumMarketPredictor:
             confidence = 0.5
 
         # Quantum accuracy estimate (simplified)
-        quantum_accuracy = 0.75 + 0.15 * np.random.random()  # 75-90% range
+        quantum_accuracy = 0.75 + 0.15 * self.rng.random()  # 75-90% range
 
         # Feature importance (simplified)
         feature_importance = {
@@ -336,9 +345,6 @@ class QuantumMarketPredictor:
         """
         Make ensemble predictions across multiple symbols using quantum correlations
         """
-        if weights is None:
-            weights = [1.0 / len(symbols)] * len(symbols)
-
         predictions = {}
         for symbol in symbols:
             if symbol in self.market_data:
@@ -348,7 +354,7 @@ class QuantumMarketPredictor:
         # Apply quantum correlation adjustments (simplified)
         for symbol, pred in predictions.items():
             # Quantum interference effect
-            interference_factor = np.random.uniform(0.95, 1.05)
+            interference_factor = self.rng.uniform(0.95, 1.05)
             pred.predicted_price *= interference_factor
             pred.confidence *= interference_factor
 

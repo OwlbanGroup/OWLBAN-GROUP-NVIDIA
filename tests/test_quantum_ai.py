@@ -1,4 +1,4 @@
-"""
+IT"""
 Comprehensive tests for quantum AI systems integration.
 Tests all quantum AI components including NIM, OWLBAN AI, financial systems,
 energy optimization, monitoring, portfolio optimization, risk analysis, and market prediction.
@@ -111,10 +111,29 @@ class TestQuantumAISystems:
     def test_market_predictor(self):
         """Test quantum market prediction."""
         qmp = QuantumMarketPredictor()
-        historical_data = np.random.rand(1000, 20)
-        predictions = qmp.predict_market(historical_data)
-        assert isinstance(predictions, np.ndarray)
-        assert predictions.shape[0] == 1000
+
+        # Create sample market data
+        prices = np.random.rand(1000) * 100 + 100  # Random prices around 100
+        volumes = np.random.rand(1000) * 1000000  # Random volumes
+        timestamps = np.arange(1000)
+
+        market_data = MarketData(
+            symbol="AAPL",
+            prices=prices,
+            volumes=volumes,
+            timestamps=timestamps
+        )
+
+        # Add market data and train
+        qmp.add_market_data(market_data)
+        qmp.train_quantum_model("AAPL", epochs=1)  # Quick training for test
+
+        # Make prediction
+        prediction = qmp.predict_market_movement("AAPL")
+        assert hasattr(prediction, 'predicted_price')
+        assert hasattr(prediction, 'confidence')
+        assert hasattr(prediction, 'direction')
+        assert prediction.direction in ['up', 'down', 'neutral']
 
 
 if __name__ == "__main__":
