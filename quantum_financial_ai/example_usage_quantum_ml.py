@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 import time
-from quantum_financial_ai.quantum_machine_learning_pipeline import (
+from quantum_machine_learning_pipeline import (
     QuantumMLPipeline,
     FinancialQuantumMLApplication,
     create_synthetic_financial_data,
