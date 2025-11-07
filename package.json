@@ -1,0 +1,29 @@
+{
+  "name": "owlban-group-nvidia",
+  "version": "1.0.0",
+  "description": "OWLBAN GROUP &amp; NVIDIA AI",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OwlbanGroup/OWLBAN-GROUP-NVIDIA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/OwlbanGroup/OWLBAN-GROUP-NVIDIA/issues"
+  },
+  "homepage": "https://github.com/OwlbanGroup/OWLBAN-GROUP-NVIDIA#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
