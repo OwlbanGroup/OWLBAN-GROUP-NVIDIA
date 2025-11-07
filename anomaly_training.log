@@ -20,3 +20,25 @@
 2025-11-06 14:39:04,952 - AnomalyTraining - INFO - - Anomaly Reconstruction Error: 0.3955
 2025-11-06 14:39:04,953 - AnomalyTraining - INFO - - Detection Rate: 0.000
 2025-11-06 14:39:04,953 - AnomalyTraining - ERROR - Training failed: 'memory_allocated'
+2025-11-06 16:31:58,249 - AnomalyTraining - INFO - OWLBAN GROUP - Anomaly Detection Training Started
+2025-11-06 16:31:58,251 - AnomalyTraining - INFO - Generating training data...
+2025-11-06 16:31:58,386 - AdvancedAnomalyDetection - INFO - NVIDIA GPU-accelerated anomaly detection using device: cpu
+2025-11-06 16:31:58,387 - AnomalyTraining - INFO - Starting anomaly detection training...
+2025-11-06 16:31:58,412 - AnomalyTraining - INFO - Training autoencoder on normal data...
+2025-11-06 16:31:58,552 - AnomalyTraining - INFO - Epoch 10/50 completed
+2025-11-06 16:31:58,648 - AnomalyTraining - INFO - Epoch 20/50 completed
+2025-11-06 16:31:58,760 - AnomalyTraining - INFO - Epoch 30/50 completed
+2025-11-06 16:31:58,839 - AnomalyTraining - INFO - Epoch 40/50 completed
+2025-11-06 16:31:58,957 - AnomalyTraining - INFO - Epoch 50/50 completed
+2025-11-06 16:31:58,959 - AnomalyTraining - INFO - Testing on normal data...
+2025-11-06 16:31:59,020 - AnomalyTraining - INFO - Testing on anomalous data...
+2025-11-06 16:31:59,061 - AnomalyTraining - INFO - Training completed!
+2025-11-06 16:31:59,062 - AnomalyTraining - INFO - Normal data reconstruction error: 0.2918
+2025-11-06 16:31:59,062 - AnomalyTraining - INFO - Anomalous data reconstruction error: 0.3465
+2025-11-06 16:31:59,062 - AnomalyTraining - INFO - Anomaly detection rate: 0.000
+2025-11-06 16:31:59,063 - AnomalyTraining - INFO - GPU Status: {'device': 'cpu', 'cuda_available': False, 'model_parameters': 5546, 'input_size': 10}
+2025-11-06 16:31:59,064 - AnomalyTraining - INFO - Training Results:
+2025-11-06 16:31:59,064 - AnomalyTraining - INFO - - Normal Reconstruction Error: 0.2918
+2025-11-06 16:31:59,065 - AnomalyTraining - INFO - - Anomaly Reconstruction Error: 0.3465
+2025-11-06 16:31:59,065 - AnomalyTraining - INFO - - Detection Rate: 0.000
+2025-11-06 16:31:59,065 - AnomalyTraining - ERROR - Training failed: 'memory_allocated'
