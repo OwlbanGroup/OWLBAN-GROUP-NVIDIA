@@ -1,0 +1,159 @@
+2025/11/14 20:54:42 [warn] 1#1: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 20:54:42 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 20:55:12 [emerg] 42#42: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:55:46 [emerg] 48#48: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:56:20 [emerg] 54#54: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:56:54 [emerg] 60#60: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:57:28 [emerg] 66#66: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:58:03 [emerg] 72#72: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:58:38 [emerg] 78#78: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:59:14 [emerg] 84#84: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 20:59:49 [emerg] 90#90: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:00:23 [emerg] 96#96: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:00:58 [emerg] 102#102: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:01:34 [emerg] 108#108: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:02:08 [emerg] 114#114: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:02:43 [emerg] 120#120: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:03:18 [emerg] 126#126: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:03:54 [warn] 132#132: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:03:54 [warn] 132#132: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:04:31 [emerg] 138#138: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:05:14 [warn] 144#144: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:05:14 [warn] 144#144: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:05:50 [warn] 150#150: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:05:50 [warn] 150#150: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:06:28 [emerg] 156#156: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:07:05 [warn] 162#162: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:07:05 [warn] 162#162: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:07:43 [warn] 169#169: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:07:43 [warn] 169#169: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:08:20 [warn] 175#175: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:08:20 [warn] 175#175: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:08:58 [warn] 181#181: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:08:58 [warn] 181#181: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:09:29 [emerg] 187#187: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:10:04 [warn] 193#193: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:10:04 [warn] 193#193: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:10:41 [warn] 199#199: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:10:41 [warn] 199#199: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:11:12 [warn] 205#205: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:11:12 [warn] 205#205: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:11:44 [emerg] 211#211: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:12:19 [warn] 217#217: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:12:19 [warn] 217#217: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:12:53 [emerg] 223#223: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:13:28 [emerg] 230#230: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:14:13 [emerg] 236#236: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:14:49 [emerg] 242#242: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:15:25 [emerg] 248#248: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:15:59 [emerg] 254#254: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:16:35 [warn] 260#260: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:16:35 [warn] 260#260: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:17:09 [emerg] 267#267: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:17:46 [emerg] 273#273: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:18:23 [emerg] 279#279: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:18:59 [emerg] 285#285: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:19:33 [emerg] 290#290: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:20:09 [emerg] 296#296: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:20:43 [emerg] 303#303: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:21:18 [emerg] 309#309: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:21:53 [emerg] 315#315: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:22:29 [emerg] 321#321: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:23:04 [emerg] 327#327: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:23:40 [emerg] 334#334: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:24:14 [emerg] 340#340: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:24:48 [emerg] 346#346: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:25:25 [warn] 352#352: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:25:25 [warn] 352#352: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:26:02 [emerg] 358#358: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:26:37 [emerg] 364#364: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:27:53 [emerg] 370#370: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:28:28 [emerg] 376#376: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:29:04 [emerg] 382#382: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:29:38 [emerg] 388#388: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:30:13 [emerg] 395#395: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:30:49 [emerg] 401#401: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:31:23 [emerg] 407#407: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:31:58 [emerg] 413#413: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:32:33 [warn] 419#419: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:32:33 [warn] 419#419: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:33:12 [emerg] 425#425: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:33:49 [warn] 431#431: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:33:49 [warn] 431#431: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:34:20 [warn] 437#437: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:34:20 [warn] 437#437: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:34:54 [emerg] 443#443: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:35:30 [warn] 449#449: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:35:30 [warn] 449#449: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:36:01 [emerg] 455#455: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:36:42 [emerg] 461#461: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:37:18 [emerg] 467#467: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:37:53 [warn] 473#473: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:37:53 [warn] 473#473: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:38:27 [emerg] 479#479: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:39:01 [warn] 485#485: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:39:01 [warn] 485#485: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:39:33 [emerg] 491#491: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:40:10 [warn] 497#497: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:40:10 [warn] 497#497: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:40:40 [emerg] 502#502: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:41:16 [warn] 509#509: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:41:16 [warn] 509#509: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:41:47 [warn] 515#515: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:41:47 [warn] 515#515: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:42:18 [emerg] 521#521: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:42:54 [emerg] 527#527: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:43:29 [emerg] 533#533: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:44:03 [emerg] 539#539: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:44:40 [warn] 545#545: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:44:40 [warn] 545#545: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:45:17 [warn] 551#551: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:45:17 [warn] 551#551: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:45:50 [warn] 557#557: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:45:50 [warn] 557#557: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:46:22 [emerg] 563#563: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:46:58 [emerg] 569#569: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:47:36 [warn] 575#575: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:47:36 [warn] 575#575: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:48:14 [warn] 581#581: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:48:14 [warn] 581#581: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:48:50 [emerg] 588#588: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:49:26 [emerg] 594#594: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:50:04 [warn] 600#600: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:50:04 [warn] 600#600: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:50:41 [emerg] 606#606: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:51:15 [warn] 612#612: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:51:15 [warn] 612#612: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:51:46 [emerg] 618#618: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:52:21 [warn] 624#624: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:52:21 [warn] 624#624: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:52:52 [warn] 629#629: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:52:52 [warn] 629#629: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:53:23 [emerg] 635#635: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:53:58 [emerg] 641#641: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:54:32 [emerg] 647#647: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:55:07 [warn] 653#653: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 21:55:07 [warn] 653#653: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 21:55:37 [emerg] 659#659: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:56:11 [emerg] 665#665: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:56:45 [emerg] 671#671: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:57:21 [emerg] 677#677: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:57:55 [emerg] 683#683: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:58:29 [emerg] 689#689: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:59:03 [emerg] 695#695: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 21:59:37 [emerg] 701#701: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:00:11 [emerg] 707#707: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:00:47 [emerg] 714#714: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:01:21 [emerg] 720#720: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:01:55 [emerg] 726#726: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:02:29 [emerg] 732#732: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:03:05 [emerg] 738#738: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:03:39 [emerg] 744#744: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:04:14 [emerg] 750#750: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:04:48 [emerg] 756#756: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:05:22 [emerg] 763#763: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:05:57 [emerg] 769#769: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:06:33 [emerg] 775#775: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:07:07 [emerg] 781#781: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:07:43 [emerg] 787#787: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:08:19 [emerg] 793#793: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50

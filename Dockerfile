@@ -53,16 +53,19 @@ CMD ["python", "production_server.py"]
 # Production stage
 FROM base as production
 
+# Switch back to root to install packages
+USER root
+
 # Install production dependencies
 RUN pip install --no-cache-dir waitress gunicorn
-
-# Copy production configuration
-COPY .env.production .env
 
 # Set production environment
 ENV FLASK_ENV=production \
     TESTING=false \
     SECRET_KEY=production-secret-key-change-this
+
+# Switch back to appuser
+USER appuser
 
 # Use production server
 CMD ["python", "production_server.py"]

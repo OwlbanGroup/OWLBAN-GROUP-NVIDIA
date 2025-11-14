@@ -1,0 +1,45 @@
+﻿JPMorgan Financial APIs - Docker Backup Manifest
+================================================
+Backup Date: 2025-11-14 15:51:17
+Backup Location: .\backups\docker_backup_2025-11-14_15-50-51
+
+Contents:
+---------
+1. PostgreSQL full database dump (if accessible)
+2. Docker volume backups (tar.gz archives)
+3. Configuration files
+4. Container logs
+
+Volume Backups:
+  - jpmorgan_financial_apis_postgres_data.tar.gz
+  - jpmorgan_financial_apis_redis_data.tar.gz
+  - jpmorgan_financial_apis_prometheus_data.tar.gz
+  - jpmorgan_financial_apis_grafana_data.tar.gz
+  - jpmorgan_financial_apis_alertmanager_data.tar.gz
+
+Configuration Files:
+  - docker-compose.production.yml
+  - alertmanager.yml
+  - prometheus.yml
+  - .env.production
+  - nginx.conf
+
+Container Logs:
+  - jpmorgan-nginx-prod_logs.txt
+  - jpmorgan-grafana-prod_logs.txt
+  - jpmorgan-api-prod_logs.txt
+  - jpmorgan-alertmanager-prod_logs.txt
+  - jpmorgan-prometheus-prod_logs.txt
+  - jpmorgan-postgres-prod_logs.txt
+  - jpmorgan-redis-prod_logs.txt
+  - jpmorgan-node-exporter-prod_logs.txt
+
+Restoration Instructions:
+------------------------
+To restore PostgreSQL data:
+  docker exec -i jpmorgan-postgres-prod psql -U jpmorgan_prod < postgres_full_backup.sql
+
+To restore a volume:
+  docker run --rm -v VOLUME_NAME:/target -v C:\Users\bizle\Desktop\jpmorgan_financial_apis/.\backups\docker_backup_2025-11-14_15-50-51:/backup alpine tar xzf /backup/VOLUME_NAME.tar.gz -C /target
+
+================================================
