@@ -1,0 +1,146 @@
+# Grafana Helm Chart Values for JPMorgan Financial APIs
+adminPassword: ${GRAFANA_ADMIN_PASSWORD}
+
+image:
+  repository: grafana/grafana
+  tag: 9.3.0
+
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClassName: "fast-ssd"
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 500m
+  limits:
+    memory: 1Gi
+    cpu: 1000m
+
+securityContext:
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472
+
+service:
+  type: ClusterIP
+  port: 80
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+
+grafana.ini:
+  server:
+    domain: grafana.jpmorgan.com
+    root_url: https://grafana.jpmorgan.com
+    serve_from_sub_path: false
+  security:
+    admin_user: admin
+    allow_embedding: true
+    cookie_secure: true
+    cookie_samesite: strict
+  auth:
+    disable_login_form: false
+    oauth_auto_login: false
+  auth.anonymous:
+    enabled: true
+    org_name: JPMorgan
+    org_role: Viewer
+  database:
+    type: sqlite3
+  session:
+    provider: memory
+  analytics:
+    reporting_enabled: false
+    check_for_updates: false
+  alerting:
+    enabled: true
+    execute_alerts: true
+  metrics:
+    enabled: true
+  log:
+    mode: console
+    level: info
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'jpmorgan'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
+
+dashboards:
+  jpmorgan-telemetry:
+    gnetId: null
+    revision: null
+    datasource: Prometheus
+  jpmorgan-gpu:
+    gnetId: null
+    revision: null
+    datasource: Prometheus
+  jpmorgan-system:
+    gnetId: null
+    revision: null
+    datasource: Prometheus
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server.jpmorgan-apis.svc.cluster.local
+      access: proxy
+      isDefault: true
+      editable: true
+    - name: Loki
+      type: loki
+      url: http://loki.jpmorgan-apis.svc.cluster.local
+      access: proxy
+      editable: true
+
+plugins:
+  - grafana-piechart-panel
+  - grafana-worldmap-panel
+  - grafana-clock-panel
+  - grafana-simple-json-datasource
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - grafana.jpmorgan.com
+  tls:
+    - secretName: grafana-tls
+      hosts:
+        - grafana.jpmorgan.com
+
+env:
+  - name: GF_SECURITY_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: grafana-secret
+        key: admin-password
+  - name: GF_SECURITY_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: grafana-secret
+        key: secret-key
+
+extraSecretMounts:
+  - name: grafana-secret
+    secretName: grafana-secret
+    defaultMode: 0440
+    mountPath: /etc/secrets/grafana
+    readOnly: true

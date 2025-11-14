@@ -1,0 +1,313 @@
+name: Enhanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_new.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_new.txt
+        pip install pytest-cov black isort mypy flake8 bandit safety pre-commit
+
+    - name: Lint with flake8
+      run: |
+        flake8 src/ app.py --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/ app.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Check code formatting with black
+      run: black --check --diff src/ app.py
+
+    - name: Check import sorting with isort
+      run: isort --check-only --diff src/ app.py
+
+    - name: Type checking with mypy
+      run: mypy src/ app.py --ignore-missing-imports
+
+    - name: Security scan with bandit
+      run: bandit -r src/ app.py -f json -o bandit-report.json || true
+
+    - name: Check security with safety
+      run: safety check --output json | tee safety-report.json || true
+
+    - name: Run tests with coverage
+      run: |
+        pytest test_*.py --cov=src --cov-report=xml --cov-report=html --cov-fail-under=80
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports-${{ matrix.python-version }}
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  security-audit:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install security tools
+      run: |
+        pip install bandit safety pip-audit
+
+    - name: Audit dependencies
+      run: |
+        pip-audit --format json | tee pip-audit-report.json || true
+
+    - name: Check for secrets
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload security audit reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit-reports
+        path: pip-audit-report.json
+
+  load-test:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Artillery
+      run: |
+        cd load-testing
+        npm install
+
+    - name: Run smoke load test
+      run: |
+        cd load-testing
+        npm run test:smoke
+
+    - name: Run load test
+      run: |
+        cd load-testing
+        npm run test:load
+
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: load-testing/
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [test, security-audit, load-test]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: jpmorgan/telemetry-api
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'image'
+        scan-ref: 'jpmorgan/telemetry-api:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Install Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.12.0
+
+    - name: Add Helm repositories
+      run: |
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo add elastic https://helm.elastic.co
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+
+    - name: Deploy to staging with Helm
+      run: |
+        cd helm/jpmorgan-telemetry
+        helm upgrade --install jpmorgan-telemetry-staging . \
+          --namespace staging \
+          --create-namespace \
+          --set image.tag=${{ github.sha }} \
+          --set postgresql.enabled=true \
+          --set redis.enabled=true \
+          --set elasticsearch.enabled=true \
+          --set kibana.enabled=true \
+          --set prometheus.enabled=true \
+          --set alertmanager.enabled=true \
+          --values values-staging.yaml \
+          --wait \
+          --timeout 600s
+
+    - name: Run post-deployment tests
+      run: |
+        echo "Running post-deployment health checks..."
+        # Add health check commands here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Install Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.12.0
+
+    - name: Add Helm repositories
+      run: |
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo add elastic https://helm.elastic.co
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+
+    - name: Deploy to production with Helm
+      run: |
+        cd helm/jpmorgan-telemetry
+        helm upgrade --install jpmorgan-telemetry-prod . \
+          --namespace production \
+          --create-namespace \
+          --set image.tag=${{ github.sha }} \
+          --set postgresql.enabled=true \
+          --set redis.enabled=true \
+          --set elasticsearch.enabled=true \
+          --set kibana.enabled=true \
+          --set prometheus.enabled=true \
+          --set alertmanager.enabled=true \
+          --values values-production.yaml \
+          --wait \
+          --timeout 900s
+
+    - name: Run production validation tests
+      run: |
+        echo "Running production validation tests..."
+        # Add comprehensive validation tests here
+
+    - name: Create backup
+      run: |
+        echo "Creating production backup..."
+        # Add backup commands here
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, security-audit, docker]
+    if: always()
+
+    steps:
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "Pipeline failed! Check the logs for details."
+        # Add notification logic here (Slack, email, etc.)

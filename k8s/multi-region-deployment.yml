@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multi-region-config
+  namespace: jpmorgan-apis
+data:
+  PRIMARY_REGION: "us-east-1"
+  SECONDARY_REGIONS: "us-west-2,eu-west-1,ap-southeast-1"
+  CROSS_REGION_LOAD_BALANCING: "true"
+  REGION_FAILOVER_ENABLED: "true"
+  DATA_REPLICATION_ENABLED: "true"
+  GLOBAL_DNS_LOAD_BALANCING: "true"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-region-ingress
+  namespace: jpmorgan-apis
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Region: $region";
+    external-dns.alpha.kubernetes.io/hostname: "api.jpmorgan.com"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - api.jpmorgan.com
+    secretName: jpmorgan-tls
+  rules:
+  - host: api.jpmorgan.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jpmorgan-financial-apis
+            port:
+              number: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jpmorgan-financial-apis-us-east-1
+  namespace: jpmorgan-apis
+  labels:
+    app: jpmorgan-financial-apis
+    region: us-east-1
+    tier: primary
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jpmorgan-financial-apis
+      region: us-east-1
+  template:
+    metadata:
+      labels:
+        app: jpmorgan-financial-apis
+        region: us-east-1
+        tier: primary
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-east-1
+      containers:
+      - name: api-server
+        image: jpmorgan.azurecr.io/jpmorgan-financial-apis:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: REGION
+          value: "us-east-1"
+        - name: TIER
+          value: "primary"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: primary-db-url
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2
+            memory: 4Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jpmorgan-financial-apis-us-west-2
+  namespace: jpmorgan-apis
+  labels:
+    app: jpmorgan-financial-apis
+    region: us-west-2
+    tier: secondary
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jpmorgan-financial-apis
+      region: us-west-2
+  template:
+    metadata:
+      labels:
+        app: jpmorgan-financial-apis
+        region: us-west-2
+        tier: secondary
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west-2
+      containers:
+      - name: api-server
+        image: jpmorgan.azurecr.io/jpmorgan-financial-apis:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: REGION
+          value: "us-west-2"
+        - name: TIER
+          value: "secondary"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: secondary-db-url
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2
+            memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jpmorgan-financial-apis
+  namespace: jpmorgan-apis
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+spec:
+  type: LoadBalancer
+  selector:
+    app: jpmorgan-financial-apis
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jpmorgan-api-pdb
+  namespace: jpmorgan-apis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: jpmorgan-financial-apis
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: multi-region-network-policy
+  namespace: jpmorgan-apis
+spec:
+  podSelector:
+    matchLabels:
+      app: jpmorgan-financial-apis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgresql
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443

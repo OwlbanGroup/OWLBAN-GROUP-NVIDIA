@@ -1,0 +1,260 @@
+{
+  "dashboard": {
+    "title": "JPMorgan Financial APIs - Telemetry & GPU Dashboard",
+    "tags": ["telemetry", "jpmorgan", "financial", "gpu", "nvidia"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Request Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "GPU Utilization",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "gpu_utilization_percent",
+            "legendFormat": "GPU {{gpu_id}} Utilization %"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "GPU Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "gpu_memory_used_bytes / gpu_memory_total_bytes * 100",
+            "legendFormat": "GPU {{gpu_id}} Memory %"
+          }
+        ],
+        "gridPos": {
+          "x": 8,
+          "y": 8,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "GPU Temperature",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "gpu_temperature_celsius",
+            "legendFormat": "GPU {{gpu_id}} Temp °C"
+          }
+        ],
+        "gridPos": {
+          "x": 16,
+          "y": 8,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(errors_total[5m])",
+            "legendFormat": "{{type}} - {{endpoint}}"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Telemetry Events Processed",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(telemetry_events_processed_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Batch Size Distribution",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "rate(telemetry_batch_size_bucket[5m])",
+            "legendFormat": "Batch size distribution"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Anomaly Detection Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(anomaly_detections_total[5m])",
+            "legendFormat": "{{result}}"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "GPU Power Consumption",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "gpu_power_usage_watts",
+            "legendFormat": "GPU {{gpu_id}} Power (W)"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 32,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "ML Model Performance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ml_model_inference_time_seconds",
+            "legendFormat": "Inference Time"
+          },
+          {
+            "expr": "ml_model_accuracy",
+            "legendFormat": "Model Accuracy"
+          }
+        ],
+        "gridPos": {
+          "x": 8,
+          "y": 32,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Active Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "active_connections"
+          }
+        ],
+        "gridPos": {
+          "x": 16,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "title": "Service Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"telemetry-api\"}"
+          }
+        ],
+        "gridPos": {
+          "x": 20,
+          "y": 32,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "title": "GPU Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "gpu_status",
+            "legendFormat": "GPU Available"
+          }
+        ],
+        "gridPos": {
+          "x": 16,
+          "y": 36,
+          "w": 4,
+          "h": 4
+        }
+      },
+      {
+        "title": "Database Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "db_connections_active",
+            "legendFormat": "Active DB Connections"
+          }
+        ],
+        "gridPos": {
+          "x": 20,
+          "y": 36,
+          "w": 4,
+          "h": 4
+        }
+      }
+    ],
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

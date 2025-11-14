@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPMorgan Financial APIs - Complete Integration Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- React CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .pulse-green { animation: pulseGreen 2s infinite; }
+        @keyframes pulseGreen { 0%, 100% { background-color: rgb(34, 197, 94); } 50% { background-color: rgb(22, 163, 74); } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">JPMorgan Financial APIs</h1>
+                    <p class="text-gray-600 mt-2">Complete Integration Dashboard - Enterprise Telemetry Processing</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full pulse-green mr-2"></div>
+                        <span class="text-sm text-gray-600">System Online</span>
+                    </div>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">v1.0.0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Health Check -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">API Health</h3>
+                        <p class="text-sm text-gray-600" id="health-status">Checking...</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🏥</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WebSocket Status -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">WebSocket</h3>
+                        <p class="text-sm text-gray-600" id="ws-status">Checking...</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🔌</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ML Status -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">ML Engine</h3>
+                        <p class="text-sm text-gray-600" id="ml-status">Checking...</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🧠</span>
+                    </div>
+                </div>
+                <!-- ML Controls -->
+                <div class="mt-4 space-y-2">
+                    <button onclick="activateMLEngine()" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm mr-2">
+                        Activate ML
+                    </button>
+                    <button onclick="runAnomalyDetection()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm mr-2">
+                        Detect Anomalies
+                    </button>
+                    <button onclick="trainMLModel()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                        Train Model
+                    </button>
+                </div>
+                <!-- ML Results -->
+                <div class="mt-3 text-xs">
+                    <div class="text-gray-600">Model Status: <span id="model-status">Not Trained</span></div>
+                    <div class="text-gray-600">Last Anomalies: <span id="last-anomalies">0</span></div>
+                    <div class="text-gray-600">Accuracy: <span id="model-accuracy">N/A</span></div>
+                </div>
+            </div>
+
+            <!-- Database Status -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Database</h3>
+                        <p class="text-sm text-gray-600" id="db-status">Checking...</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🗄️</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Features Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- API Endpoints -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">API Endpoints</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium">Health Check</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">GET /health</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium">Telemetry Processing</span>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">POST /telemetry</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium">ML Anomalies</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">POST /ml/anomalies</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium">Data Conversion</span>
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">POST /data/convert</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium">GitHub MCP</span>
+                        <span class="px-2 py-1 bg-pink-100 text-pink-800 rounded text-sm">GET /mcp/repos</span>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Real-time Metrics -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Real-time Metrics</h3>
+                <canvas id="metricsChart" width="400" height="200"></canvas>
+                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Requests/min:</span>
+                        <span class="font-semibold text-blue-600" id="requests-min">0</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Active Connections:</span>
+                        <span class="font-semibold text-green-600" id="active-connections">0</span>
+                    </div>
+                </div>
+                <!-- Live Data Display -->
+                <div class="mt-6 border-t pt-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">Live Data Updates</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Telemetry Events:</span>
+                            <span class="font-semibold text-purple-600" id="telemetry-events">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Anomalies Detected:</span>
+                            <span class="font-semibold text-red-600" id="anomalies-detected">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Businesses:</span>
+                            <span class="font-semibold text-indigo-600" id="total-businesses">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Assets:</span>
+                            <span class="font-semibold text-green-600" id="total-assets">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Active Users:</span>
+                            <span class="font-semibold text-orange-600" id="active-users">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Components -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Integrated Components</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Flask API -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">🌐</span>
+                        <h4 class="font-semibold">Flask REST API</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Enterprise-grade REST API with 15+ endpoints</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Health Checks</span>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Rate Limiting</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">CORS</span>
+                    </div>
+                </div>
+
+                <!-- WebSocket -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">🔌</span>
+                        <h4 class="font-semibold">WebSocket Streaming</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Real-time telemetry data streaming</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Real-time</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Async</span>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">Auto-reconnect</span>
+                    </div>
+                </div>
+
+                <!-- Machine Learning -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">🧠</span>
+                        <h4 class="font-semibold">ML Anomaly Detection</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">TensorFlow-powered anomaly detection</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">TensorFlow</span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Auto-training</span>
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">CPU Optimized</span>
+                    </div>
+                </div>
+
+                <!-- Cloud Storage -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">☁️</span>
+                        <h4 class="font-semibold">Multi-Cloud Storage</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">AWS S3, Google Cloud, Azure Blob</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">AWS S3</span>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">GCS</span>
+                        <span class="px-2 py-1 bg-cyan-100 text-cyan-800 rounded text-xs">Azure</span>
+                    </div>
+                </div>
+
+                <!-- GitHub MCP -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">🐙</span>
+                        <h4 class="font-semibold">GitHub MCP</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Repository and issue management</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Repos</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Issues</span>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">PRs</span>
+                    </div>
+                </div>
+
+                <!-- Data Processing -->
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">📊</span>
+                        <h4 class="font-semibold">Data Processing</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Multi-format data conversion</p>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs">JSON</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">CSV</span>
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">XML</span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Excel</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Controls Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Deployment Controls</h3>
+            <div id="deploy-button-container"></div>
+        </div>
+
+        <!-- Live Demo Section -->
+        <div class="bg-white rounded-lg shadow p-6 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Live Integration Demo</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Test API Call -->
+                <div>
+                    <h4 class="font-semibold mb-3">Test API Call</h4>
+                    <button onclick="testHealthCheck()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2">
+                        Health Check
+                    </button>
+                    <button onclick="testDataFormats()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-2">
+                        Data Formats
+                    </button>
+                    <button onclick="testWebSocketStatus()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                        WebSocket Status
+                    </button>
+                    <div id="api-result" class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono min-h-20"></div>
+                </div>
+
+                <!-- WebSocket Demo -->
+                <div>
+                    <h4 class="font-semibold mb-3">WebSocket Demo</h4>
+                    <button onclick="connectWebSocket()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded mr-2">
+                        Connect WS
+                    </button>
+                    <button onclick="sendWebSocketMessage()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded mr-2">
+                        Send Message
+                    </button>
+                    <button onclick="syncLiveData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mr-2">
+                        Sync Live Data
+                    </button>
+                    <button onclick="getRealtimeMetrics()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded mr-2">
+                        Get Metrics
+                    </button>
+                    <button onclick="disconnectWebSocket()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                        Disconnect
+                    </button>
+                    <div id="ws-result" class="mt-3 p-3 bg-gray-100 rounded text-sm font-mono min-h-20"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel" data-type="module" src="/static/DeployButton.js"></script>
+    <script>
+        console.log('Dashboard JavaScript loading...');
+
+        // Global variables
+        let socket = null;
+        let metricsChart = null;
+
+        console.log('Global variables initialized');
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            metricsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'API Requests',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update system status
+        async function updateSystemStatus() {
+            console.log('Updating system status...');
+            // Health check
+            try {
+                const healthResponse = await fetch('/health');
+                const healthData = await healthResponse.json();
+                document.getElementById('health-status').textContent = healthData.status;
+                console.log('Health check successful:', healthData.status);
+            } catch (error) {
+                console.error('Health check failed:', error);
+                document.getElementById('health-status').textContent = 'Error';
+            }
+
+            // WebSocket status
+            try {
+                const wsResponse = await fetch('/ws/status');
+                const wsData = await wsResponse.json();
+                document.getElementById('ws-status').textContent = `${wsData.active_connections || 0} connections`;
+                document.getElementById('active-connections').textContent = wsData.active_connections || 0;
+                console.log('WebSocket status:', wsData);
+            } catch (error) {
+                console.error('WebSocket status failed:', error);
+                document.getElementById('ws-status').textContent = 'Rate limited';
+                document.getElementById('active-connections').textContent = 'N/A';
+            }
+
+            // ML status (simulated)
+            document.getElementById('ml-status').textContent = 'TensorFlow Ready';
+            console.log('ML status updated');
+
+            // Database status (simulated)
+            document.getElementById('db-status').textContent = 'SQLite Connected';
+            console.log('Database status updated');
+        }
+
+        // Test functions
+        async function testHealthCheck() {
+            console.log('Testing health check...');
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+                console.log('Health check response:', data);
+            } catch (error) {
+                document.getElementById('api-result').textContent = `Error: ${error.message}`;
+                console.error('Health check error:', error);
+            }
+        }
+
+        async function testDataFormats() {
+            console.log('Testing data formats...');
+            try {
+                const response = await fetch('/data/formats');
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+                console.log('Data formats response:', data);
+            } catch (error) {
+                document.getElementById('api-result').textContent = `Error: ${error.message}`;
+                console.error('Data formats error:', error);
+            }
+        }
+
+        async function testWebSocketStatus() {
+            console.log('Testing WebSocket status...');
+            try {
+                const response = await fetch('/ws/status');
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+                console.log('WebSocket status response:', data);
+            } catch (error) {
+                document.getElementById('api-result').textContent = `Error: ${error.message}`;
+                console.error('WebSocket status error:', error);
+            }
+        }
+
+        // Socket.IO functions
+        function connectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+
+            try {
+                socket = io();
+                socket.on('connect', () => {
+                    document.getElementById('ws-result').textContent = 'Socket.IO connected successfully!';
+                });
+                socket.on('connection_established', (data) => {
+                    document.getElementById('ws-result').textContent += `\nReceived: ${JSON.stringify(data)}`;
+                });
+                socket.on('response', (data) => {
+                    document.getElementById('ws-result').textContent += `\nReceived: ${JSON.stringify(data)}`;
+                });
+                socket.on('live_data_update', (data) => {
+                    document.getElementById('ws-result').textContent += `\nLive data: ${JSON.stringify(data)}`;
+                    // Update live data display
+                    if (data.type === 'metrics') {
+                        document.getElementById('requests-min').textContent = data.data.requests_per_minute || 0;
+                    } else if (data.type === 'telemetry') {
+                        document.getElementById('telemetry-events').textContent = data.data.events_processed || 0;
+                        document.getElementById('anomalies-detected').textContent = data.data.anomalies_detected || 0;
+                    } else if (data.type === 'business') {
+                        document.getElementById('total-businesses').textContent = data.data.total_businesses || 0;
+                        document.getElementById('total-assets').textContent = data.data.total_assets || 0;
+                        document.getElementById('active-users').textContent = data.data.active_users || 0;
+                    }
+                });
+                socket.on('sync_complete', (data) => {
+                    document.getElementById('ws-result').textContent += `\nSync complete: ${JSON.stringify(data)}`;
+                });
+                socket.on('realtime_metrics', (data) => {
+                    document.getElementById('ws-result').textContent += `\nMetrics: ${JSON.stringify(data)}`;
+                });
+                socket.on('sync_error', (data) => {
+                    document.getElementById('ws-result').textContent += `\nSync error: ${JSON.stringify(data)}`;
+                });
+                socket.on('metrics_error', (data) => {
+                    document.getElementById('ws-result').textContent += `\nMetrics error: ${JSON.stringify(data)}`;
+                });
+                socket.on('anomaly_detection_result', (data) => {
+                    document.getElementById('ws-result').textContent += `\nAnomaly detection: ${data.anomalies_found} anomalies found`;
+                    document.getElementById('last-anomalies').textContent = data.anomalies_found;
+                    document.getElementById('model-accuracy').textContent = `${(data.detection_accuracy * 100).toFixed(1)}%`;
+                });
+                socket.on('anomaly_detection_error', (data) => {
+                    document.getElementById('ws-result').textContent += `\nAnomaly detection error: ${data.error}`;
+                });
+                socket.on('ml_training_complete', (data) => {
+                    document.getElementById('ws-result').textContent += `\nML training completed: ${data.accuracy * 100}% accuracy`;
+                    document.getElementById('model-status').textContent = 'Trained';
+                    document.getElementById('model-accuracy').textContent = `${(data.accuracy * 100).toFixed(1)}%`;
+                });
+                socket.on('ml_training_error', (data) => {
+                    document.getElementById('ws-result').textContent += `\nML training error: ${data.error}`;
+                    document.getElementById('model-status').textContent = 'Training Failed';
+                });
+                socket.on('ml_status_update', (data) => {
+                    document.getElementById('model-status').textContent = data.model_status;
+                    if (data.last_accuracy) {
+                        document.getElementById('model-accuracy').textContent = `${(data.last_accuracy * 100).toFixed(1)}%`;
+                    }
+                });
+                socket.on('disconnect', () => {
+                    document.getElementById('ws-result').textContent += '\nSocket.IO disconnected';
+                });
+                socket.on('connect_error', (error) => {
+                    document.getElementById('ws-result').textContent = `Socket.IO connection error: ${error.message}`;
+                });
+            } catch (error) {
+                document.getElementById('ws-result').textContent = `Connection failed: ${error.message}`;
+            }
+        }
+
+        function sendWebSocketMessage() {
+            console.log('Sending WebSocket message...');
+            if (socket && socket.connected) {
+                const message = {
+                    type: 'test_message',
+                    message: 'Hello from dashboard!',
+                    timestamp: new Date().toISOString()
+                };
+                socket.emit('test_message', message);
+                document.getElementById('ws-result').textContent += `\nSent: ${JSON.stringify(message)}`;
+                console.log('Message sent:', message);
+            } else {
+                console.log('Socket not connected');
+                document.getElementById('ws-result').textContent = 'Socket.IO not connected';
+            }
+        }
+
+        function syncLiveData() {
+            if (socket && socket.connected) {
+                const syncRequest = {
+                    sync_type: 'full',
+                    timestamp: new Date().toISOString()
+                };
+                socket.emit('sync_live_data', syncRequest);
+                document.getElementById('ws-result').textContent += `\nSent sync request: ${JSON.stringify(syncRequest)}`;
+            } else {
+                document.getElementById('ws-result').textContent = 'Socket.IO not connected';
+            }
+        }
+
+        function getRealtimeMetrics() {
+            if (socket && socket.connected) {
+                socket.emit('get_realtime_metrics');
+                document.getElementById('ws-result').textContent += '\nRequested real-time metrics';
+            } else {
+                document.getElementById('ws-result').textContent = 'Socket.IO not connected';
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        // ML Engine functions
+        function activateMLEngine() {
+            document.getElementById('ml-status').textContent = 'ML Engine Activated';
+            document.getElementById('model-status').textContent = 'Ready for Training';
+            document.getElementById('ws-result').textContent += '\nML Engine activated successfully';
+        }
+
+        function runAnomalyDetection() {
+            if (socket && socket.connected) {
+                socket.emit('run_anomaly_detection');
+                document.getElementById('ws-result').textContent += '\nRunning anomaly detection...';
+            } else {
+                document.getElementById('ws-result').textContent = 'WebSocket not connected - cannot run anomaly detection';
+            }
+        }
+
+        function trainMLModel() {
+            if (socket && socket.connected) {
+                const trainingData = [
+                    [10, 5, 2, 1, 3, 8, 4],
+                    [12, 6, 3, 2, 4, 9, 5],
+                    [8, 4, 1, 0, 2, 7, 3],
+                    [15, 8, 4, 3, 5, 11, 6]
+                ];
+                socket.emit('train_ml_model', { training_data: trainingData, contamination: 0.1 });
+                document.getElementById('ws-result').textContent += '\nTraining ML model...';
+                document.getElementById('model-status').textContent = 'Training...';
+            } else {
+                document.getElementById('ws-result').textContent = 'WebSocket not connected - cannot train model';
+            }
+        }
+
+        // Update metrics periodically
+        function updateMetrics() {
+            // Simulate metrics updates
+            const now = new Date().toLocaleTimeString();
+            if (metricsChart.data.labels.length > 10) {
+                metricsChart.data.labels.shift();
+                metricsChart.data.datasets[0].data.shift();
+            }
+            metricsChart.data.labels.push(now);
+            metricsChart.data.datasets[0].data.push(Math.floor(Math.random() * 20) + 5);
+            metricsChart.update();
+
+            document.getElementById('requests-min').textContent = Math.floor(Math.random() * 50) + 10;
+        }
+
+        // Initialize React DeployButton
+        function initReactDeployButton() {
+            const container = document.getElementById('deploy-button-container');
+            if (container) {
+                const root = ReactDOM.createRoot(container);
+                root.render(React.createElement(DeployButton));
+            }
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing dashboard...');
+            initChart();
+            updateSystemStatus();
+            updateMetrics();
+            initReactDeployButton();
+
+            // Update status every 30 seconds
+            setInterval(updateSystemStatus, 30000);
+
+            // Update metrics every 5 seconds
+            setInterval(updateMetrics, 5000);
+
+            console.log('Dashboard initialization complete');
+        });
+    </script>
+</body>
+</html>

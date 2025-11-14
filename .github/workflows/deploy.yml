@@ -1,0 +1,189 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
+
+    - name: Deploy to staging
+      run: |
+        # Update deployment with new image
+        kubectl set image deployment/jpmorgan-telemetry-api jpmorgan-telemetry-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -n jpmorgan-apis-staging
+
+        # Wait for rollout to complete
+        kubectl rollout status deployment/jpmorgan-telemetry-api -n jpmorgan-apis-staging --timeout=300s
+
+        # Run health checks
+        ./health_check_production.sh staging
+
+  deploy-production:
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl for production
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
+
+    - name: Blue-Green Deployment
+      run: |
+        # Get current active deployment
+        CURRENT_ACTIVE=$(kubectl get service jpmorgan-telemetry-service -n jpmorgan-apis -o jsonpath='{.spec.selector.version}')
+
+        if [ "$CURRENT_ACTIVE" = "blue" ]; then
+          NEW_ACTIVE="green"
+          OLD_ACTIVE="blue"
+        else
+          NEW_ACTIVE="blue"
+          OLD_ACTIVE="green"
+        fi
+
+        echo "Deploying to $NEW_ACTIVE, current active is $CURRENT_ACTIVE"
+
+        # Deploy to new version
+        kubectl set image deployment/jpmorgan-telemetry-api-$NEW_ACTIVE jpmorgan-telemetry-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -n jpmorgan-apis
+
+        # Wait for new deployment to be ready
+        kubectl rollout status deployment/jpmorgan-telemetry-api-$NEW_ACTIVE -n jpmorgan-apis --timeout=600s
+
+        # Run comprehensive health checks
+        ./health_check_production.sh production
+
+        # Switch traffic to new deployment
+        kubectl patch service jpmorgan-telemetry-service -n jpmorgan-apis -p "{\"spec\":{\"selector\":{\"version\":\"$NEW_ACTIVE\"}}}"
+
+        # Wait for traffic to switch
+        sleep 30
+
+        # Verify new deployment is working
+        if ./health_check_production.sh production; then
+          echo "Deployment successful, keeping new version active"
+
+          # Scale down old deployment
+          kubectl scale deployment jpmorgan-telemetry-api-$OLD_ACTIVE -n jpmorgan-apis --replicas=0
+        else
+          echo "Deployment failed, rolling back"
+
+          # Rollback: switch traffic back
+          kubectl patch service jpmorgan-telemetry-service -n jpmorgan-apis -p "{\"spec\":{\"selector\":{\"version\":\"$OLD_ACTIVE\"}}}"
+
+          # Scale down failed deployment
+          kubectl scale deployment jpmorgan-telemetry-api-$NEW_ACTIVE -n jpmorgan-apis --replicas=0
+
+          exit 1
+        fi
+
+  rollback:
+    if: failure() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl for production
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
+
+    - name: Automated Rollback
+      run: |
+        # Get current active deployment
+        CURRENT_ACTIVE=$(kubectl get service jpmorgan-telemetry-service -n jpmorgan-apis -o jsonpath='{.spec.selector.version}')
+
+        if [ "$CURRENT_ACTIVE" = "blue" ]; then
+          ROLLBACK_TO="green"
+        else
+          ROLLBACK_TO="blue"
+        fi
+
+        echo "Rolling back to $ROLLBACK_TO"
+
+        # Switch traffic back to previous version
+        kubectl patch service jpmorgan-telemetry-service -n jpmorgan-apis -p "{\"spec\":{\"selector\":{\"version\":\"$ROLLBACK_TO\"}}}"
+
+        # Scale up the rollback target
+        kubectl scale deployment jpmorgan-telemetry-api-$ROLLBACK_TO -n jpmorgan-apis --replicas=3
+
+        # Scale down the failed deployment
+        kubectl scale deployment jpmorgan-telemetry-api-$CURRENT_ACTIVE -n jpmorgan-apis --replicas=0
+
+        # Send notification (would integrate with Slack, Teams, etc.)
+        echo "Rollback completed successfully"
+
+  validate-deployment:
+    needs: [deploy-staging, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install requests pyyaml
+
+    - name: Run deployment validation
+      run: |
+        python scripts/ci/validate_deployment.py

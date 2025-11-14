@@ -1,0 +1,45 @@
+# Staging environment overrides
+replicaCount: 2
+
+image:
+  tag: "latest"
+
+ingress:
+  hosts:
+    - host: staging-api.jpmorgan.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: staging-jpmorgan-tls
+      hosts:
+        - staging-api.jpmorgan.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+
+postgresql:
+  auth:
+    postgresPassword: "staging-postgres-password"
+    password: "staging-telemetry-password"
+
+redis:
+  auth:
+    password: "staging-redis-password"
+
+monitoring:
+  prometheus:
+    scrapeInterval: 30s
+
+backup:
+  enabled: false  # Disable backups in staging

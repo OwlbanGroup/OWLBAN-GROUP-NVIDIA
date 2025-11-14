@@ -1,0 +1,201 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jpmorgan-apis-loadbalancer
+  namespace: jpmorgan-apis
+  annotations:
+    # AWS Load Balancer annotations
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+    # GCP Load Balancer annotations
+    cloud.google.com/load-balancer-type: "Internal"
+    # Azure Load Balancer annotations
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "jpmorgan-apis-rg"
+spec:
+  type: LoadBalancer
+  selector:
+    app: jpmorgan-financial-apis
+    component: api-server
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 5443
+    protocol: TCP
+  - name: websocket
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jpmorgan-apis-ingress
+  namespace: jpmorgan-apis
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - api.jpmorgan.com
+    - api.jpmorgan.internal
+    secretName: jpmorgan-apis-tls
+  rules:
+  - host: api.jpmorgan.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jpmorgan-apis-loadbalancer
+            port:
+              number: 80
+  - host: api.jpmorgan.internal
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jpmorgan-apis-loadbalancer
+            port:
+              number: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-load-balancer-config
+  namespace: jpmorgan-apis
+data:
+  nginx.conf: |
+    upstream api_backend {
+        least_conn;
+        server jpmorgan-financial-apis-0.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:5000 weight=1 max_fails=3 fail_timeout=30s;
+        server jpmorgan-financial-apis-1.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:5000 weight=1 max_fails=3 fail_timeout=30s;
+        server jpmorgan-financial-apis-2.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:5000 weight=1 max_fails=3 fail_timeout=30s;
+        keepalive 32;
+    }
+
+    upstream websocket_backend {
+        ip_hash;
+        server jpmorgan-financial-apis-0.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:8080;
+        server jpmorgan-financial-apis-1.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:8080;
+        server jpmorgan-financial-apis-2.jpmorgan-financial-apis.jpmorgan-apis.svc.cluster.local:8080;
+    }
+
+    server {
+        listen 80;
+        server_name api.jpmorgan.com;
+
+        # Rate limiting
+        limit_req zone=api burst=100 nodelay;
+        limit_req_status 429;
+
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+        # API endpoints
+        location /api/ {
+            proxy_pass http://api_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+            proxy_buffering off;
+        }
+
+        # WebSocket support
+        location /ws/ {
+            proxy_pass http://websocket_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 86400;
+        }
+
+        # Health check
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-load-balancer
+  namespace: jpmorgan-apis
+  labels:
+    app: nginx-load-balancer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-load-balancer
+  template:
+    metadata:
+      labels:
+        app: nginx-load-balancer
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21-alpine
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-load-balancer-config

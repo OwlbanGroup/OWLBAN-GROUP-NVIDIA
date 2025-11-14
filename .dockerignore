@@ -1,0 +1,80 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing and linting
+.pytest_cache/
+.mypy_cache/
+test_*.py
+*_test.py
+test_*.bat
+test_*.ps1
+test_api.ps1
+comprehensive_e2e_test.py
+e2e_test.py
+manual_test.py
+remaining_test_results.json
+run_tests.bat
+run_tests.ps1
+run_all_tests.py
+run_e2e_tests.bat
+
+# Development and IDE
+.vscode/
+.github/
+.gitlab-ci.yml
+syntax_check.ps1
+TODO.md
+
+# Deployment and CI/CD
+deploy_*.sh
+deploy_*.ps1
+deploy_local.sh
+deploy_production.sh
+deploy_aws.sh
+aws-cloudformation.yml
+.gitlab-ci.yml
+
+# Logs and data
+logs/
+*.log
+telemetry.db
+
+# Documentation
+README.md
+docs/
+VERSION
+
+# Monitoring
+alertmanager.yml
+grafana_dashboard.json
+prometheus.yml
+
+# Environment and config
+.env*
+.env.example
+.env.new
+
+# Other apps and scripts
+app_final.py
+app_fixed.py
+proxy_app.py
+integrate_all.py
+openapi.yml
+
+# Microservices and templates (if not needed)
+microservices/
+templates/
+
+# Source (if not needed, but probably keep src/)
+# src/
+
+# Keep only necessary files
+# app.py
+# config.py
+# requirements.txt
+# Dockerfile
+# docker-compose.yml
+# src/ (if used)

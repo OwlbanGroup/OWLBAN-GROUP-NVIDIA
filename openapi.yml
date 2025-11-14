@@ -1,0 +1,585 @@
+openapi: 3.0.3
+info:
+  title: JPMorgan Financial APIs - Telemetry Service
+  description: |
+    A comprehensive telemetry data processing and analysis API for JPMorgan Financial Services.
+
+    This API provides endpoints for:
+    - Receiving and processing telemetry data
+    - Batch processing of telemetry events
+    - Machine learning-based anomaly detection
+    - Data export and analytics
+    - Real-time metrics and monitoring
+
+    ## Authentication
+    All endpoints require Bearer token authentication using OAuth 2.0.
+
+    ## Rate Limiting
+    The API implements rate limiting to ensure fair usage:
+    - 200 requests per day
+    - 50 requests per hour
+    - Specific limits per endpoint
+
+    ## Data Format
+    Telemetry data should follow the Microsoft Windows telemetry format with required fields:
+    - `ver`: Version (string)
+    - `name`: Event name (string)
+    - `time`: Timestamp (ISO 8601 format)
+    - `data`: Event data (object)
+    - `ext`: Extensions (object, optional)
+  version: 1.0.0
+  contact:
+    name: JPMorgan Financial APIs Team
+    email: api-support@jpmorgan.com
+  license:
+    name: Proprietary
+    url: https://jpmorgan.com/terms
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://api.jpmorgan.com/telemetry
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Check the health status of the API service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /telemetry:
+    post:
+      summary: Receive Telemetry Data
+      description: |
+        Receive and process individual telemetry data events.
+
+        The endpoint validates the input data and processes it through the telemetry pipeline.
+        Machine learning models may be applied for anomaly detection.
+      operationId: receiveTelemetry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryData'
+            example:
+              ver: "4.0"
+              name: "Microsoft.Windows.ApplicationModel.Store.Telemetry.BeginOperation"
+              time: "2025-09-22T19:42:10.2549325Z"
+              data:
+                Op: "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync"
+                PFN: "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe"
+                IsFirst: true
+                Duration: 1234
+              ext:
+                userId: "user123"
+                sessionId: "session456"
+      responses:
+        '200':
+          description: Telemetry data processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /telemetry/batch:
+    post:
+      summary: Batch Process Telemetry Data
+      description: |
+        Process multiple telemetry events in a single batch operation.
+
+        This endpoint is optimized for high-volume data processing and provides
+        detailed statistics about the batch processing results.
+      operationId: receiveTelemetryBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchTelemetryRequest'
+            example:
+              telemetry_data:
+                - ver: "4.0"
+                  name: "Microsoft.Windows.ApplicationModel.Store.Telemetry.BeginOperation"
+                  time: "2025-09-22T19:42:10.2549325Z"
+                  data:
+                    Op: "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync"
+                    PFN: "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe"
+                - ver: "4.0"
+                  name: "Microsoft.Windows.ApplicationModel.Store.Telemetry.EndOperation"
+                  time: "2025-09-22T19:42:11.2549325Z"
+                  data:
+                    Op: "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync"
+                    PFN: "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe"
+                    Result: "Success"
+      responses:
+        '200':
+          description: Batch processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTelemetryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /telemetry/metrics:
+    get:
+      summary: Get Telemetry Metrics
+      description: |
+        Retrieve aggregated metrics and statistics about telemetry data processing.
+
+        Query parameters allow filtering by time range and specific metrics.
+      operationId: getTelemetryMetrics
+      parameters:
+        - name: hours
+          in: query
+          description: Number of hours to look back (1-720, default: 24)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 720
+            default: 24
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ml/anomalies:
+    post:
+      summary: Detect Anomalies
+      description: |
+        Use machine learning models to detect anomalies in telemetry data.
+
+        This endpoint applies trained ML models to identify unusual patterns
+        or outliers in the provided telemetry data.
+      operationId: detectAnomalies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyDetectionRequest'
+      responses:
+        '200':
+          description: Anomaly detection completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyDetectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ml/train:
+    post:
+      summary: Train ML Model
+      description: |
+        Train the machine learning model with new telemetry data.
+
+        This endpoint accepts telemetry data to retrain or update the
+        anomaly detection models.
+      operationId: trainMlModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingRequest'
+      responses:
+        '200':
+          description: Model training completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /telemetry/export:
+    get:
+      summary: Export Telemetry Data
+      description: |
+        Export telemetry events in various formats (JSON, CSV).
+
+        Supports filtering by operation and limiting the number of results.
+      operationId: exportTelemetry
+      parameters:
+        - name: operation
+          in: query
+          description: Filter by operation name
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of events to export (1-10000, default: 1000)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 1000
+        - name: format
+          in: query
+          description: Export format (json, csv)
+          required: false
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+      responses:
+        '200':
+          description: Export completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /metrics:
+    get:
+      summary: Prometheus Metrics
+      description: |
+        Expose Prometheus metrics for monitoring and alerting.
+
+        This endpoint provides detailed metrics about API performance,
+        error rates, and system health.
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        OAuth 2.0 Bearer token authentication.
+
+        Obtain a token from the authentication service and include it in the Authorization header:
+        `Authorization: Bearer <your-token>`
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        version:
+          type: string
+          example: "1.0.0"
+
+    TelemetryData:
+      type: object
+      required:
+        - ver
+        - name
+        - time
+        - data
+      properties:
+        ver:
+          type: string
+          description: Version of the telemetry format
+          example: "4.0"
+        name:
+          type: string
+          description: Name of the telemetry event
+          example: "Microsoft.Windows.ApplicationModel.Store.Telemetry.BeginOperation"
+        time:
+          type: string
+          format: date-time
+          description: Timestamp of the event
+          example: "2025-09-22T19:42:10.2549325Z"
+        data:
+          type: object
+          description: Event-specific data payload
+          additionalProperties: true
+        ext:
+          type: object
+          description: Extension data (optional)
+          additionalProperties: true
+
+    TelemetryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "Telemetry data processed successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    BatchTelemetryRequest:
+      type: object
+      required:
+        - telemetry_data
+      properties:
+        telemetry_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryData'
+          minItems: 1
+          maxItems: 1000
+
+    BatchTelemetryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "Batch processed: 50/50 events successful"
+        statistics:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 50
+            successful:
+              type: integer
+              example: 50
+            failed:
+              type: integer
+              example: 0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    MetricsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        metrics:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    AnomalyDetectionRequest:
+      type: object
+      required:
+        - telemetry_data
+      properties:
+        telemetry_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryData'
+          minItems: 1
+
+    AnomalyDetectionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        anomaly_results:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              is_anomaly:
+                type: boolean
+              confidence:
+                type: number
+                format: float
+              score:
+                type: number
+                format: float
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    TrainingRequest:
+      type: object
+      required:
+        - telemetry_data
+      properties:
+        telemetry_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryData'
+          minItems: 10
+
+    TrainingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "ML model trained successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    ExportResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryData'
+        count:
+          type: integer
+          example: 100
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              status:
+                type: string
+                example: "error"
+
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Missing or invalid authorization header"
+              status:
+                type: string
+                example: "error"
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Rate limit exceeded"
+              status:
+                type: string
+                example: "error"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "No events found"
+              status:
+                type: string
+                example: "error"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal server error"
+              status:
+                type: string
+                example: "error"

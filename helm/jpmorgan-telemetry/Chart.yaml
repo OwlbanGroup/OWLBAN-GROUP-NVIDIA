@@ -1,0 +1,45 @@
+apiVersion: v2
+name: jpmorgan-telemetry
+description: A Helm chart for JPMorgan Telemetry API with monitoring stack
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - jpmorgan
+  - telemetry
+  - api
+  - monitoring
+  - elasticsearch
+  - kibana
+  - prometheus
+home: https://github.com/jpmorgan-chase/telemetry-api
+sources:
+  - https://github.com/jpmorgan-chase/telemetry-api
+maintainers:
+  - name: JPMorgan DevOps Team
+    email: devops@jpmorgan.com
+dependencies:
+  - name: postgresql
+    version: "12.1.6"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "17.3.17"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  - name: elasticsearch
+    version: "8.5.1"
+    repository: "https://helm.elastic.co"
+    condition: elasticsearch.enabled
+  - name: kibana
+    version: "8.5.1"
+    repository: "https://helm.elastic.co"
+    condition: kibana.enabled
+  - name: prometheus
+    version: "15.10.1"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus.enabled
+  - name: alertmanager
+    version: "0.24.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: alertmanager.enabled

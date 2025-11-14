@@ -1,0 +1,23 @@
+{
+  "admin": {
+    "password_hash": "scrypt:32768:8:1$cACCFZU6afAmQdO1$966a2248bcfc59b64a2fa6113706b2cf206bc7b65a6f194e1d0a57768fe4a9899d34b2e7efd45af2d020be86abb6c665d57b7ef3af3610f1cbcf566879dd166c",
+    "role": "admin",
+    "email": "admin@jpmorgan.com",
+    "created_at": "2025-11-03T18:47:02.587320",
+    "active": true
+  },
+  "testuser": {
+    "password_hash": "scrypt:32768:8:1$XdOyCh2dDt48Qcr9$4ae73e387a9ad91cc62ca945872f3d58b9a30b0b81cae47aedfc8140952d7e6c21b8755084490cc730abd758e1cae52ef0ae278ef4b4274b8698df68688cb0a5",
+    "role": "user",
+    "email": "test@example.com",
+    "created_at": "2025-11-04T16:04:50.382850",
+    "active": true
+  },
+  "testuser_1762290403": {
+    "password_hash": "scrypt:32768:8:1$DMHXtyZQvkg7DYZB$0e19bed5f1e7dcdcfbb3a7cf80998614e82f8dbdc2f3501f018ee67746b8d68244ea445806cdfcce3d955e8fbee16a9500b5027f0977865a353e594052a75894",
+    "role": "user",
+    "email": "test@example.com",
+    "created_at": "2025-11-04T16:06:43.631601",
+    "active": true
+  }
+}

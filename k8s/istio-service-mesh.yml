@@ -1,0 +1,233 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: jpmorgan-gateway
+  namespace: jpmorgan-apis
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - api.jpmorgan.com
+    - grafana.jpmorgan.com
+    - prometheus.jpmorgan.com
+    - developers.jpmorgan.com
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: jpmorgan-tls
+    hosts:
+    - api.jpmorgan.com
+    - grafana.jpmorgan.com
+    - prometheus.jpmorgan.com
+    - developers.jpmorgan.com
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: jpmorgan-api-vs
+  namespace: jpmorgan-apis
+spec:
+  hosts:
+  - api.jpmorgan.com
+  gateways:
+  - jpmorgan-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: jpmorgan-api
+        port:
+          number: 80
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+    corsPolicy:
+      allowOrigins:
+      - exact: https://developers.jpmorgan.com
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+      allowHeaders:
+      - "*"
+      allowCredentials: true
+      maxAge: "86400"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: grafana-vs
+  namespace: jpmorgan-apis
+spec:
+  hosts:
+  - grafana.jpmorgan.com
+  gateways:
+  - jpmorgan-gateway
+  http:
+  - route:
+    - destination:
+        host: grafana
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: prometheus-vs
+  namespace: jpmorgan-apis
+spec:
+  hosts:
+  - prometheus.jpmorgan.com
+  gateways:
+  - jpmorgan-gateway
+  http:
+  - route:
+    - destination:
+        host: prometheus
+        port:
+          number: 9090
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: developer-portal-vs
+  namespace: jpmorgan-apis
+spec:
+  hosts:
+  - developers.jpmorgan.com
+  gateways:
+  - jpmorgan-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: jpmorgan-developer-portal
+        port:
+          number: 80
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: jpmorgan-apis
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-access-policy
+  namespace: jpmorgan-apis
+spec:
+  selector:
+    matchLabels:
+      app: jpmorgan-api
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/jpmorgan-apis/sa/jpmorgan-api-sa"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+        paths: ["/api/*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: monitoring-access-policy
+  namespace: jpmorgan-apis
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/jpmorgan-apis/sa/prometheus-sa"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: database-access-policy
+  namespace: jpmorgan-apis
+spec:
+  selector:
+    matchLabels:
+      app: postgresql
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/jpmorgan-apis/sa/jpmorgan-api-sa"]
+    to:
+    - operation:
+        ports: ["5432"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: jpmorgan-api-dr
+  namespace: jpmorgan-apis
+spec:
+  host: jpmorgan-api
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 10
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: postgresql-dr
+  namespace: jpmorgan-apis
+spec:
+  host: postgresql-primary
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 5
+        maxRequestsPerConnection: 5
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: redis-dr
+  namespace: jpmorgan-apis
+spec:
+  host: redis-cluster
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 10
+        maxRequestsPerConnection: 10

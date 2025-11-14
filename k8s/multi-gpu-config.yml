@@ -1,0 +1,212 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multi-gpu-config
+  namespace: jpmorgan-apis
+data:
+  # Multi-GPU configuration
+  gpu-strategy: "spread"  # spread, pack, or custom
+  gpu-memory-fraction: "0.8"
+  gpu-device-ids: "0,1,2,3"  # Available GPU device IDs
+  gpu-memory-limit: "16Gi"  # Per GPU memory limit
+  gpu-power-limit: "300W"   # Per GPU power limit
+
+  # ML workload distribution
+  ml-batch-size: "64"
+  ml-parallel-inference: "true"
+  ml-gpu-affinity: "balanced"  # balanced, performance, or memory
+
+  # Monitoring and health checks
+  gpu-health-check-interval: "30s"
+  gpu-memory-threshold: "90"
+  gpu-utilization-threshold: "85"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jpmorgan-ml-worker-multi-gpu
+  namespace: jpmorgan-apis
+  labels:
+    app: jpmorgan-financial-apis
+    component: ml-worker
+    gpu-enabled: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jpmorgan-financial-apis
+      component: ml-worker
+  template:
+    metadata:
+      labels:
+        app: jpmorgan-financial-apis
+        component: ml-worker
+        gpu-enabled: "true"
+    spec:
+      # Node selector for GPU nodes
+      nodeSelector:
+        accelerator: nvidia-tesla-v100  # Adjust based on your GPU type
+        gpu-count: "4"  # Require nodes with at least 4 GPUs
+
+      # Tolerations for GPU nodes
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+
+      containers:
+      - name: ml-worker
+        image: jpmorgan/financial-apis:gpu-latest
+        ports:
+        - containerPort: 8001
+          name: ml-port
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1,2,3"  # Use all 4 GPUs
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: GPU_MEMORY_FRACTION
+          value: "0.8"
+        - name: ML_BATCH_SIZE
+          value: "64"
+        - name: ML_PARALLEL_INFERENCE
+          value: "true"
+
+        # Resource requests and limits for multi-GPU
+        resources:
+          requests:
+            nvidia.com/gpu: "4"  # Request 4 GPUs
+            memory: "32Gi"
+            cpu: "8"
+          limits:
+            nvidia.com/gpu: "4"  # Limit to 4 GPUs
+            memory: "64Gi"
+            cpu: "16"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: ml-port
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: ml-port
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+        # Volume mounts for models and data
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+        - name: data-storage
+          mountPath: /app/data
+
+      - name: gpu-monitor
+          image: nvidia/dcgm-exporter:latest
+          ports:
+          - containerPort: 9400
+            name: metrics
+          env:
+          - name: DCGM_EXPORTER_LISTEN
+            value: ":9400"
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: ml-port
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: ml-port
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+        # Volume mounts for models and data
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+        - name: data-storage
+          mountPath: /app/data
+
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: ml-models-pvc
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ml-data-pvc
+
+      # Service account for GPU access
+      serviceAccountName: gpu-service-account
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gpu-service-account
+  namespace: jpmorgan-apis
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gpu-access-role
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["use"]
+  resourceNames: ["gpu-pod-security-policy"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gpu-access-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gpu-access-role
+subjects:
+- kind: ServiceAccount
+  name: gpu-service-account
+  namespace: jpmorgan-apis
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: gpu-pod-security-policy
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+  - '*'
+  hostIPC: true
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  volumes:
+  - '*'
+  allowedHostPaths:
+  - pathPrefix: "/dev/nvidia"
+    readOnly: false
+  - pathPrefix: "/usr/local/nvidia"
+    readOnly: true

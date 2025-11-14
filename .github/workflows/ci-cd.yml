@@ -269,6 +269,8 @@ jobs:
   # ============================================================================
   # Deploy to Staging
   # ============================================================================
+  # Required Secrets:
+  # - KUBE_CONFIG_STAGING: Base64-encoded Kubernetes config for staging environment
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -289,19 +291,22 @@ jobs:
 
     - name: Verify Kubernetes Secret
       env:
-        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING }}
+        KUBE_CONFIG_STAGING: ${{ secrets.KUBE_CONFIG_STAGING }}
       run: |
-        if [ -z "$KUBE_CONFIG" ]; then
-          echo "::error::KUBE_CONFIG_STAGING secret is not configured"
+        if [ -z "${KUBE_CONFIG_STAGING}" ]; then
+          echo "::error::KUBE_CONFIG_STAGING secret is not configured in GitHub repository settings"
+          echo "::error::Please add the secret at: Settings > Secrets and variables > Actions > Repository secrets"
           exit 1
         fi
+        echo "✅ KUBE_CONFIG_STAGING secret is configured"
 
     - name: Configure kubectl
       env:
-        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING }}
+        KUBE_CONFIG_STAGING: ${{ secrets.KUBE_CONFIG_STAGING }}
       run: |
-        echo "$KUBE_CONFIG" | base64 -d > kubeconfig
+        echo "${KUBE_CONFIG_STAGING}" | base64 -d > kubeconfig
         export KUBECONFIG=./kubeconfig
+        kubectl version --client
 
     - name: Deploy to Staging
       run: |
@@ -318,6 +323,8 @@ jobs:
   # ============================================================================
   # Deploy to Production
   # ============================================================================
+  # Required Secrets:
+  # - KUBE_CONFIG_PRODUCTION: Base64-encoded Kubernetes config for production environment
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -338,19 +345,22 @@ jobs:
 
     - name: Verify Kubernetes Secret
       env:
-        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+        KUBE_CONFIG_PRODUCTION: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
       run: |
-        if [ -z "$KUBE_CONFIG" ]; then
-          echo "::error::KUBE_CONFIG_PRODUCTION secret is not configured"
+        if [ -z "${KUBE_CONFIG_PRODUCTION}" ]; then
+          echo "::error::KUBE_CONFIG_PRODUCTION secret is not configured in GitHub repository settings"
+          echo "::error::Please add the secret at: Settings > Secrets and variables > Actions > Repository secrets"
           exit 1
         fi
+        echo "✅ KUBE_CONFIG_PRODUCTION secret is configured"
 
     - name: Configure kubectl
       env:
-        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+        KUBE_CONFIG_PRODUCTION: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
       run: |
-        echo "$KUBE_CONFIG" | base64 -d > kubeconfig
+        echo "${KUBE_CONFIG_PRODUCTION}" | base64 -d > kubeconfig
         export KUBECONFIG=./kubeconfig
+        kubectl version --client
 
     - name: Deploy to Production
       run: |

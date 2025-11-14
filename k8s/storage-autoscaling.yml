@@ -1,0 +1,131 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storage-worker-autoscaler
+  namespace: jpmorgan-apis
+  labels:
+    app: storage-worker
+    component: autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storage-worker
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: storage_operations_per_second
+      target:
+        type: AverageValue
+        averageValue: 100
+  - type: External
+    external:
+      metric:
+        name: s3_requests_per_second
+        selector:
+          matchLabels:
+            service: storage
+      target:
+        type: Value
+        value: 500
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-autoscaling-config
+  namespace: jpmorgan-apis
+data:
+  STORAGE_AUTO_SCALING_ENABLED: "true"
+  STORAGE_MAX_CONCURRENT_OPERATIONS: "100"
+  STORAGE_QUEUE_SIZE_THRESHOLD: "50"
+  S3_REQUESTS_PER_SECOND_THRESHOLD: "500"
+  GCS_REQUESTS_PER_SECOND_THRESHOLD: "500"
+  AZURE_BLOB_REQUESTS_PER_SECOND_THRESHOLD: "500"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: storage-worker-monitor
+  namespace: jpmorgan-apis
+  labels:
+    app: storage-worker
+spec:
+  selector:
+    matchLabels:
+      app: storage-worker
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-worker
+  namespace: jpmorgan-apis
+  labels:
+    app: storage-worker
+    component: autoscaling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storage-worker
+  template:
+    metadata:
+      labels:
+        app: storage-worker
+    spec:
+      containers:
+      - name: storage-worker
+        image: jpmorgan.azurecr.io/jpmorgan-financial-apis:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: STORAGE_AUTO_SCALING_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: storage-autoscaling-config
+              key: STORAGE_AUTO_SCALING_ENABLED
+        - name: STORAGE_MAX_CONCURRENT_OPERATIONS
+          valueFrom:
+            configMapKeyRef:
+              name: storage-autoscaling-config
+              key: STORAGE_MAX_CONCURRENT_OPERATIONS
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5

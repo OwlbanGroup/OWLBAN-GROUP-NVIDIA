@@ -1,0 +1,244 @@
+# Default values for jpmorgan-telemetry chart
+replicaCount: 3
+
+image:
+  repository: jpmorgan/telemetry-api
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: api.jpmorgan.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: jpmorgan-tls
+      hosts:
+        - api.jpmorgan.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Database configuration
+database:
+  host: postgresql
+  port: 5432
+  name: telemetry_db
+  user: telemetry_user
+  password: ""  # Set via secret
+  sslmode: require
+
+# Redis configuration
+redis:
+  host: redis-master
+  port: 6379
+  password: ""  # Set via secret
+
+# Encryption configuration
+encryption:
+  key: ""  # Set via secret
+  salt: ""  # Set via secret
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    scrapeInterval: 15s
+  alertmanager:
+    enabled: true
+    smtp:
+      host: smtp.gmail.com
+      port: 587
+      username: ""
+      password: ""
+      from: alerts@jpmorgan.com
+
+# Logging configuration
+logging:
+  level: INFO
+  format: json
+  elasticsearch:
+    enabled: true
+    host: elasticsearch-master
+    port: 9200
+    index: jpmorgan-telemetry
+
+# Security configuration
+security:
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 1000
+  cors:
+    enabled: true
+    allowedOrigins:
+      - "https://*.jpmorgan.com"
+  tls:
+    enabled: true
+    certManager:
+      enabled: true
+      issuer: letsencrypt-prod
+
+# External dependencies
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: ""
+    username: telemetry_user
+    password: ""
+    database: telemetry_db
+  architecture: standalone
+  persistence:
+    enabled: true
+    size: 50Gi
+
+redis:
+  enabled: true
+  auth:
+    password: ""
+  architecture: standalone
+  persistence:
+    enabled: true
+    size: 10Gi
+
+elasticsearch:
+  enabled: true
+  replicas: 1
+  minimumMasterNodes: 1
+  persistence:
+    enabled: true
+    size: 50Gi
+
+kibana:
+  enabled: true
+  elasticsearchHosts: "http://elasticsearch-master:9200"
+
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+      size: 20Gi
+  prometheusSpec:
+    retention: 30d
+    retentionSize: "50GiB"
+
+alertmanager:
+  enabled: true
+  config:
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'alerts@jpmorgan.com'
+    route:
+      receiver: 'email-notifications'
+    receivers:
+    - name: 'email-notifications'
+      email_configs:
+      - to: 'ops@jpmorgan.com'
+        send_resolved: true
+
+# Istio service mesh configuration
+istio:
+  enabled: false
+  gateway:
+    enabled: true
+    hosts:
+      - api.jpmorgan.com
+  virtualService:
+    enabled: true
+    gateways:
+      - jpmorgan-gateway
+    hosts:
+      - api.jpmorgan.com
+  destinationRule:
+    enabled: true
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+  peerAuthentication:
+    enabled: true
+    mode: STRICT
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: ingress-nginx
+      ports:
+      - protocol: TCP
+        port: 80
+      - protocol: TCP
+        port: 443
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 30
+  s3:
+    bucket: jpmorgan-telemetry-backups
+    region: us-east-1

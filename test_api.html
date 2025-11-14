@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPMorgan API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>JPMorgan Financial APIs - Test Interface</h1>
+
+    <div class="test-section">
+        <h2>1. Test Health Check (No Auth Required)</h2>
+        <button onclick="testHealth()">Test Health Check</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. User Login</h2>
+        <input type="text" id="username" placeholder="Username" value="testuser">
+        <input type="password" id="password" placeholder="Password" value="testpass">
+        <button onclick="login()">Login</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test JPMorgan Data (Requires Auth)</h2>
+        <button onclick="testJPMorganData()">Test JPMorgan Data (No Token)</button>
+        <button onclick="testJPMorganDataWithToken()">Test JPMorgan Data (With Token)</button>
+        <div id="jpmorgan-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Invalid Token</h2>
+        <button onclick="testInvalidToken()">Test Invalid Token</button>
+        <div id="invalid-token-result"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        // Test health check endpoint
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Status: ${response.status}</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Login and get token
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('login-result');
+
+            try {
+                const response = await fetch('http://localhost:5000/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Login successful! Token: ${authToken}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Login failed: ${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test JPMorgan data without token
+        async function testJPMorganData() {
+            const resultDiv = document.getElementById('jpmorgan-result');
+            try {
+                const response = await fetch('http://localhost:5000/api/jpmorgan-data');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Status: ${response.status} (Expected 401)</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test JPMorgan data with valid token
+        async function testJPMorganDataWithToken() {
+            const resultDiv = document.getElementById('jpmorgan-result');
+
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Please login first to get a token</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Status: ${response.status} - Access granted!</div>
+                        <h3>Financial Metrics:</h3>
+                        <pre>${JSON.stringify(data.financial_metrics, null, 2)}</pre>
+                        <h3>Assets (${data.assets.length}):</h3>
+                        <pre>${JSON.stringify(data.assets, null, 2)}</pre>
+                        <h3>Stock Ticker:</h3>
+                        <pre>${JSON.stringify(data.stock_ticker, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Status: ${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test with invalid token
+        async function testInvalidToken() {
+            const resultDiv = document.getElementById('invalid-token-result');
+            try {
+                const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                    headers: {
+                        'Authorization': 'Bearer invalid_token_123'
+                    }
+                });
+
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Status: ${response.status} (Expected 401)</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

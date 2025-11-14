@@ -1,0 +1,108 @@
+stages:
+  - test
+  - security
+  - build
+  - deploy
+  - notify
+
+variables:
+  DOCKER_IMAGE: jpmorgan/telemetry-api
+
+test:
+  stage: test
+  image: python:3.11
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.9", "3.10", "3.11"]
+  before_script:
+    - apt-get update && apt-get install -y python${PYTHON_VERSION}-dev
+    - python${PYTHON_VERSION} -m pip install --upgrade pip
+    - pip install -r requirements_new.txt
+    - pip install pytest-cov black isort mypy flake8 bandit safety pre-commit
+  script:
+    - flake8 src/ app.py --count --select=E9,F63,F7,F82 --show-source --statistics
+    - flake8 src/ app.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - black --check --diff src/ app.py
+    - isort --check-only --diff src/ app.py
+    - mypy src/ app.py --ignore-missing-imports
+    - bandit -r src/ app.py -f json -o bandit-report.json || true
+    - safety check --output json | tee safety-report.json || true
+    - pytest test_*.py --cov=src --cov-report=xml --cov-report=html --cov-fail-under=80
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - bandit-report.json
+      - safety-report.json
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+security_audit:
+  stage: security
+  image: python:3.11
+  dependencies:
+    - test
+  before_script:
+    - pip install bandit safety pip-audit
+  script:
+    - pip-audit --format json | tee pip-audit-report.json || true
+    - echo "GitLeaks scan would be performed here (requires GitLab Ultimate or external tool)"
+  artifacts:
+    paths:
+      - pip-audit-report.json
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+docker_build:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+
+deploy_staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging environment..."
+    # Add your staging deployment commands here
+  environment:
+    name: staging
+    url: https://staging.example.com
+  only:
+    - develop
+
+deploy_production:
+  stage: deploy
+  script:
+    - echo "Deploying to production environment..."
+    # Add your production deployment commands here
+  environment:
+    name: production
+    url: https://production.example.com
+  only:
+    - main
+
+notify:
+  stage: notify
+  script:
+    - |
+      if [ $CI_JOB_STATUS == "failed" ]; then
+        echo "Pipeline failed! Check the logs for details."
+        # Add notification logic here (Slack, email, etc.)
+      fi
+  when: always

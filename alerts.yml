@@ -1,0 +1,101 @@
+groups:
+  - name: telemetry_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for more than 2 minutes"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency"
+          description: "95th percentile latency is above 2 seconds for more than 2 minutes"
+
+      - alert: LowProcessingRate
+        expr: rate(telemetry_events_processed_total[5m]) < 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low telemetry processing rate"
+          description: "Processing less than 1 event per minute for more than 5 minutes"
+
+      - alert: HighAnomalyRate
+        expr: rate(anomaly_detections_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High anomaly detection rate"
+          description: "Anomaly detection rate is above 50% for more than 2 minutes"
+
+      - alert: ServiceDown
+        expr: up{job="telemetry-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Telemetry API service is down"
+          description: "The telemetry API service has been down for more than 1 minute"
+
+      - alert: GPUUnavailable
+        expr: gpu_status == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPU unavailable"
+          description: "GPU has been unavailable for more than 5 minutes"
+
+      - alert: HighGPUTemperature
+        expr: gpu_temperature_celsius > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GPU temperature"
+          description: "GPU temperature is above 85°C for more than 2 minutes"
+
+      - alert: HighGPUMemoryUsage
+        expr: gpu_memory_used_bytes / gpu_memory_total_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High GPU memory usage"
+          description: "GPU memory usage is above 95% for more than 2 minutes"
+
+      - alert: GPUJobFailed
+        expr: increase(gpu_job_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPU job failure"
+          description: "A GPU-accelerated job has failed"
+
+      - alert: DatabaseConnectionHigh
+        expr: db_connections_active > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections"
+          description: "Database has more than 50 active connections for more than 2 minutes"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is above 80% for more than 5 minutes"

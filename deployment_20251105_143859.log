@@ -1,0 +1,12 @@
+[0;34m[14:38:59] INFO:[0m 🚀 Starting JPMorgan Financial APIs Production Deployment
+[0;34m[14:38:59] INFO:[0m 🚀 Starting JPMorgan Financial APIs Production Deployment
+[0;34m[14:38:59] INFO:[0m Project: jpmorgan-financial-apis
+[0;34m[14:38:59] INFO:[0m Project: jpmorgan-financial-apis
+[0;34m[14:38:59] INFO:[0m Version: v1.0.0
+[0;34m[14:38:59] INFO:[0m Version: v1.0.0
+[0;34m[14:38:59] INFO:[0m Namespace: jpmorgan-apis
+[0;34m[14:38:59] INFO:[0m Namespace: jpmorgan-apis
+[0;32m[14:38:59] INFO:[0m Starting pre-deployment checks...
+[0;32m[14:38:59] INFO:[0m Starting pre-deployment checks...
+[0;31m[14:38:59] ERROR:[0m Required environment variable TOKEN_CLIENT_ID is not set
+[0;31m[14:38:59] ERROR:[0m Required environment variable TOKEN_CLIENT_ID is not set

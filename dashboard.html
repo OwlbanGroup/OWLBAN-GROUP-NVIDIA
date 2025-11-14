@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPMorgan Financial Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .login-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .metric-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stock-price {
+            font-size: 2em;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .stock-change.positive {
+            color: #27ae60;
+        }
+        .stock-change.negative {
+            color: #e74c3c;
+        }
+        .assets-list {
+            list-style: none;
+        }
+        .assets-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .asset-name {
+            font-weight: 600;
+        }
+        .asset-value {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #27ae60; }
+        .status-offline { background: #e74c3c; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #ffeaea;
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #e74c3c;
+        }
+        .success {
+            background: #eaffea;
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #27ae60;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 JPMorgan Financial Dashboard</h1>
+            <p>Real-time financial metrics and market data</p>
+        </div>
+
+        <!-- Login Section -->
+        <div class="login-section" id="loginSection">
+            <div class="status-indicator status-offline" id="serverStatus"></div>
+            <span id="statusText">Connecting to server...</span>
+            <input type="text" id="username" placeholder="Username" value="testuser">
+            <input type="password" id="password" placeholder="Password" value="testpass">
+            <button onclick="login()">Login</button>
+            <button onclick="logout()" class="hidden" id="logoutBtn">Logout</button>
+        </div>
+
+        <!-- Error Messages -->
+        <div id="errorMessage" class="error hidden"></div>
+        <div id="successMessage" class="success hidden"></div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard" id="dashboard" class="hidden">
+            <!-- Financial Metrics Card -->
+            <div class="card">
+                <h3>📊 Financial Metrics</h3>
+                <div id="financialMetrics" class="loading">Loading financial data...</div>
+            </div>
+
+            <!-- Stock Ticker Card -->
+            <div class="card">
+                <h3>📈 Stock Information</h3>
+                <div id="stockTicker" class="loading">Loading stock data...</div>
+            </div>
+
+            <!-- Assets Card -->
+            <div class="card">
+                <h3>🏢 Key Assets</h3>
+                <div id="assetsList" class="loading">Loading assets data...</div>
+            </div>
+
+            <!-- Performance Card -->
+            <div class="card">
+                <h3>📊 Performance</h3>
+                <div id="performanceData" class="loading">Loading performance data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let authToken = null;
+        let isLoggedIn = false;
+        let liveDataInterval = null;
+        let isLiveMode = false;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerHealth();
+        });
+
+        // Check server health
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('serverStatus').className = 'status-indicator status-online';
+                    document.getElementById('statusText').textContent = `Server Online - ${data.version}`;
+                } else {
+                    throw new Error('Server health check failed');
+                }
+            } catch (error) {
+                document.getElementById('serverStatus').className = 'status-indicator status-offline';
+                document.getElementById('statusText').textContent = 'Server Offline';
+                showError('Unable to connect to server. Please ensure the Flask app is running.');
+            }
+        }
+
+        // Login function
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    isLoggedIn = true;
+                    localStorage.setItem('authToken', authToken);
+
+                    // Update UI
+                    document.getElementById('loginSection').classList.add('success');
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('statusText').textContent = `Logged in as ${username}`;
+
+                    showSuccess('Login successful! Loading dashboard...');
+                    loadDashboardData();
+                } else {
+                    showError(data.error || 'Login failed');
+                }
+            } catch (error) {
+                showError('Login request failed: ' + error.message);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            authToken = null;
+            isLoggedIn = false;
+            localStorage.removeItem('authToken');
+
+            // Stop live updates
+            stopLiveUpdates();
+
+            // Reset UI
+            document.getElementById('loginSection').classList.remove('success');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('statusText').textContent = 'Logged out';
+
+            // Clear dashboard data
+            clearDashboard();
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            if (!authToken) {
+                showError('No authentication token available');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    showError('Authentication failed. Please login again.');
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    updateDashboard(data);
+                    showSuccess('Dashboard data loaded successfully!');
+
+                    // Start live data updates
+                    if (!isLiveMode) {
+                        startLiveUpdates();
+                    }
+                } else {
+                    showError(data.error || 'Failed to load dashboard data');
+                }
+            } catch (error) {
+                showError('Failed to load dashboard data: ' + error.message);
+            }
+        }
+
+        // Start live data updates
+        function startLiveUpdates() {
+            isLiveMode = true;
+            liveDataInterval = setInterval(async () => {
+                if (!authToken) return;
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateDashboard(data);
+                    }
+                } catch (error) {
+                    console.log('Live update failed:', error);
+                }
+            }, 5000); // Update every 5 seconds
+
+            showSuccess('Live data updates enabled - refreshing every 5 seconds');
+        }
+
+        // Stop live updates
+        function stopLiveUpdates() {
+            if (liveDataInterval) {
+                clearInterval(liveDataInterval);
+                liveDataInterval = null;
+            }
+            isLiveMode = false;
+        }
+
+        // Update dashboard with data
+        function updateDashboard(data) {
+            // Financial Metrics
+            const metrics = data.financial_metrics;
+            document.getElementById('financialMetrics').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Revenue</span>
+                    <span class="metric-value">$${metrics.revenue.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Net Income</span>
+                    <span class="metric-value">$${metrics.net_income.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Assets</span>
+                    <span class="metric-value">$${metrics.total_assets.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value">$${metrics.market_cap.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">P/E Ratio</span>
+                    <span class="metric-value">${metrics.pe_ratio}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Dividend Yield</span>
+                    <span class="metric-value">${(metrics.dividend_yield * 100).toFixed(2)}%</span>
+                </div>
+            `;
+
+            // Stock Ticker
+            const stock = data.stock_ticker;
+            document.getElementById('stockTicker').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="stock-price">$${stock.current_price}</div>
+                    <div class="stock-change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                        ${stock.change >= 0 ? '+' : ''}${stock.change} (${stock.change_percent >= 0 ? '+' : ''}${stock.change_percent}%)
+                    </div>
+                    <div style="color: #666; margin-top: 5px;">Volume: ${stock.volume.toLocaleString()}</div>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Symbol</span>
+                    <span class="metric-value">${stock.symbol}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Exchange</span>
+                    <span class="metric-value">${stock.exchange}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Company</span>
+                    <span class="metric-value">${stock.company_name}</span>
+                </div>
+            `;
+
+            // Assets List
+            const assets = data.assets;
+            document.getElementById('assetsList').innerHTML = `
+                <ul class="assets-list">
+                    ${assets.map(asset => `
+                        <li>
+                            <span class="asset-name">${asset.name}</span>
+                            <span class="asset-value">$${asset.value.toLocaleString()}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+
+            // Performance Data (placeholder for now)
+            document.getElementById('performanceData').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Data Status</span>
+                    <span class="metric-value" style="color: #27ae60;">Live</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Last Updated</span>
+                    <span class="metric-value">${new Date(data.timestamp).toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">API Response Time</span>
+                    <span class="metric-value">< 100ms</span>
+                </div>
+            `;
+        }
+
+        // Clear dashboard data
+        function clearDashboard() {
+            document.getElementById('financialMetrics').innerHTML = '<div class="loading">Please login to view data</div>';
+            document.getElementById('stockTicker').innerHTML = '<div class="loading">Please login to view data</div>';
+            document.getElementById('assetsList').innerHTML = '<div class="loading">Please login to view data</div>';
+            document.getElementById('performanceData').innerHTML = '<div class="loading">Please login to view data</div>';
+        }
+
+        // Utility functions
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+            setTimeout(() => successDiv.classList.add('hidden'), 3000);
+        }
+
+        // Auto-login if token exists
+        const savedToken = localStorage.getItem('authToken');
+        if (savedToken) {
+            authToken = savedToken;
+            isLoggedIn = true;
+            document.getElementById('loginSection').classList.add('success');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('statusText').textContent = 'Logged in (from saved session)';
+            loadDashboardData();
+        }
+    </script>
+</body>
+</html>

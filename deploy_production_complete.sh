@@ -1,0 +1,260 @@
+#!/bin/bash
+# JPMorgan Financial APIs - Complete Production Deployment Script
+# This script handles the full production deployment including infrastructure setup
+
+set -e  # Exit on any error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="jpmorgan-financial-apis"
+NAMESPACE="jpmorgan-apis"
+CLUSTER_NAME="jpmorgan-prod-cluster"
+DOCKER_REGISTRY="jpmorgan.azurecr.io"
+DOCKER_TAG="production"
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Pre-deployment checks
+pre_deployment_checks() {
+    log_info "Running pre-deployment checks..."
+
+    # Check if required tools are installed
+    command -v docker >/dev/null 2>&1 || { log_error "Docker is required but not installed."; exit 1; }
+    command -v kubectl >/dev/null 2>&1 || { log_error "kubectl is required but not installed."; exit 1; }
+    command -v helm >/dev/null 2>&1 || { log_error "Helm is required but not installed."; exit 1; }
+
+    # Check if .env.production exists
+    if [ ! -f ".env.production" ]; then
+        log_error ".env.production file not found. Please create it with production configuration."
+        exit 1
+    fi
+
+    # Check if required environment variables are set
+    required_vars=("TOKEN_CLIENT_ID" "TOKEN_CLIENT_SECRET" "SECRET_KEY" "POSTGRES_PASSWORD")
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^${var}=" .env.production || grep -q "^${var}=CHANGE_THIS" .env.production; then
+            log_error "Required environment variable ${var} is not set or has default value in .env.production"
+            exit 1
+        fi
+    done
+
+    log_success "Pre-deployment checks passed"
+}
+
+# Build and push Docker images
+build_and_push_images() {
+    log_info "Building and pushing Docker images..."
+
+    # Build GPU-enabled image
+    docker build -f Dockerfile.gpu -t ${DOCKER_REGISTRY}/${PROJECT_NAME}:${DOCKER_TAG} .
+    docker build -f Dockerfile.gpu -t ${DOCKER_REGISTRY}/${PROJECT_NAME}:latest .
+
+    # Push images
+    docker push ${DOCKER_REGISTRY}/${PROJECT_NAME}:${DOCKER_TAG}
+    docker push ${DOCKER_REGISTRY}/${PROJECT_NAME}:latest
+
+    log_success "Docker images built and pushed"
+}
+
+# Setup Kubernetes cluster
+setup_kubernetes() {
+    log_info "Setting up Kubernetes cluster..."
+
+    # Create namespace
+    kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+
+    # Apply RBAC
+    kubectl apply -f k8s/rbac.yml
+
+    # Setup secrets
+    kubectl create secret generic jpmorgan-secrets \
+        --from-env-file=.env.production \
+        --namespace=${NAMESPACE} \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    # Setup PostgreSQL
+    kubectl apply -f k8s/database-replication.yml
+
+    # Setup Redis
+    kubectl apply -f k8s/redis-cluster.yml
+
+    # Wait for database to be ready
+    log_info "Waiting for PostgreSQL to be ready..."
+    kubectl wait --for=condition=ready pod -l app=postgresql -n ${NAMESPACE} --timeout=300s
+
+    log_success "Kubernetes cluster setup completed"
+}
+
+# Deploy Istio service mesh
+deploy_istio() {
+    log_info "Deploying Istio service mesh..."
+
+    # Install Istio (assuming istioctl is available)
+    istioctl install --set profile=demo -y
+
+    # Wait for Istio to be ready
+    kubectl wait --for=condition=ready pod -l istio=pilot -n istio-system --timeout=300s
+
+    # Apply Istio configurations
+    kubectl apply -f k8s/istio-service-mesh.yml
+
+    log_success "Istio service mesh deployed"
+}
+
+# Deploy monitoring stack
+deploy_monitoring() {
+    log_info "Deploying monitoring stack..."
+
+    # Add Helm repositories
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo add grafana https://grafana.github.io/helm-charts
+    helm repo add elastic https://helm.elastic.co
+    helm repo update
+
+    # Install Prometheus
+    helm upgrade --install prometheus prometheus-community/prometheus \
+        --namespace=${NAMESPACE} \
+        --create-namespace \
+        --values monitoring/prometheus-values.yml
+
+    # Install Grafana
+    helm upgrade --install grafana grafana/grafana \
+        --namespace=${NAMESPACE} \
+        --set adminPassword='${GRAFANA_PASSWORD}' \
+        --values monitoring/grafana-values.yml
+
+    # Install Elasticsearch
+    helm upgrade --install elasticsearch elastic/elasticsearch \
+        --namespace=${NAMESPACE} \
+        --values monitoring/elasticsearch-values.yml
+
+    log_success "Monitoring stack deployed"
+}
+
+# Deploy application
+deploy_application() {
+    log_info "Deploying JPMorgan Financial APIs application..."
+
+    # Apply ConfigMaps
+    kubectl apply -f k8s/configmaps.yml
+
+    # Deploy application with HPA
+    kubectl apply -f k8s/hpa.yml
+
+    # Deploy multi-GPU configuration
+    kubectl apply -f k8s/multi-gpu-config.yml
+
+    # Deploy load balancer
+    kubectl apply -f k8s/load-balancer.yml
+
+    # Wait for deployment to be ready
+    kubectl wait --for=condition=available --timeout=600s deployment/jpmorgan-financial-apis -n ${NAMESPACE}
+
+    log_success "Application deployed successfully"
+}
+
+# Run post-deployment tests
+run_post_deployment_tests() {
+    log_info "Running post-deployment tests..."
+
+    # Run comprehensive E2E tests
+    if [ -f "comprehensive_e2e_test.py" ]; then
+        python comprehensive_e2e_test.py
+    fi
+
+    # Run health checks
+    ./scripts/health_check_production.sh
+
+    log_success "Post-deployment tests completed"
+}
+
+# Setup backup and disaster recovery
+setup_backup_recovery() {
+    log_info "Setting up backup and disaster recovery..."
+
+    # Apply backup configurations
+    kubectl apply -f k8s/backup.yml
+
+    # Setup disaster recovery procedures
+    kubectl apply -f k8s/disaster-recovery.yml
+
+    log_success "Backup and disaster recovery setup completed"
+}
+
+# Main deployment function
+main() {
+    log_info "Starting complete production deployment of JPMorgan Financial APIs"
+
+    pre_deployment_checks
+    build_and_push_images
+    setup_kubernetes
+    deploy_istio
+    deploy_monitoring
+    deploy_application
+    run_post_deployment_tests
+    setup_backup_recovery
+
+    log_success "🎉 Production deployment completed successfully!"
+    log_info ""
+    log_info "Next steps:"
+    log_info "1. Verify application is accessible: https://api.jpmorgan.com/health"
+    log_info "2. Check monitoring dashboards: https://grafana.jpmorgan.com"
+    log_info "3. Review logs in Kibana: https://kibana.jpmorgan.com"
+    log_info "4. Run load tests: locust -f load-testing/locustfile.py"
+    log_info "5. Monitor HPA scaling: kubectl get hpa -n ${NAMESPACE}"
+    log_info ""
+    log_info "For troubleshooting, check the logs:"
+    log_info "kubectl logs -f deployment/jpmorgan-financial-apis -n ${NAMESPACE}"
+}
+
+# Handle command line arguments
+case "${1:-}" in
+    "check")
+        pre_deployment_checks
+        ;;
+    "build")
+        build_and_push_images
+        ;;
+    "k8s")
+        setup_kubernetes
+        ;;
+    "istio")
+        deploy_istio
+        ;;
+    "monitoring")
+        deploy_monitoring
+        ;;
+    "deploy")
+        deploy_application
+        ;;
+    "test")
+        run_post_deployment_tests
+        ;;
+    "backup")
+        setup_backup_recovery
+        ;;
+    *)
+        main
+        ;;
+esac

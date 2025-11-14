@@ -1,0 +1,79 @@
+# Production environment overrides
+replicaCount: 5
+
+image:
+  tag: "latest"
+
+ingress:
+  hosts:
+    - host: api.jpmorgan.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: jpmorgan-tls
+      hosts:
+        - api.jpmorgan.com
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 75
+
+postgresql:
+  auth:
+    postgresPassword: "prod-postgres-password"
+    password: "prod-telemetry-password"
+  persistence:
+    size: 100Gi
+
+redis:
+  auth:
+    password: "prod-redis-password"
+  persistence:
+    size: 20Gi
+
+elasticsearch:
+  persistence:
+    size: 100Gi
+
+monitoring:
+  prometheus:
+    retention: 90d
+    retentionSize: "100GiB"
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 30
+  s3:
+    bucket: jpmorgan-telemetry-backups-prod
+    region: us-east-1
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 3
+
+networkPolicy:
+  enabled: true
+
+istio:
+  enabled: true
+  gateway:
+    enabled: true
+  virtualService:
+    enabled: true
+  destinationRule:
+    enabled: true
+  peerAuthentication:
+    enabled: true

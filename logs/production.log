@@ -1,0 +1,5 @@
+2025-11-04 19:01:20,666 - waitress - INFO - Serving on http://0.0.0.0:8000
+2025-11-04 19:27:39,101 - waitress - INFO - Serving on http://0.0.0.0:8000
+2025-11-05 14:46:28,191 - waitress - INFO - Serving on http://0.0.0.0:8000
+2025-11-05 14:46:40,315 - telemetry_logger - INFO - Health check requested
+2025-11-05 14:48:14,367 - telemetry_logger - INFO - Health check requested

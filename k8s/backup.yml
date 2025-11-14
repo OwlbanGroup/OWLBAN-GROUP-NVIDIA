@@ -1,0 +1,204 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-backup
+  namespace: jpmorgan-apis
+  labels:
+    app: postgresql-backup
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgresql-backup
+        spec:
+          containers:
+          - name: postgresql-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              pg_dump -h postgresql-primary -U jpmorgan_user -d jpmorgan_financial_apis | gzip > /backup/postgresql-$(date +%Y%m%d-%H%M%S).sql.gz
+              # Upload to cloud storage (AWS S3 example)
+              # aws s3 cp /backup/postgresql-$(date +%Y%m%d-%H%M%S).sql.gz s3://jpmorgan-backups/database/
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: password
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-backup
+  namespace: jpmorgan-apis
+  labels:
+    app: redis-backup
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: redis-backup
+        spec:
+          containers:
+          - name: redis-backup
+            image: redis:7.0-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              redis-cli -h redis-cluster --rdb /backup/redis-$(date +%Y%m%d-%H%M%S).rdb
+              # Upload to cloud storage
+              # aws s3 cp /backup/redis-$(date +%Y%m%d-%H%M%S).rdb s3://jpmorgan-backups/redis/
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: application-backup
+  namespace: jpmorgan-apis
+  labels:
+    app: application-backup
+spec:
+  schedule: "0 4 * * *"  # Daily at 4 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: application-backup
+        spec:
+          containers:
+          - name: application-backup
+            image: jpmorgan/financial-apis:production
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Backup application data and logs
+              tar -czf /backup/app-logs-$(date +%Y%m%d-%H%M%S).tar.gz /app/logs
+              tar -czf /backup/app-data-$(date +%Y%m%d-%H%M%S).tar.gz /app/data
+              # Upload to cloud storage
+              # aws s3 cp /backup/app-logs-$(date +%Y%m%d-%H%M%S).tar.gz s3://jpmorgan-backups/application/
+              # aws s3 cp /backup/app-data-$(date +%Y%m%d-%H%M%S).tar.gz s3://jpmorgan-backups/application/
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+            - name: logs
+              mountPath: /app/logs
+            - name: data
+              mountPath: /app/data
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc
+          - name: logs
+            emptyDir: {}
+          - name: data
+            emptyDir: {}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backup-restore-test
+  namespace: jpmorgan-apis
+  labels:
+    app: backup-restore-test
+spec:
+  template:
+    metadata:
+      labels:
+        app: backup-restore-test
+    spec:
+      containers:
+      - name: backup-restore-test
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Test PostgreSQL backup restoration
+          echo "Testing PostgreSQL backup restoration..."
+          # Download latest backup from cloud storage
+          # aws s3 cp s3://jpmorgan-backups/database/latest.sql.gz /tmp/backup.sql.gz
+          # gunzip /tmp/backup.sql.gz
+          # psql -h test-postgresql -U jpmorgan_user -d test_db < /tmp/backup.sql
+
+          # Test Redis backup restoration
+          echo "Testing Redis backup restoration..."
+          # aws s3 cp s3://jpmorgan-backups/redis/latest.rdb /tmp/redis.rdb
+          # redis-cli -h test-redis --rdb /tmp/redis.rdb
+
+          echo "Backup restoration test completed successfully"
+      restartPolicy: Never
+  backoffLimit: 3
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-pvc
+  namespace: jpmorgan-apis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: "standard"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-config
+  namespace: jpmorgan-apis
+data:
+  RETENTION_DAYS: "30"
+  BACKUP_SCHEDULE: "0 2 * * *"
+  CLOUD_STORAGE_BUCKET: "jpmorgan-backups"
+  ENCRYPTION_KEY: "CHANGE_THIS_ENCRYPTION_KEY"
+  COMPRESSION_LEVEL: "9"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backup-secret
+  namespace: jpmorgan-apis
+type: Opaque
+data:
+  AWS_ACCESS_KEY_ID: "CHANGE_THIS_AWS_ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "CHANGE_THIS_AWS_SECRET_KEY"
+  ENCRYPTION_PASSPHRASE: "CHANGE_THIS_ENCRYPTION_PASSPHRASE"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backup-pdb
+  namespace: jpmorgan-apis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgresql-backup

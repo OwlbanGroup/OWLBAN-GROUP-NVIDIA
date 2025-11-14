@@ -1,0 +1,7 @@
+{
+    "black-formatter.cwd": "${workspaceFolder}",
+    "black-formatter.interpreter": ["./venv/Scripts/python.exe"],
+    "black-formatter.importStrategy": "useBundled",
+    "black-formatter.args": [],
+    "black-formatter.showNotifications": "off"
+}

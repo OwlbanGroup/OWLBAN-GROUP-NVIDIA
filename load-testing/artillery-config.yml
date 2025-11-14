@@ -1,0 +1,96 @@
+config:
+  target: 'https://api.jpmorgan.com'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    # Load testing phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Load Test"
+    # Stress testing phase
+    - duration: 120
+      arrivalRate: 50
+      name: "Stress Test"
+    # Spike testing phase
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike Test"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  processor: './processors/telemetry-processor.js'
+
+scenarios:
+  - name: "Submit Telemetry Data"
+    weight: 70
+    flow:
+      - post:
+          url: "/api/telemetry"
+          json:
+            timestamp: "{{ timestamp }}"
+            operation: "{{ operation }}"
+            pfn: "{{ pfn }}"
+            version: "{{ version }}"
+            event_name: "{{ event_name }}"
+            shell_id: "{{ shell_id }}"
+            event_flags: "{{ event_flags }}"
+            pg_name: "{{ pg_name }}"
+            dvc_sample: "{{ dvc_sample }}"
+            flags: "{{ flags }}"
+            edition: "{{ edition }}"
+            epoch: "{{ epoch }}"
+            seq: "{{ seq }}"
+            data_type: "{{ data_type }}"
+            is_required: "{{ is_required }}"
+            data_category: "{{ data_category }}"
+            product: "{{ product }}"
+            priv_tags: "{{ priv_tags }}"
+            policies: "{{ policies }}"
+            cv: "{{ cv }}"
+            boot_id: "{{ boot_id }}"
+            os_name: "{{ os_name }}"
+            os_version: "{{ os_version }}"
+            exp_id: "{{ exp_id }}"
+            app_id: "{{ app_id }}"
+            app_version: "{{ app_version }}"
+            is_1p: "{{ is_1p }}"
+            as_id: "{{ as_id }}"
+            local_id: "{{ local_id }}"
+            device_class: "{{ device_class }}"
+            dev_make: "{{ dev_make }}"
+            dev_model: "{{ dev_model }}"
+            ticket_keys: "{{ ticket_keys }}"
+            user_local_id: "{{ user_local_id }}"
+            tz: "{{ tz }}"
+            pn1: "{{ pn1 }}"
+            p1: "{{ p1 }}"
+            pn2: "{{ pn2 }}"
+            p2: "{{ p2 }}"
+            pn3: "{{ pn3 }}"
+            p3: "{{ p3 }}"
+            pn4: "{{ pn4 }}"
+            p4: "{{ p4 }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: 'status'
+            - hasProperty: 'message'
+
+  - name: "Health Check"
+    weight: 20
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - hasProperty: 'status'
+
+  - name: "Get Telemetry Metrics"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/telemetry/metrics"
+          expect:
+            - statusCode: 200
+            - hasProperty: 'metrics'
