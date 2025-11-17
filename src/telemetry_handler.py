@@ -9,10 +9,11 @@ from collections import defaultdict, deque
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import psycopg2
+import psycopg2.pool
 from psycopg2.extras import execute_batch
 
 from .data_processor import prepare_for_ml
@@ -21,7 +22,7 @@ from .ml_model import AnomalyDetector
 from .telemetry_parser import TelemetryEvent, TelemetryParser
 
 try:
-    from config import config
+    from config import config  # type: ignore
 except ImportError:
     # Fallback config if module not found
     class Config:
@@ -30,11 +31,11 @@ except ImportError:
     config = Config()
 
 # Query performance tracking
-query_performance_stats = defaultdict(
+query_performance_stats: Dict[str, Dict[str, Union[int, float]]] = defaultdict(
     lambda: {
         'count': 0,
-        'total_time': 0,
-        'max_time': 0,
+        'total_time': 0.0,
+        'max_time': 0.0,
         'min_time': float('inf')
     }
 )
@@ -109,7 +110,7 @@ class TelemetryDatabase:
     and SQLite support
     """
 
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: Optional[str] = None):
         self.db_url = db_path or config.DATABASE_URL
         self.is_postgres = (
             self.db_url.startswith('postgresql://') or
@@ -700,7 +701,7 @@ class TelemetryHandler:
 
     def process_batch(
         self, telemetry_data_list: List[Dict[str, Any]]
-    ) -> Dict[str, int]:
+    ) -> Dict[str, Any]:
         """
         Process a batch of telemetry events with async processing
 
@@ -710,7 +711,7 @@ class TelemetryHandler:
         Returns:
             Dictionary with processing statistics
         """
-        stats = {
+        stats: Dict[str, Any] = {
             'total': len(telemetry_data_list),
             'successful': 0,
             'failed': 0,
@@ -778,7 +779,7 @@ class TelemetryHandler:
             )
             return False
 
-    def _process_batch_queue(self) -> Dict[str, int]:
+    def _process_batch_queue(self) -> Dict[str, Any]:
         """Process the current batch queue"""
         try:
             with self.lock:
@@ -801,8 +802,8 @@ class TelemetryHandler:
         return self.database.get_metrics_summary(hours)
 
     def export_events(
-        self, operation: str = None, limit: int = 1000,
-        output_file: str = None
+        self, operation: Optional[str] = None, limit: int = 1000,
+        output_file: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Export telemetry events to file or return as list

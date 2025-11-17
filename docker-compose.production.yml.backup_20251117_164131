@@ -53,7 +53,7 @@ services:
     env_file:
       - .env.production
     environment:
-      - DATABASE_URL=postgresql://jpmorgan_prod:SecureP%40ssw0rd2024@postgresql:5432/jpmorgan_financial_apis_prod
+      - DATABASE_URL=postgresql://jpmorgan_prod:SecureP@ssw0rd2024@postgresql:5432/jpmorgan_financial_apis_prod
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./logs:/var/log/jpmorgan
@@ -195,4 +195,3 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
