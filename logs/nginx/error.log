@@ -869,3 +869,5 @@
 2025/11/17 22:01:20 [emerg] 60#60: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
 2025/11/17 22:01:55 [emerg] 66#66: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
 2025/11/17 22:02:29 [emerg] 72#72: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 22:03:03 [emerg] 78#78: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 22:03:38 [emerg] 84#84: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
