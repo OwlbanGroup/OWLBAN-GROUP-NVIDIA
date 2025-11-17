@@ -4,8 +4,10 @@ Production WSGI server for JPMorgan Financial APIs
 """
 import os
 import logging
-from waitress import serve
-from app_final import app
+from waitress import serve  # type: ignore[import-untyped]
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from app import app  # pylint: disable=import-error
 
 # Configure production logging
 logging.basicConfig(
@@ -23,7 +25,10 @@ def configure_production_app():
     """Configure the Flask app for production"""
     # Set production environment variables
     os.environ.setdefault('FLASK_ENV', 'production')
-    os.environ.setdefault('SECRET_KEY', os.environ.get('SECRET_KEY', 'production-secret-key-change-in-env'))
+    os.environ.setdefault(
+        'SECRET_KEY',
+        os.environ.get('SECRET_KEY', 'production-secret-key-change-in-env')
+    )
 
     # Configure Flask app for production
     app.config.update(
@@ -41,9 +46,6 @@ def configure_production_app():
 
     # Configure rate limiting for production (Redis if available)
     try:
-        from flask_limiter import Limiter
-        from flask_limiter.util import get_remote_address
-
         # Try to use Redis for rate limiting in production
         redis_url = os.environ.get('REDIS_URL')
         if redis_url:
@@ -63,10 +65,15 @@ def configure_production_app():
                 storage_uri="memory://",
                 strategy="fixed-window"
             )
-            logger.warning("⚠️ Using in-memory rate limiting (not recommended for production)")
+            logger.warning(
+                "⚠️ Using in-memory rate limiting (not recommended for production)"
+            )
 
-    except Exception as e:
-        logger.error(f"Failed to configure rate limiting: {e}")
+        # Store limiter in app config for later use
+        app.config['LIMITER'] = limiter
+
+    except (ImportError, ConnectionError, RuntimeError) as e:
+        logger.error("Failed to configure rate limiting: %s", str(e))
 
     return app
 
@@ -81,8 +88,8 @@ if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8000))
     workers = int(os.environ.get('WORKERS', 4))
 
-    logger.info(f"📍 Server will be available at: http://{host}:{port}")
-    logger.info(f"🔧 Using Waitress WSGI server with {workers} threads")
+    logger.info("📍 Server will be available at: http://%s:%s", host, port)
+    logger.info("🔧 Using Waitress WSGI server with %s threads", workers)
     logger.info("🏭 Production configuration applied")
 
     # Start the production server
@@ -104,6 +111,6 @@ if __name__ == "__main__":
             # Security headers
             ident='JPMorgan Financial APIs Production Server'
         )
-    except Exception as e:
-        logger.error(f"Failed to start production server: {e}")
+    except (OSError, RuntimeError, ValueError) as e:
+        logger.error("Failed to start production server: %s", str(e))
         raise

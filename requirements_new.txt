@@ -51,6 +51,9 @@ boto3==1.35.11
 # YAML support
 PyYAML==6.0.2
 
+# Database drivers
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+
 # New additions for enhanced functionality
 pydantic==2.8.2  # For data validation
 sqlalchemy==2.0.31  # For database operations

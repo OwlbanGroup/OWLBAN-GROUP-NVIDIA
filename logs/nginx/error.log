@@ -157,3 +157,592 @@
 2025/11/14 22:07:07 [emerg] 781#781: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
 2025/11/14 22:07:43 [emerg] 787#787: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
 2025/11/14 22:08:19 [emerg] 793#793: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:08:53 [emerg] 800#800: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:09:28 [emerg] 806#806: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:10:04 [emerg] 812#812: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:10:39 [emerg] 818#818: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:11:15 [emerg] 825#825: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:11:50 [emerg] 831#831: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:36:02 [warn] 1#1: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 22:36:02 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 22:36:31 [warn] 43#43: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 22:36:31 [warn] 43#43: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 22:37:01 [emerg] 49#49: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:37:36 [emerg] 55#55: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:38:12 [warn] 61#61: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 22:38:12 [warn] 61#61: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 22:38:42 [emerg] 67#67: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:39:16 [emerg] 73#73: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:39:50 [emerg] 79#79: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:40:24 [emerg] 85#85: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:40:58 [emerg] 91#91: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:41:32 [emerg] 97#97: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:42:06 [emerg] 103#103: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:42:40 [emerg] 109#109: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:43:15 [emerg] 115#115: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:43:49 [emerg] 121#121: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:44:23 [warn] 127#127: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 22:44:23 [warn] 127#127: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 22:44:56 [emerg] 133#133: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:45:30 [emerg] 139#139: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:46:04 [emerg] 145#145: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:46:39 [emerg] 151#151: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:47:13 [emerg] 157#157: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:47:47 [emerg] 163#163: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:48:21 [emerg] 169#169: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:48:55 [emerg] 175#175: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:49:30 [emerg] 181#181: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:50:04 [emerg] 187#187: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:50:38 [emerg] 193#193: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:51:12 [emerg] 199#199: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:51:46 [emerg] 205#205: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:52:20 [emerg] 211#211: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:52:54 [emerg] 217#217: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:53:28 [emerg] 223#223: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:54:02 [emerg] 229#229: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:54:36 [emerg] 235#235: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:55:10 [emerg] 241#241: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:55:45 [emerg] 247#247: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:56:19 [emerg] 253#253: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:56:53 [emerg] 259#259: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:57:27 [emerg] 265#265: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:58:01 [emerg] 271#271: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:58:35 [emerg] 277#277: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:59:10 [emerg] 283#283: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 22:59:44 [emerg] 289#289: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:00:18 [emerg] 295#295: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:00:52 [emerg] 301#301: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:01:26 [emerg] 307#307: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:02:00 [emerg] 313#313: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:02:34 [emerg] 319#319: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:03:08 [emerg] 325#325: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:03:43 [emerg] 332#332: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:04:17 [emerg] 338#338: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:04:51 [emerg] 344#344: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:05:25 [emerg] 350#350: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:05:59 [emerg] 356#356: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:06:33 [emerg] 362#362: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:07:08 [emerg] 368#368: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:07:42 [emerg] 374#374: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:08:16 [emerg] 380#380: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:08:50 [emerg] 386#386: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:09:25 [emerg] 393#393: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:09:59 [emerg] 400#400: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:10:33 [emerg] 406#406: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:11:08 [warn] 412#412: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/14 23:11:08 [warn] 412#412: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/14 23:11:41 [emerg] 418#418: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:12:16 [emerg] 424#424: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:12:50 [emerg] 430#430: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:13:24 [emerg] 436#436: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:13:58 [emerg] 442#442: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:14:32 [emerg] 448#448: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:15:06 [emerg] 454#454: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:15:41 [emerg] 460#460: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:16:15 [emerg] 466#466: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:16:49 [emerg] 471#471: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:17:24 [emerg] 477#477: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:17:58 [emerg] 483#483: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:18:32 [emerg] 489#489: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:19:06 [emerg] 495#495: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:19:40 [emerg] 501#501: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:20:14 [emerg] 507#507: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:20:48 [emerg] 513#513: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:21:22 [emerg] 519#519: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:21:56 [emerg] 525#525: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:22:30 [emerg] 531#531: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:23:04 [emerg] 537#537: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:23:38 [emerg] 544#544: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:24:12 [emerg] 550#550: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:24:46 [emerg] 556#556: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:25:21 [emerg] 562#562: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/14 23:25:55 [emerg] 568#568: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:22:24 [warn] 1#1: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:22:24 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:22:55 [warn] 34#34: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:22:55 [warn] 34#34: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:23:29 [warn] 40#40: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:23:29 [warn] 40#40: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:24:07 [emerg] 46#46: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:24:44 [warn] 52#52: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:24:44 [warn] 52#52: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:25:15 [warn] 58#58: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:25:15 [warn] 58#58: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:25:47 [warn] 65#65: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:25:47 [warn] 65#65: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:26:21 [warn] 71#71: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:26:21 [warn] 71#71: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:26:55 [emerg] 77#77: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:27:31 [emerg] 83#83: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:28:05 [emerg] 91#91: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:28:39 [emerg] 98#98: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:29:16 [emerg] 104#104: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:29:51 [emerg] 110#110: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:30:27 [emerg] 116#116: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:31:01 [emerg] 122#122: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:31:37 [emerg] 128#128: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:32:12 [warn] 133#133: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:32:12 [warn] 133#133: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:32:48 [warn] 139#139: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:32:48 [warn] 139#139: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:33:20 [warn] 145#145: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:33:20 [warn] 145#145: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:33:57 [warn] 152#152: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:33:57 [warn] 152#152: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:34:31 [warn] 158#158: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:34:31 [warn] 158#158: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:35:04 [warn] 164#164: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:35:04 [warn] 164#164: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:35:37 [warn] 171#171: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:35:37 [warn] 171#171: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:36:15 [emerg] 177#177: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:37:14 [warn] 183#183: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:37:14 [warn] 183#183: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:37:58 [warn] 189#189: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:37:58 [warn] 189#189: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:38:45 [emerg] 195#195: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:39:38 [warn] 200#200: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:39:38 [warn] 200#200: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:40:17 [warn] 207#207: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:40:17 [warn] 207#207: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:40:51 [warn] 213#213: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:40:51 [warn] 213#213: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:41:36 [warn] 219#219: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:41:36 [warn] 219#219: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:42:14 [warn] 225#225: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:42:14 [warn] 225#225: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:42:49 [warn] 231#231: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:42:49 [warn] 231#231: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:43:24 [warn] 237#237: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:43:24 [warn] 237#237: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:43:59 [warn] 243#243: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:43:59 [warn] 243#243: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:44:30 [warn] 248#248: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:44:30 [warn] 248#248: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:45:01 [warn] 255#255: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:45:01 [warn] 255#255: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:45:32 [warn] 261#261: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:45:32 [warn] 261#261: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:46:30 [warn] 267#267: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:46:30 [warn] 267#267: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:47:06 [warn] 274#274: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:47:06 [warn] 274#274: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:47:39 [warn] 280#280: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:47:39 [warn] 280#280: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:48:11 [warn] 285#285: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:48:11 [warn] 285#285: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:48:46 [warn] 292#292: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:48:46 [warn] 292#292: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:49:17 [warn] 298#298: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:49:17 [warn] 298#298: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:49:49 [warn] 305#305: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:49:49 [warn] 305#305: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:50:24 [warn] 311#311: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:50:24 [warn] 311#311: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:50:55 [warn] 317#317: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:50:55 [warn] 317#317: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:51:29 [warn] 323#323: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:51:29 [warn] 323#323: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:52:02 [warn] 329#329: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:52:02 [warn] 329#329: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:52:35 [warn] 336#336: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:52:35 [warn] 336#336: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:53:11 [warn] 342#342: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:53:11 [warn] 342#342: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:53:45 [warn] 347#347: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:53:45 [warn] 347#347: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:54:21 [emerg] 354#354: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 17:54:58 [warn] 360#360: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:54:58 [warn] 360#360: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:55:30 [warn] 366#366: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:55:30 [warn] 366#366: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:56:04 [warn] 371#371: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:56:04 [warn] 371#371: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:56:38 [warn] 377#377: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:56:38 [warn] 377#377: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:57:14 [warn] 383#383: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:57:14 [warn] 383#383: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:57:45 [warn] 389#389: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:57:45 [warn] 389#389: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:58:21 [warn] 395#395: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:58:21 [warn] 395#395: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:58:55 [warn] 401#401: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:58:55 [warn] 401#401: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 17:59:30 [warn] 407#407: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 17:59:30 [warn] 407#407: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:00:04 [warn] 413#413: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:00:04 [warn] 413#413: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:00:35 [warn] 419#419: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:00:35 [warn] 419#419: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:01:09 [warn] 425#425: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:01:09 [warn] 425#425: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:01:43 [warn] 431#431: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:01:43 [warn] 431#431: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:02:16 [warn] 437#437: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:02:16 [warn] 437#437: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:02:49 [warn] 443#443: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:02:49 [warn] 443#443: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:03:20 [emerg] 449#449: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 18:03:58 [warn] 456#456: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:03:58 [warn] 456#456: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:04:34 [warn] 462#462: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:04:34 [warn] 462#462: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:05:07 [warn] 468#468: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:05:07 [warn] 468#468: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:05:40 [warn] 474#474: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:05:40 [warn] 474#474: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:06:21 [warn] 480#480: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:06:21 [warn] 480#480: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:06:53 [warn] 487#487: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:06:53 [warn] 487#487: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:07:24 [warn] 493#493: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:07:24 [warn] 493#493: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:07:56 [warn] 499#499: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:07:56 [warn] 499#499: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:08:26 [warn] 505#505: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:08:26 [warn] 505#505: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:08:57 [warn] 511#511: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:08:57 [warn] 511#511: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:09:29 [warn] 517#517: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:09:29 [warn] 517#517: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:10:02 [warn] 523#523: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:10:02 [warn] 523#523: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:10:32 [warn] 528#528: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:10:32 [warn] 528#528: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:11:05 [warn] 534#534: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:11:05 [warn] 534#534: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:11:36 [warn] 540#540: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:11:36 [warn] 540#540: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:12:09 [warn] 547#547: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:12:09 [warn] 547#547: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:12:41 [warn] 553#553: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:12:41 [warn] 553#553: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:13:12 [warn] 558#558: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:13:12 [warn] 558#558: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:13:46 [warn] 564#564: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:13:46 [warn] 564#564: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:14:19 [warn] 570#570: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:14:19 [warn] 570#570: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:14:50 [warn] 577#577: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:14:50 [warn] 577#577: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:15:21 [warn] 583#583: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:15:21 [warn] 583#583: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:15:52 [warn] 589#589: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:15:52 [warn] 589#589: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:16:24 [warn] 595#595: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:16:24 [warn] 595#595: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:16:58 [emerg] 601#601: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 18:17:33 [warn] 607#607: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:17:33 [warn] 607#607: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:18:08 [warn] 613#613: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:18:08 [warn] 613#613: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:18:40 [warn] 619#619: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:18:40 [warn] 619#619: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:19:11 [warn] 625#625: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:19:11 [warn] 625#625: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:19:42 [warn] 631#631: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:19:42 [warn] 631#631: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:20:13 [warn] 637#637: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:20:13 [warn] 637#637: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:20:44 [warn] 642#642: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:20:44 [warn] 642#642: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:21:19 [warn] 648#648: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:21:19 [warn] 648#648: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:21:54 [warn] 654#654: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:21:54 [warn] 654#654: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:22:31 [warn] 660#660: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:22:31 [warn] 660#660: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:23:05 [warn] 667#667: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:23:05 [warn] 667#667: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:23:37 [warn] 673#673: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:23:37 [warn] 673#673: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:24:07 [warn] 679#679: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:24:07 [warn] 679#679: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:24:38 [warn] 685#685: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:24:38 [warn] 685#685: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:25:09 [warn] 691#691: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:25:09 [warn] 691#691: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:25:40 [warn] 698#698: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:25:40 [warn] 698#698: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:26:13 [warn] 704#704: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:26:13 [warn] 704#704: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:26:45 [warn] 712#712: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:26:45 [warn] 712#712: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:27:16 [warn] 718#718: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:27:16 [warn] 718#718: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:27:47 [warn] 724#724: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:27:47 [warn] 724#724: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:28:20 [warn] 730#730: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:28:20 [warn] 730#730: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:28:54 [warn] 735#735: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:28:54 [warn] 735#735: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:29:25 [warn] 741#741: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:29:25 [warn] 741#741: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:29:56 [warn] 747#747: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:29:56 [warn] 747#747: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:30:29 [warn] 754#754: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:30:29 [warn] 754#754: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:30:59 [warn] 761#761: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:30:59 [warn] 761#761: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:31:31 [warn] 767#767: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:31:31 [warn] 767#767: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:32:04 [warn] 774#774: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:32:04 [warn] 774#774: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:32:36 [warn] 780#780: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:32:36 [warn] 780#780: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:33:07 [warn] 786#786: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:33:07 [warn] 786#786: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:33:38 [warn] 791#791: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:33:38 [warn] 791#791: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:34:10 [warn] 797#797: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:34:10 [warn] 797#797: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:34:41 [warn] 803#803: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:34:41 [warn] 803#803: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:35:13 [warn] 809#809: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:35:13 [warn] 809#809: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:35:46 [warn] 815#815: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:35:46 [warn] 815#815: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:36:22 [warn] 821#821: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:36:22 [warn] 821#821: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:36:56 [warn] 827#827: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:36:56 [warn] 827#827: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:37:29 [warn] 833#833: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:37:29 [warn] 833#833: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:38:05 [warn] 839#839: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:38:05 [warn] 839#839: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:38:40 [warn] 846#846: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:38:40 [warn] 846#846: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:39:13 [warn] 852#852: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:39:13 [warn] 852#852: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:39:53 [warn] 858#858: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:39:53 [warn] 858#858: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:40:25 [emerg] 864#864: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 18:41:03 [warn] 870#870: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:41:03 [warn] 870#870: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:41:38 [warn] 876#876: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:41:38 [warn] 876#876: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:42:11 [warn] 882#882: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:42:11 [warn] 882#882: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:42:45 [warn] 888#888: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:42:45 [warn] 888#888: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:43:20 [warn] 894#894: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:43:20 [warn] 894#894: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:43:51 [warn] 900#900: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:43:51 [warn] 900#900: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:44:22 [warn] 906#906: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:44:22 [warn] 906#906: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:44:53 [warn] 912#912: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:44:53 [warn] 912#912: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:45:25 [warn] 918#918: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:45:25 [warn] 918#918: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:45:56 [warn] 924#924: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:45:56 [warn] 924#924: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:46:32 [warn] 930#930: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:46:32 [warn] 930#930: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:47:04 [warn] 936#936: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:47:04 [warn] 936#936: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:47:36 [warn] 942#942: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:47:36 [warn] 942#942: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:48:08 [warn] 948#948: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:48:08 [warn] 948#948: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:48:41 [warn] 953#953: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:48:41 [warn] 953#953: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:49:16 [warn] 959#959: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:49:16 [warn] 959#959: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:49:48 [warn] 966#966: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:49:48 [warn] 966#966: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:50:21 [warn] 972#972: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:50:21 [warn] 972#972: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:50:56 [warn] 978#978: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:50:56 [warn] 978#978: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:51:30 [warn] 984#984: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:51:30 [warn] 984#984: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:52:07 [warn] 991#991: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:52:07 [warn] 991#991: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:52:40 [warn] 996#996: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:52:40 [warn] 996#996: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:53:14 [warn] 1002#1002: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:53:14 [warn] 1002#1002: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:53:47 [warn] 1008#1008: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:53:47 [warn] 1008#1008: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:54:18 [warn] 1014#1014: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:54:18 [warn] 1014#1014: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:54:52 [warn] 1020#1020: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:54:52 [warn] 1020#1020: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:55:24 [warn] 1027#1027: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:55:24 [warn] 1027#1027: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:55:59 [warn] 1033#1033: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:55:59 [warn] 1033#1033: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:56:34 [warn] 1039#1039: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:56:34 [warn] 1039#1039: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:57:05 [warn] 1046#1046: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:57:05 [warn] 1046#1046: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:57:40 [warn] 1052#1052: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:57:40 [warn] 1052#1052: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:58:15 [warn] 1059#1059: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:58:15 [warn] 1059#1059: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:58:50 [warn] 1065#1065: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:58:50 [warn] 1065#1065: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:59:22 [warn] 1071#1071: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:59:22 [warn] 1071#1071: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 18:59:59 [warn] 1077#1077: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 18:59:59 [warn] 1077#1077: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:00:38 [warn] 1083#1083: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:00:38 [warn] 1083#1083: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:01:12 [warn] 1089#1089: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:01:12 [warn] 1089#1089: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:01:46 [warn] 1095#1095: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:01:46 [warn] 1095#1095: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:02:18 [warn] 1101#1101: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:02:18 [warn] 1101#1101: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:02:51 [warn] 1107#1107: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:02:51 [warn] 1107#1107: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:03:28 [warn] 1114#1114: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:03:28 [warn] 1114#1114: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:04:00 [warn] 1120#1120: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:04:00 [warn] 1120#1120: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:04:32 [warn] 1126#1126: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:04:32 [warn] 1126#1126: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:05:05 [warn] 1132#1132: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:05:05 [warn] 1132#1132: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:05:38 [warn] 1138#1138: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:05:38 [warn] 1138#1138: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:06:10 [warn] 1144#1144: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:06:10 [warn] 1144#1144: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:06:42 [warn] 1150#1150: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:06:42 [warn] 1150#1150: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:07:16 [warn] 1156#1156: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:07:16 [warn] 1156#1156: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:07:49 [emerg] 1162#1162: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:08:25 [warn] 1168#1168: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:08:25 [warn] 1168#1168: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:09:01 [warn] 1174#1174: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:09:01 [warn] 1174#1174: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:09:35 [warn] 1180#1180: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:09:35 [warn] 1180#1180: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:10:10 [warn] 1187#1187: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:10:10 [warn] 1187#1187: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:10:44 [warn] 1193#1193: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:10:44 [warn] 1193#1193: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:11:19 [warn] 1199#1199: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:11:19 [warn] 1199#1199: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:11:50 [warn] 1205#1205: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:11:50 [warn] 1205#1205: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:12:23 [warn] 1211#1211: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:12:23 [warn] 1211#1211: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:12:53 [warn] 1217#1217: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:12:53 [warn] 1217#1217: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:13:24 [warn] 1222#1222: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:13:24 [warn] 1222#1222: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:13:56 [warn] 1228#1228: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:13:56 [warn] 1228#1228: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:14:39 [warn] 1234#1234: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:14:39 [warn] 1234#1234: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:15:14 [warn] 1240#1240: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:15:14 [warn] 1240#1240: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:15:47 [warn] 1246#1246: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:15:47 [warn] 1246#1246: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:16:18 [warn] 1252#1252: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:16:18 [warn] 1252#1252: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:16:50 [warn] 1258#1258: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:16:50 [warn] 1258#1258: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:17:22 [warn] 1264#1264: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:17:22 [warn] 1264#1264: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:17:53 [warn] 1270#1270: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:17:53 [warn] 1270#1270: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:18:24 [warn] 1275#1275: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:18:24 [warn] 1275#1275: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:18:55 [warn] 1281#1281: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:18:55 [warn] 1281#1281: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:19:29 [warn] 1287#1287: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:19:29 [warn] 1287#1287: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:20:01 [warn] 1293#1293: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:20:01 [warn] 1293#1293: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:20:36 [warn] 1298#1298: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:20:36 [warn] 1298#1298: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:21:11 [warn] 1304#1304: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:21:11 [warn] 1304#1304: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:21:43 [warn] 1310#1310: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:21:43 [warn] 1310#1310: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:22:15 [warn] 1316#1316: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:22:15 [warn] 1316#1316: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:22:55 [warn] 1321#1321: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:22:55 [warn] 1321#1321: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:23:31 [warn] 1327#1327: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:23:31 [warn] 1327#1327: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:24:05 [warn] 1332#1332: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:24:05 [warn] 1332#1332: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:24:37 [warn] 1338#1338: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:24:37 [warn] 1338#1338: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:25:18 [warn] 1344#1344: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:25:18 [warn] 1344#1344: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:25:56 [warn] 1350#1350: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:25:56 [warn] 1350#1350: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:26:29 [warn] 1357#1357: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:26:29 [warn] 1357#1357: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:27:01 [warn] 1363#1363: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:27:01 [warn] 1363#1363: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:27:33 [warn] 1369#1369: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:27:33 [warn] 1369#1369: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:28:04 [warn] 1375#1375: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:28:04 [warn] 1375#1375: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:28:36 [warn] 1381#1381: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:28:36 [warn] 1381#1381: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:29:08 [warn] 1387#1387: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:29:08 [warn] 1387#1387: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:29:41 [emerg] 1393#1393: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:30:18 [warn] 1399#1399: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:30:18 [warn] 1399#1399: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:30:51 [warn] 1405#1405: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:30:51 [warn] 1405#1405: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:31:24 [warn] 1411#1411: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:31:24 [warn] 1411#1411: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:31:55 [warn] 1417#1417: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:31:55 [warn] 1417#1417: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:32:26 [warn] 1423#1423: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:32:26 [warn] 1423#1423: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:32:57 [warn] 1429#1429: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:32:57 [warn] 1429#1429: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:33:27 [emerg] 1435#1435: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:34:01 [emerg] 1441#1441: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:34:37 [emerg] 1448#1448: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:35:11 [emerg] 1454#1454: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:35:46 [emerg] 1461#1461: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:36:20 [emerg] 1467#1467: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:36:54 [emerg] 1473#1473: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:37:29 [emerg] 1479#1479: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:38:03 [warn] 1485#1485: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:38:03 [warn] 1485#1485: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:38:33 [emerg] 1491#1491: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:39:09 [warn] 1497#1497: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:39:09 [warn] 1497#1497: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:39:39 [emerg] 1503#1503: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:40:14 [warn] 1509#1509: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:40:14 [warn] 1509#1509: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:40:44 [emerg] 1515#1515: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:41:18 [warn] 1521#1521: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:41:18 [warn] 1521#1521: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:41:49 [warn] 1528#1528: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:41:49 [warn] 1528#1528: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:42:20 [emerg] 1533#1533: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:42:54 [emerg] 1539#1539: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:43:28 [emerg] 1545#1545: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:44:02 [emerg] 1551#1551: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:44:36 [emerg] 1557#1557: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:45:10 [emerg] 1563#1563: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:45:45 [emerg] 1569#1569: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:46:19 [emerg] 1575#1575: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:46:53 [emerg] 1582#1582: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:47:27 [emerg] 1588#1588: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:48:01 [emerg] 1594#1594: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:48:35 [emerg] 1600#1600: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:49:09 [warn] 1606#1606: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:49:09 [warn] 1606#1606: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:49:42 [emerg] 1612#1612: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:50:16 [warn] 1618#1618: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:72
+2025/11/17 19:50:16 [warn] 1618#1618: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/ssl/server.crt"
+2025/11/17 19:50:47 [emerg] 1624#1624: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:51:21 [emerg] 1630#1630: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:51:55 [emerg] 1636#1636: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:52:29 [emerg] 1642#1642: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50
+2025/11/17 19:53:03 [emerg] 1648#1648: host not found in upstream "app:8000" in /etc/nginx/nginx.conf:50

@@ -23,6 +23,7 @@ pandas==2.2.2
 numpy==1.26.4
 scikit-learn==1.5.1
 tensorflow==2.17.0  # GPU-accelerated ML with CUDA support
+matplotlib==3.9.1
 
 
 # For E2E testing
@@ -51,6 +52,9 @@ boto3==1.35.11
 # YAML support
 PyYAML==6.0.2
 
+# Database drivers
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+
 # New additions for enhanced functionality
 pydantic==2.8.2  # For data validation
 sqlalchemy==2.0.31  # For database operations
@@ -65,3 +69,7 @@ flower==2.0.1  # For Celery monitoring
 # Load testing dependencies
 locust==2.29.1
 faker==25.8.0
+
+# Additional production dependencies
+gunicorn==22.0.0  # Production WSGI server
+waitress==3.0.0  # Alternative production server
