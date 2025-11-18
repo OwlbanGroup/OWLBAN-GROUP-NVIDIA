@@ -1,6 +1,4 @@
-
-# JPMorgan Financial APIs - Production Docker Compose Configuration
-# No version attribute needed (Docker Compose v2+)
+version: '3.8'
 
 services:
   # PostgreSQL Database
@@ -197,5 +195,4 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
 

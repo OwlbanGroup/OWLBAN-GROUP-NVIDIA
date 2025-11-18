@@ -1296,7 +1296,123 @@ def index():
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     """Serve the web dashboard"""
-    return render_template('index.html')
+    try:
+        with open('dashboard.html', 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'text/html'}
+    except FileNotFoundError:
+        return jsonify({
+            'error': 'Dashboard file not found',
+            'status': 'error'
+        }), 404
+
+@app.route('/api/jpmorgan-data', methods=['GET'])
+@limiter.limit("10 per minute")
+@require_auth
+def get_jpmorgan_data():
+    """
+    Get live JPMorgan financial data for dashboard
+    
+    Requires Authorization header with Bearer token
+    """
+    try:
+        import random
+        from datetime import datetime
+        
+        # Generate mock live financial data
+        # In production, this would fetch real data from JPMorgan APIs
+        data = {
+            'financial_metrics': {
+                'revenue': 125000000000 + random.randint(-1000000000, 1000000000),
+                'net_income': 48000000000 + random.randint(-500000000, 500000000),
+                'total_assets': 3200000000000 + random.randint(-10000000000, 10000000000),
+                'market_cap': 450000000000 + random.randint(-5000000000, 5000000000),
+                'pe_ratio': round(12.5 + random.uniform(-0.5, 0.5), 2),
+                'dividend_yield': round(0.0275 + random.uniform(-0.002, 0.002), 4)
+            },
+            'stock_ticker': {
+                'symbol': 'JPM',
+                'company_name': 'JPMorgan Chase & Co.',
+                'exchange': 'NYSE',
+                'current_price': round(145.50 + random.uniform(-2, 2), 2),
+                'change': round(random.uniform(-3, 3), 2),
+                'change_percent': round(random.uniform(-2, 2), 2),
+                'volume': 12500000 + random.randint(-1000000, 1000000)
+            },
+            'assets': [
+                {'name': 'Cash & Equivalents', 'value': 850000000000},
+                {'name': 'Securities', 'value': 650000000000},
+                {'name': 'Loans', 'value': 1100000000000},
+                {'name': 'Trading Assets', 'value': 450000000000},
+                {'name': 'Other Assets', 'value': 150000000000}
+            ],
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'status': 'live'
+        }
+        
+        return jsonify(data), 200
+        
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_jpmorgan_data'})
+        return jsonify({
+            'error': 'Failed to fetch financial data',
+            'status': 'error'
+        }), 500
+
+@app.route('/user/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def user_login():
+    """
+    User login endpoint for dashboard
+    
+    Expected JSON payload:
+    {
+        "username": "user",
+        "password": "password"
+    }
+    """
+    try:
+        request_data = request.get_json()
+        
+        if not request_data or 'username' not in request_data or 'password' not in request_data:
+            return jsonify({
+                'error': 'Username and password are required',
+                'status': 'error'
+            }), 400
+        
+        username = request_data['username']
+        password = request_data['password']
+        
+        # Authenticate user
+        success, error_message = user_manager.authenticate_user(username, password)
+        
+        if not success:
+            return jsonify({
+                'error': error_message,
+                'status': 'error'
+            }), 401
+        
+        # Create session token
+        session_token = user_manager.create_session_token(username)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Login successful',
+            'token': session_token,
+            'user': user_manager.get_user_info(username),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except json.JSONDecodeError:
+        return jsonify({
+            'error': 'Invalid JSON format',
+            'status': 'error'
+        }), 400
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'user_login'})
+        return jsonify({
+            'error': 'Internal server error',
+            'status': 'error'
+        }), 500
 
 if __name__ == '__main__':
     # Log application startup

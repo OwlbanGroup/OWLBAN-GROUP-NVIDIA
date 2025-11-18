@@ -222,10 +222,21 @@
             checkServerHealth();
         });
 
+        // Get API base URL (use relative URLs for production, or localhost for development)
+        function getApiBaseUrl() {
+            // If running through a web server (production), use relative URLs
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                return window.location.origin;
+            }
+            // Fallback for local file testing
+            return 'http://localhost:8000';
+        }
+
         // Check server health
         async function checkServerHealth() {
             try {
-                const response = await fetch('http://localhost:5000/health');
+                const apiUrl = getApiBaseUrl();
+                const response = await fetch(`${apiUrl}/health`);
                 const data = await response.json();
 
                 if (response.ok) {
@@ -252,7 +263,8 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/user/login', {
+                const apiUrl = getApiBaseUrl();
+                const response = await fetch(`${apiUrl}/user/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -309,7 +321,8 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                const apiUrl = getApiBaseUrl();
+                const response = await fetch(`${apiUrl}/api/jpmorgan-data`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -347,7 +360,8 @@
                 if (!authToken) return;
 
                 try {
-                    const response = await fetch('http://localhost:5000/api/jpmorgan-data', {
+                    const apiUrl = getApiBaseUrl();
+                    const response = await fetch(`${apiUrl}/api/jpmorgan-data`, {
                         headers: {
                             'Authorization': `Bearer ${authToken}`
                         }
