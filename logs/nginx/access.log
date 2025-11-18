@@ -1,0 +1,1 @@
+172.20.0.1 - - [18/Nov/2025:00:34:37 +0000] "GET / HTTP/1.1" 404 48 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.7019" "-" rt=0.057 uct="0.012" uht="0.057" urt="0.057"
