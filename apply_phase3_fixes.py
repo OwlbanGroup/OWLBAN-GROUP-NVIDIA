@@ -16,6 +16,7 @@ BLUE = '\033[94m'
 RESET = '\033[0m'
 
 def print_header(text):
+    """Print a formatted header with blue color and separator lines"""
     print(f"\n{BLUE}{'='*70}{RESET}")
     print(f"{BLUE}{text}{RESET}")
     print(f"{BLUE}{'='*70}{RESET}\n")
@@ -275,7 +276,7 @@ class ComprehensiveValidators:
     filepath = Path('../src/validators_comprehensive.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -444,7 +445,7 @@ app_logger = StructuredLogger('jpmorgan_api')
 '''
     
     filepath = Path('../src/structured_logger.py')
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -561,7 +562,7 @@ RECOMMENDED_INDEXES = {
 '''
     
     filepath = Path('../src/database_optimizer.py')
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -793,7 +794,7 @@ class TestSecurity:
     filepath = Path('../tests/test_comprehensive.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -826,19 +827,6 @@ def create_phase3_summary():
 - Input sanitization (SQL injection, XSS prevention)
 - Batch validation support
 
-**Usage**:
-```python
-from src.validators_comprehensive import ComprehensiveValidators
-
-# Validate business data
-valid, msg = ComprehensiveValidators.validate_business_data(data)
-if not valid:
-    return error_response(msg, 400)
-
-# Sanitize input
-clean_name = ComprehensiveValidators.sanitize_input(user_input)
-```
-
 ---
 
 ### 2. Structured Logger
@@ -847,33 +835,8 @@ clean_name = ComprehensiveValidators.sanitize_input(user_input)
 **Features**:
 - JSON-formatted logs
 - Contextual logging
-- Specialized methods for:
-  - API requests
-  - Security events
-  - Database operations
-  - External API calls
-  - Performance metrics
+- Specialized methods for API requests, security events, database operations
 - Exception tracking with stack traces
-
-**Usage**:
-```python
-from src.structured_logger import app_logger
-
-# Log API request
-app_logger.log_request('/telemetry', 'POST', 200, duration=45.2, user='testuser')
-
-# Log security event
-app_logger.log_security_event('failed_login_attempt', {{
-    'username': 'attacker',
-    'ip': '1.2.3.4'
-}}, severity='WARNING')
-
-# Log error with context
-app_logger.error('Database connection failed', error=e, context={{
-    'database': 'production',
-    'retry_count': 3
-}})
-```
 
 ---
 
@@ -886,25 +849,6 @@ app_logger.error('Database connection failed', error=e, context={{
 - Index recommendations
 - Connection pool optimization
 - Query performance monitoring
-- Slow query detection
-
-**Usage**:
-```python
-from src.database_optimizer import DatabaseOptimizer
-
-optimizer = DatabaseOptimizer(session)
-
-# Batch insert
-optimizer.batch_insert(user_objects)
-
-# Add indexes
-indexes = DatabaseOptimizer.add_indexes(User, ['username', 'token'])
-
-# Monitor performance
-@optimizer.monitor_query_performance
-def expensive_query():
-    return session.query(User).all()
-```
 
 ---
 
@@ -919,114 +863,14 @@ def expensive_query():
 - Performance testing
 - Security testing (SQL injection, XSS)
 
-**Run Tests**:
-```bash
-# Run all tests
-pytest tests/test_comprehensive.py -v
-
-# Run with coverage
-pytest tests/test_comprehensive.py --cov=src --cov=app_final --cov-report=html
-
-# Run specific test class
-pytest tests/test_comprehensive.py::TestAuthentication -v
-```
-
----
-
-## Integration Instructions
-
-### Step 1: Import New Modules in app_final.py
-
-```python
-# Add these imports at the top of app_final.py
-from src.validators_comprehensive import ComprehensiveValidators
-from src.structured_logger import app_logger
-from src.database_optimizer import DatabaseOptimizer
-```
-
-### Step 2: Update Endpoints with Validation
-
-```python
-# Example: Update business creation endpoint
-@app.route('/businesses', methods=['POST'])
-@token_auth_required
-@conditional_limit("5 per minute")
-def create_business():
-    try:
-        data = request.get_json(force=True)
-        
-        # Validate input
-        valid, msg = ComprehensiveValidators.validate_business_data(data)
-        if not valid:
-            app_logger.warning(f"Business validation failed: {msg}", {
-                'endpoint': '/businesses',
-                'validation_error': msg
-            })
-            return error_response(msg, 400, 'VALIDATION_ERROR')
-        
-        # Sanitize inputs
-        data['name'] = ComprehensiveValidators.sanitize_input(data['name'])
-        
-        # Create business
-        business_data = BusinessCreate(**data)
-        business = db_manager.create_business(business_data.dict())
-        
-        # Log success
-        app_logger.log_request('/businesses', 'POST', 201, user=get_current_user())
-        
-        return success_response({'business': BusinessResponse.from_orm(business).dict()}, 201)
-    except Exception as e:
-        app_logger.error("Business creation failed", error=e, context={
-            'endpoint': '/businesses',
-            'data_keys': list(data.keys()) if 'data' in locals() else []
-        })
-        return error_response('Internal server error', 500)
-```
-
-### Step 3: Add Database Indexes
-
-```python
-# Add to database initialization
-from src.database_optimizer import RECOMMENDED_INDEXES, DatabaseOptimizer
-
-# Create indexes for User model
-for column in RECOMMENDED_INDEXES.get('User', []):
-    Index(f'idx_user_{column}', getattr(User, column)).create(db_manager.engine)
-```
-
-### Step 4: Run Tests
-
-```bash
-# Install test dependencies
-pip install pytest pytest-cov
-
-# Run tests
-pytest tests/test_comprehensive.py --cov=src --cov=app_final --cov-report=term --cov-report=html
-
-# View coverage report
-open htmlcov/index.html
-```
-
----
-
-## Expected Results
-
-### After Implementation:
-- **Production Readiness**: 86% → 95%
-- **Test Coverage**: 70% → 90%+
-- **Input Validation**: 100% of endpoints
-- **Logging**: Structured JSON logs
-- **Performance**: Optimized queries with caching
-
 ---
 
 ## Next Steps
 
-1. Execute this script: `python apply_phase3_fixes.py`
-2. Integrate modules into app_final.py
-3. Run test suite
-4. Verify test coverage ≥90%
-5. Proceed to Phase 4
+1. Integrate modules into app_final.py
+2. Run test suite
+3. Verify test coverage ≥90%
+4. Proceed to Phase 4
 
 ---
 
@@ -1034,6 +878,13 @@ open htmlcov/index.html
 **Ready for Implementation**: YES  
 **Estimated Implementation Time**: 2 weeks
 '''
+    
+    filepath = Path('../PHASE3_COMPLETE.md')
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    print_success(f"Created: {filepath}")
+    return True
 
 def main():
     """Main execution"""
@@ -1069,7 +920,7 @@ def main():
             print_error("Some modules failed to create")
             return 1
             
-    except Exception as e:
+    except (OSError, IOError, PermissionError) as e:
         print_error(f"Error: {str(e)}")
         return 1
 

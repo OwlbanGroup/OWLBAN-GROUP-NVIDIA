@@ -81,54 +81,13 @@ from src.cloud_storage import setup_cloud_storage  # type: ignore
 from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
-from src.schemas import
-# Phase 3: Quality & Testing Modules
-from src.validators_comprehensive import ComprehensiveValidators  # type: ignore
-from src.structured_logger import app_logger  # type: ignore
-from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore
-# Phase 4: Polish & Deploy Modules
-from src.swagger_config import configure_swagger  # type: ignore
-
- BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
 
 # Initialize ML model
 anomaly_detector = AnomalyDetector()
-# Initialize Database Indexes (Phase 3)
-try:
-    from src.models.user import User
-    from sqlalchemy import Index
-    
-    # Create recommended indexes for better query performance
-    for column in RECOMMENDED_INDEXES.get('User', []):
-        try:
-            index_name = f"idx_user_{column}"
-            Index(index_name, getattr(User, column)).create(db_manager.engine, checkfirst=True)
-            telemetry_logger.get_logger().info(f"Created index: {index_name}")
-        except Exception as e:
-            telemetry_logger.get_logger().warning(f"Index creation skipped for {column}: {e}")
-    
-    # Create indexes for Business and Asset models
-    for column in RECOMMENDED_INDEXES.get('Business', []):
-        try:
-            index_name = f"idx_business_{column}"
-            Index(index_name, getattr(BusinessModel, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-    
-    for column in RECOMMENDED_INDEXES.get('Asset', []):
-        try:
-            index_name = f"idx_asset_{column}"
-            Index(index_name, getattr(AssetModel, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-    
-    print_success("Database indexes created successfully")
-except Exception as e:
-    telemetry_logger.get_logger().warning(f"Database index creation failed: {e}")
-
 
 # Prometheus metrics (app_final version to avoid conflicts)
 REQUEST_COUNT_FINAL = Counter('http_requests_total_final', 'Total HTTP requests (final)', ['method', 'endpoint', 'status_code'])
@@ -152,22 +111,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 if os.environ.get('TESTING') == '1':
     app.config['TESTING'] = True
 
-
-# Initialize Swagger Documentation (Phase 4)
-try:
-    api = configure_swagger(app)
-    print_success("Swagger documentation configured at /api/docs/")
-except Exception as e:
-    print_warning(f"Swagger configuration failed: {e}")
-    # Fallback to Flask-RESTX
-    api = Api(app,
-              title='JPMorgan Telemetry API',
-              version=get_version(),
-              description='Enterprise-grade API for processing Microsoft Windows Store '
-                          'telemetry data with ML anomaly detection, cloud storage integration, '
-                          'and GitHub MCP connectivity.',
-              doc='/swagger/')
-
+# Initialize Flask-RESTX API for documentation
+api = Api(app,
+          title='JPMorgan Telemetry API',
+          version=get_version(),
+          description='Enterprise-grade API for processing Microsoft Windows Store '
+                      'telemetry data with ML anomaly detection, cloud storage integration, '
+                      'and GitHub MCP connectivity.',
+          doc='/swagger/')
 
 # Initialize security headers
 Talisman(app, content_security_policy=None, force_https=False)  # Configure CSP and HTTPS for production

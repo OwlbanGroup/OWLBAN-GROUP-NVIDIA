@@ -184,7 +184,7 @@ def configure_swagger(app: Flask) -> Api:
     filepath = Path('../src/swagger_config.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -350,7 +350,7 @@ def create_grafana_dashboard():
     filepath = Path('../grafana/dashboards/jpmorgan_api_dashboard.json')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     filepath = Path('../scripts/security_audit.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     # Make executable
@@ -781,7 +781,7 @@ Before deploying to production:
 '''
     
     filepath = Path('../PHASE4_COMPLETE.md')
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
     print_success(f"Created: {filepath}")
