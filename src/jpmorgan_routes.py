@@ -2,13 +2,15 @@
 JP Morgan API Integration Routes
 Exposes JP Morgan Payments APIs through our system
 """
-from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Optional, Dict, Any
+
+import httpx
 import structlog
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from .jpmorgan_client import get_jpmorgan_client, JPMorganAPIClient
-from shared.schemas import APIResponse, ErrorResponse
+from shared.schemas import APIResponse
 from shared.auth import require_auth, TokenData
 
 logger = structlog.get_logger()
@@ -19,8 +21,11 @@ router = APIRouter(prefix="/api/jpmorgan", tags=["JP Morgan Integration"])
 # AI ACCOUNTS Routes
 @router.get("/accounts")
 async def get_accounts(
-    account_type: str = Query("all", description="Account type: corporate, business, personal, or all"),
-    token_data: TokenData = Depends(require_auth),
+    account_type: str = Query(
+        "all",
+        description="Account type: corporate, business, personal, or all"
+    ),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get accounts from JP Morgan AI ACCOUNTS project"""
@@ -31,15 +36,18 @@ async def get_accounts(
             message=f"Retrieved {len(accounts)} accounts",
             data={"accounts": accounts}
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get accounts", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve accounts")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve accounts"
+        ) from e
 
 
 @router.get("/accounts/{account_id}/balance")
 async def get_account_balance(
     account_id: str,
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get account balance from JP Morgan"""
@@ -50,9 +58,12 @@ async def get_account_balance(
             message="Balance retrieved successfully",
             data=balance
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get balance", account_id=account_id, error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve balance")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve balance"
+        ) from e
 
 
 @router.get("/accounts/{account_id}/transactions")
@@ -61,7 +72,7 @@ async def get_account_transactions(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(100, ge=1, le=1000),
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get account transactions from JP Morgan"""
@@ -74,9 +85,16 @@ async def get_account_transactions(
             message=f"Retrieved {len(transactions)} transactions",
             data={"transactions": transactions}
         )
-    except Exception as e:
-        logger.error("Failed to get transactions", account_id=account_id, error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve transactions")
+    except httpx.HTTPError as e:
+        logger.error(
+            "Failed to get transactions",
+            account_id=account_id,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve transactions"
+        ) from e
 
 
 # CORPORATE LOGIN Routes
@@ -101,15 +119,15 @@ async def corporate_login(
         )
     except HTTPException:
         raise
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Corporate login failed", error=str(e))
-        raise HTTPException(status_code=401, detail="Login failed")
+        raise HTTPException(status_code=401, detail="Login failed") from e
 
 
 @router.get("/corporate/users/{user_id}")
 async def get_corporate_user(
     user_id: str,
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get corporate user information from JP Morgan"""
@@ -120,9 +138,12 @@ async def get_corporate_user(
             message="User information retrieved",
             data=user_info
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get user info", user_id=user_id, error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve user information")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve user information"
+        ) from e
 
 
 # PAYROLL Routes
@@ -131,7 +152,7 @@ async def get_payroll(
     employee_id: Optional[str] = Query(None),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get payroll data from JP Morgan OWL PAYROLL project"""
@@ -142,15 +163,18 @@ async def get_payroll(
             message=f"Retrieved {len(payroll_data)} payroll records",
             data={"payroll": payroll_data}
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get payroll data", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve payroll data")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve payroll data"
+        ) from e
 
 
 @router.post("/payroll/process")
 async def process_payroll(
     payroll_data: Dict[str, Any],
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Process payroll payment through JP Morgan"""
@@ -161,15 +185,18 @@ async def process_payroll(
             message="Payroll processed successfully",
             data=result
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to process payroll", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to process payroll")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to process payroll"
+        ) from e
 
 
 # PETTY CASH Routes
 @router.get("/petty-cash/balance")
 async def get_petty_cash_balance(
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get petty cash balance from JP Morgan OWL PETTY CASH project"""
@@ -180,15 +207,18 @@ async def get_petty_cash_balance(
             message="Petty cash balance retrieved",
             data=balance
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get petty cash balance", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve petty cash balance")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve petty cash balance"
+        ) from e
 
 
 @router.post("/petty-cash/requests")
 async def create_petty_cash_request(
     request_data: Dict[str, Any],
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Create petty cash request through JP Morgan"""
@@ -199,16 +229,19 @@ async def create_petty_cash_request(
             message="Petty cash request created",
             data=result
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to create petty cash request", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to create petty cash request")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create petty cash request"
+        ) from e
 
 
 @router.get("/petty-cash/transactions")
 async def get_petty_cash_transactions(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get petty cash transactions from JP Morgan"""
@@ -219,9 +252,12 @@ async def get_petty_cash_transactions(
             message=f"Retrieved {len(transactions)} transactions",
             data={"transactions": transactions}
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get petty cash transactions", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve transactions")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve transactions"
+        ) from e
 
 
 # OWL1 DATA INTEGRATION Routes
@@ -229,7 +265,7 @@ async def get_petty_cash_transactions(
 async def sync_data(
     data_type: str,
     data: Dict[str, Any],
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Sync data with JP Morgan Owl1 integration"""
@@ -240,14 +276,14 @@ async def sync_data(
             message=f"Data synced successfully: {data_type}",
             data=result
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to sync data", data_type=data_type, error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to sync data")
+        raise HTTPException(status_code=500, detail="Failed to sync data") from e
 
 
 @router.get("/integration/status")
 async def get_integration_status(
-    token_data: TokenData = Depends(require_auth),
+    _token_data: TokenData = Depends(require_auth),
     client: JPMorganAPIClient = Depends(get_jpmorgan_client)
 ):
     """Get Owl1 integration status from JP Morgan"""
@@ -258,9 +294,12 @@ async def get_integration_status(
             message="Integration status retrieved",
             data=status
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Failed to get integration status", error=str(e))
-        raise HTTPException(status_code=500, detail="Failed to retrieve integration status")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve integration status"
+        ) from e
 
 
 # Health check for JP Morgan integration
@@ -280,16 +319,18 @@ async def jpmorgan_health(
                     "status": "connected",
                     "has_token": bool(token)
                 }
-            except Exception as proj_error:
+            except httpx.HTTPError as proj_error:
                 projects_status[project_name] = {
                     "status": "error",
                     "error": str(proj_error)
                 }
+
         
         all_connected = all(
-            p["status"] == "connected" 
+            p["status"] == "connected"
             for p in projects_status.values()
         )
+
         
         return APIResponse(
             status="success" if all_connected else "partial",
@@ -300,6 +341,6 @@ async def jpmorgan_health(
                 "timestamp": datetime.utcnow().isoformat()
             }
         )
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error("Health check failed", error=str(e))
-        raise HTTPException(status_code=500, detail="Health check failed")
+        raise HTTPException(status_code=500, detail="Health check failed") from e

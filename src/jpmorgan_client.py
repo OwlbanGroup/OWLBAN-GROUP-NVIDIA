@@ -3,24 +3,29 @@ JP Morgan Payments API Client
 Integrates with JP Morgan Developer Portal APIs
 """
 import os
-import httpx
-import asyncio
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List
+
+import httpx
 import structlog
-from jose import jwt
-import json
 
 logger = structlog.get_logger()
 
 
 class JPMorganAPIClient:
     """Client for JP Morgan Payments APIs"""
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         """Initialize JP Morgan API client"""
-        self.base_url = os.getenv("JPMORGAN_BASE_URL", "https://api.payments.jpmorgan.com")
-        self.auth_url = os.getenv("JPMORGAN_AUTH_URL", "https://auth.payments.jpmorgan.com")
+        self.base_url = os.getenv(
+            "JPMORGAN_BASE_URL",
+            "https://api.payments.jpmorgan.com"
+        )
+        self.auth_url = os.getenv(
+            "JPMORGAN_AUTH_URL",
+            "https://auth.payments.jpmorgan.com"
+        )
+
         
         # Project credentials
         self.projects = {
@@ -50,10 +55,12 @@ class JPMorganAPIClient:
                 "api_key": os.getenv("JPMORGAN_OWL1_API_KEY"),
             }
         }
+
         
         # Token cache
-        self.tokens = {}
+        self.tokens: Dict[str, Dict[str, Any]] = {}
         self.client = httpx.AsyncClient(timeout=30.0)
+
     
     async def get_access_token(self, project: str) -> str:
         """Get OAuth access token for a project"""
@@ -62,12 +69,14 @@ class JPMorganAPIClient:
             if project in self.tokens:
                 token_data = self.tokens[project]
                 if datetime.now() < token_data["expires_at"]:
-                    return token_data["access_token"]
+                    return str(token_data["access_token"])
+
             
             # Get new token
             credentials = self.projects.get(project)
             if not credentials or not credentials["client_id"]:
                 raise ValueError(f"Missing credentials for project: {project}")
+
             
             response = await self.client.post(
                 f"{self.auth_url}/oauth/token",
@@ -82,36 +91,45 @@ class JPMorganAPIClient:
                 }
             )
             response.raise_for_status()
+
             
             token_data = response.json()
-            access_token = token_data["access_token"]
-            expires_in = token_data.get("expires_in", 3600)
+            access_token = str(token_data["access_token"])
+            expires_in = int(token_data.get("expires_in", 3600))
+
             
             # Cache token
             self.tokens[project] = {
                 "access_token": access_token,
                 "expires_at": datetime.now() + timedelta(seconds=expires_in - 60)
             }
+
             
             logger.info("Obtained access token", project=project)
             return access_token
+
             
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get access token", project=project, error=str(e))
             raise
+        except (KeyError, ValueError) as e:
+            logger.error("Invalid token response", project=project, error=str(e))
+            raise
+
     
     async def _make_request(
         self,
         method: str,
         endpoint: str,
         project: str,
-        data: Optional[Dict] = None,
-        params: Optional[Dict] = None
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Make authenticated request to JP Morgan API"""
         try:
             access_token = await self.get_access_token(project)
             credentials = self.projects[project]
+
             
             headers = {
                 "Authorization": f"Bearer {access_token}",
@@ -119,8 +137,10 @@ class JPMorganAPIClient:
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             }
+
             
             url = f"{self.base_url}{endpoint}"
+
             
             response = await self.client.request(
                 method=method,
@@ -130,8 +150,10 @@ class JPMorganAPIClient:
                 params=params
             )
             response.raise_for_status()
+
             
             return response.json()
+
             
         except httpx.HTTPStatusError as e:
             logger.error(
@@ -142,21 +164,29 @@ class JPMorganAPIClient:
                 error=str(e)
             )
             raise
-        except Exception as e:
-            logger.error("Request error", project=project, endpoint=endpoint, error=str(e))
+        except httpx.HTTPError as e:
+            logger.error(
+                "Request error",
+                project=project,
+                endpoint=endpoint,
+                error=str(e)
+            )
             raise
+
     
     # AI ACCOUNTS APIs
     async def get_accounts(self, account_type: str = "all") -> List[Dict[str, Any]]:
         """Get accounts from AI ACCOUNTS project
+
         
         Args:
             account_type: 'corporate', 'business', 'personal', or 'all'
         """
         try:
-            params = {}
+            params: Dict[str, str] = {}
             if account_type != "all":
                 params["type"] = account_type
+
             
             result = await self._make_request(
                 "GET",
@@ -164,13 +194,18 @@ class JPMorganAPIClient:
                 "ai_accounts",
                 params=params
             )
-            
-            logger.info("Retrieved accounts", account_type=account_type, count=len(result.get("accounts", [])))
+
+            logger.info(
+                "Retrieved accounts",
+                account_type=account_type,
+                count=len(result.get("accounts", []))
+            )
             return result.get("accounts", [])
-            
-        except Exception as e:
+
+        except httpx.HTTPError as e:
             logger.error("Failed to get accounts", error=str(e))
             return []
+
     
     async def get_account_balance(self, account_id: str) -> Dict[str, Any]:
         """Get account balance"""
@@ -181,9 +216,14 @@ class JPMorganAPIClient:
                 "ai_accounts"
             )
             return result
-        except Exception as e:
-            logger.error("Failed to get account balance", account_id=account_id, error=str(e))
+        except httpx.HTTPError as e:
+            logger.error(
+                "Failed to get account balance",
+                account_id=account_id,
+                error=str(e)
+            )
             return {}
+
     
     async def get_account_transactions(
         self,
@@ -194,11 +234,13 @@ class JPMorganAPIClient:
     ) -> List[Dict[str, Any]]:
         """Get account transactions"""
         try:
-            params = {"limit": limit}
+            params: Dict[str, Any] = {"limit": limit}
             if start_date:
                 params["start_date"] = start_date
             if end_date:
                 params["end_date"] = end_date
+
+
             
             result = await self._make_request(
                 "GET",
@@ -207,9 +249,14 @@ class JPMorganAPIClient:
                 params=params
             )
             return result.get("transactions", [])
-        except Exception as e:
-            logger.error("Failed to get transactions", account_id=account_id, error=str(e))
+        except httpx.HTTPError as e:
+            logger.error(
+                "Failed to get transactions",
+                account_id=account_id,
+                error=str(e)
+            )
             return []
+
     
     # CORPORATE EXECUTIVE LOGIN APIs
     async def corporate_login(self, username: str, password: str) -> Dict[str, Any]:
@@ -226,9 +273,10 @@ class JPMorganAPIClient:
             )
             logger.info("Corporate login successful", username=username)
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Corporate login failed", username=username, error=str(e))
             raise
+
     
     async def get_corporate_user_info(self, user_id: str) -> Dict[str, Any]:
         """Get corporate user information"""
@@ -239,9 +287,14 @@ class JPMorganAPIClient:
                 "corporate_login"
             )
             return result
-        except Exception as e:
-            logger.error("Failed to get corporate user info", user_id=user_id, error=str(e))
+        except httpx.HTTPError as e:
+            logger.error(
+                "Failed to get corporate user info",
+                user_id=user_id,
+                error=str(e)
+            )
             return {}
+
     
     # OWL PAYROLL APIs
     async def get_payroll_data(
@@ -252,13 +305,14 @@ class JPMorganAPIClient:
     ) -> List[Dict[str, Any]]:
         """Get payroll data"""
         try:
-            params = {}
+            params: Dict[str, str] = {}
             if employee_id:
                 params["employee_id"] = employee_id
             if start_date:
                 params["start_date"] = start_date
             if end_date:
                 params["end_date"] = end_date
+
             
             result = await self._make_request(
                 "GET",
@@ -267,9 +321,10 @@ class JPMorganAPIClient:
                 params=params
             )
             return result.get("payroll_records", [])
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get payroll data", error=str(e))
             return []
+
     
     async def process_payroll(self, payroll_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process payroll payment"""
@@ -282,9 +337,10 @@ class JPMorganAPIClient:
             )
             logger.info("Payroll processed successfully")
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to process payroll", error=str(e))
             raise
+
     
     # OWL PETTY CASH APIs
     async def get_petty_cash_balance(self) -> Dict[str, Any]:
@@ -296,11 +352,15 @@ class JPMorganAPIClient:
                 "petty_cash"
             )
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get petty cash balance", error=str(e))
             return {}
+
     
-    async def create_petty_cash_request(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_petty_cash_request(
+        self,
+        request_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create petty cash request"""
         try:
             result = await self._make_request(
@@ -311,9 +371,10 @@ class JPMorganAPIClient:
             )
             logger.info("Petty cash request created")
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to create petty cash request", error=str(e))
             raise
+
     
     async def get_petty_cash_transactions(
         self,
@@ -322,7 +383,7 @@ class JPMorganAPIClient:
     ) -> List[Dict[str, Any]]:
         """Get petty cash transactions"""
         try:
-            params = {}
+            params: Dict[str, str] = {}
             if start_date:
                 params["start_date"] = start_date
             if end_date:
@@ -335,9 +396,10 @@ class JPMorganAPIClient:
                 params=params
             )
             return result.get("transactions", [])
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get petty cash transactions", error=str(e))
             return []
+
     
     # Owl1 Data Integration APIs
     async def sync_data(self, data_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -351,9 +413,10 @@ class JPMorganAPIClient:
             )
             logger.info("Data synced successfully", data_type=data_type)
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to sync data", data_type=data_type, error=str(e))
             raise
+
     
     async def get_integration_status(self) -> Dict[str, Any]:
         """Get Owl1 integration status"""
@@ -364,22 +427,22 @@ class JPMorganAPIClient:
                 "owl1"
             )
             return result
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get integration status", error=str(e))
             return {}
-    
-    async def close(self):
+
+    async def close(self) -> None:
         """Close HTTP client"""
         await self.client.aclose()
 
 
 # Singleton instance
-_jpmorgan_client = None
+_JPMORGAN_CLIENT: Optional[JPMorganAPIClient] = None
 
 
 def get_jpmorgan_client() -> JPMorganAPIClient:
     """Get JP Morgan API client instance"""
-    global _jpmorgan_client
-    if _jpmorgan_client is None:
-        _jpmorgan_client = JPMorganAPIClient()
-    return _jpmorgan_client
+    global _JPMORGAN_CLIENT
+    if _JPMORGAN_CLIENT is None:
+        _JPMORGAN_CLIENT = JPMorganAPIClient()
+    return _JPMORGAN_CLIENT
