@@ -180,7 +180,7 @@ class WhitespaceFixer:
                         f.write(new_content)
 
                     if self.verbose:
-                        print(f"✓ Fixed: {filepath}")  # noqa: W1309
+                        print(f"✓ Fixed: {filepath}")
                         if trailing_count:
                             print(f"  - Removed {trailing_count} trailing whitespace(s)")
                         if tabs_count:
@@ -192,7 +192,7 @@ class WhitespaceFixer:
                         if eof_count:
                             print(f"  - Fixed EOF newline")
                 else:
-                    print(f"[DRY RUN] Would fix: {filepath}")  # pylint: disable=logging-fstring-interpolation
+                    print(f"[DRY RUN] Would fix: {filepath}")
                     if trailing_count:
                         print(f"  - Would remove {trailing_count} trailing whitespace(s)")
                     if tabs_count:

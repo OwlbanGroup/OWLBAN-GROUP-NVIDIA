@@ -2,12 +2,11 @@
 Comprehensive Test Suite
 Achieves 90%+ code coverage for JPMorgan Financial APIs
 """
-import pytest
-import json
-import sys
 import os
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -22,10 +21,10 @@ from src.validators_comprehensive import (
 from src.response_helpers import error_response, success_response
 
 # Import database optimizer
-from src.database_optimizer import DatabaseOptimizer, apply_all_indexes
+from src.database_optimizer import DatabaseOptimizer
 
 # Import structured logger
-from src.structured_logger import StructuredLogger, app_logger
+from src.structured_logger import StructuredLogger
 
 class TestComprehensiveValidators:
     """Test comprehensive validators"""
@@ -214,13 +213,13 @@ class TestDatabaseOptimizer:
     """Test database optimizer"""
 
     @patch('src.database_optimizer.logger')
-    def test_create_indexes(self, mock_logger):
+    def test_create_indexes(self, mock_logger):  # pylint: disable=unused-argument
         """Test index creation"""
         mock_session = Mock()
         optimizer = DatabaseOptimizer(mock_session)
 
         result = optimizer.create_indexes('users')
-        assert result == True
+        assert result is True
         assert mock_session.execute.called
 
     def test_analyze_query_performance(self):
@@ -317,7 +316,7 @@ class TestPerformance:
 
     def test_validation_performance(self):
         """Test validation performance"""
-        import time
+        import time  # pylint: disable=import-outside-toplevel
 
         data = {
             'name': 'Test Corp',
@@ -334,7 +333,7 @@ class TestPerformance:
 
     def test_logging_performance(self):
         """Test logging performance"""
-        import time
+        import time  # pylint: disable=import-outside-toplevel
 
         logger = StructuredLogger('test')
 
