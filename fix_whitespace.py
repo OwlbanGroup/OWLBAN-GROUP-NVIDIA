@@ -192,7 +192,7 @@ class WhitespaceFixer:
                         if eof_count:
                             print(f"  - Fixed EOF newline")
                 else:
-                    print(f"[DRY RUN] Would fix: {filepath}")  # noqa: W1309
+                    print(f"[DRY RUN] Would fix: {filepath}")  # pylint: disable=logging-fstring-interpolation
                     if trailing_count:
                         print(f"  - Would remove {trailing_count} trailing whitespace(s)")
                     if tabs_count:
