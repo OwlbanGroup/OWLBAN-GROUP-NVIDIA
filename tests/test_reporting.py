@@ -112,9 +112,9 @@ class TestReportGenerator:
 
         # Calculate overall metrics
         total_tests = sum(cat.get('total_tests', 0) for cat in summary['test_categories'].values()
-                         if 'total_tests' in cat)
+                        if 'total_tests' in cat)
         passed_tests = sum(cat.get('passed_tests', 0) for cat in summary['test_categories'].values()
-                          if 'passed_tests' in cat)
+                            if 'passed_tests' in cat)
 
         summary['overall_metrics']['total_tests'] = total_tests
         summary['overall_metrics']['passed_tests'] = passed_tests
@@ -259,7 +259,7 @@ class TestReportGenerator:
             failure_count = len(perf_data['test_results']) - success_count
 
             ax4.pie([success_count, failure_count], labels=['Passed', 'Failed'],
-                   autopct='%1.1f%%', colors=['#27ae60', '#e74c3c'])
+                    autopct='%1.1f%%', colors=['#27ae60', '#e74c3c'])
             ax4.set_title('Test Results Distribution')
 
             plt.tight_layout()
@@ -275,12 +275,12 @@ class TestReportGenerator:
         xml_template = """<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
     <testsuite name="JPMorgan Financial APIs Test Suite"
-               tests="{{ summary.overall_metrics.total_tests }}"
-               failures="{{ summary.overall_metrics.failed_tests }}"
-               time="0">
+                tests="{{ summary.overall_metrics.total_tests }}"
+                failures="{{ summary.overall_metrics.failed_tests }}"
+                time="0">
         {% for category_name, category_data in summary.test_categories.items() %}
         <testcase name="{{ category_name }}"
-                  time="{% if category_data.execution_time %}{{ category_data.execution_time }}{% else %}0{% endif %}">
+                    time="{% if category_data.execution_time %}{{ category_data.execution_time }}{% else %}0{% endif %}">
             {% if category_data.failed_tests > 0 %}
             <failure message="{{ category_data.failed_tests }} tests failed">
                 Failed tests in {{ category_name }}: {{ category_data.failed_tests }}/{{ category_data.total_tests }}

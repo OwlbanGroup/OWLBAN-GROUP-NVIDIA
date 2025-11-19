@@ -161,13 +161,13 @@ metrics_response = api.model('MetricsResponse', {
 def configure_swagger(app):
     """
     Configure Swagger documentation for the Flask app
-    
+
     Args:
         app: Flask application instance
     """
     # Register API blueprint
     app.register_blueprint(api_blueprint)
-    
+
     # Add custom CSS for Swagger UI
     @api.documentation
     def custom_ui():
@@ -202,7 +202,7 @@ def configure_swagger(app):
         </body>
         </html>
         '''
-    
+
     return api
 
 # Example endpoint documentation
@@ -234,7 +234,7 @@ class BusinessList(Resource):
     def get(self):
         """List all businesses"""
         pass
-    
+
     @ns_business.doc('create_business', security='Bearer')
     @ns_business.expect(business_model)
     @ns_business.marshal_with(business_response, code=201)
@@ -253,7 +253,7 @@ class Business(Resource):
     def get(self, id):
         """Get business by ID"""
         pass
-    
+
     @ns_business.doc('update_business', security='Bearer')
     @ns_business.expect(business_model)
     @ns_business.marshal_with(business_response)
@@ -262,7 +262,7 @@ class Business(Resource):
     def put(self, id):
         """Update business"""
         pass
-    
+
     @ns_business.doc('delete_business', security='Bearer')
     @ns_business.marshal_with(success_response)
     @ns_business.response(404, 'Business not found', error_response)

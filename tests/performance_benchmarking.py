@@ -76,7 +76,7 @@ class PerformanceBenchmarker:
                 response = requests.get(f"{self.base_url}{endpoint}", headers=headers)
             elif method == 'POST':
                 response = requests.post(f"{self.base_url}{endpoint}",
-                                       json=data, headers=headers)
+                                        json=data, headers=headers)
             else:
                 raise ValueError(f"Unsupported method: {method}")
 
@@ -111,7 +111,7 @@ class PerformanceBenchmarker:
         }
 
     def benchmark_throughput(self, endpoint, method='GET', data=None, headers=None,
-                           concurrent_users=10, duration=60):
+                            concurrent_users=10, duration=60):
         """Benchmark throughput under concurrent load"""
         results = []
 
@@ -122,7 +122,7 @@ class PerformanceBenchmarker:
                     response = requests.get(f"{self.base_url}{endpoint}", headers=headers)
                 elif method == 'POST':
                     response = requests.post(f"{self.base_url}{endpoint}",
-                                           json=data, headers=headers)
+                                            json=data, headers=headers)
                 end_time = time.time()
 
                 return {
@@ -265,15 +265,15 @@ def benchmark_memory_usage():
 
         with app.test_client() as client:
             response = client.post('/telemetry/batch',
-                                 data=json.dumps(large_batch),
-                                 content_type='application/json')
+                                data=json.dumps(large_batch),
+                                content_type='application/json')
             return response
 
     @benchmarker.measure_memory_usage
     def train_ml_model():
         """Train ML model with large dataset"""
         training_data = [[i % 100, (i + 10) % 100, (i + 20) % 100,
-                         (i + 30) % 100, (i + 40) % 100, (i + 50) % 100, i % 10]
+                        (i + 30) % 100, (i + 40) % 100, (i + 50) % 100, i % 10]
                         for i in range(1000)]
 
         payload = {

@@ -30,17 +30,17 @@ def backup_file(filepath):
 def fix_1_authentication_bypass():
     """Fix 1.2: Remove authentication bypass vulnerability"""
     print_status("Applying Fix 1.2: Authentication Bypass Vulnerability", "INFO")
-    
+
     filepath = "app_final.py"
     if not os.path.exists(filepath):
         print_status(f"File {filepath} not found", "ERROR")
         return False
-    
+
     backup_file(filepath)
-    
+
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Fix require_auth function
     old_code = """def require_auth(f):
     @wraps(f)
@@ -48,7 +48,7 @@ def fix_1_authentication_bypass():
         # Skip authentication in testing mode
         if app.config.get('TESTING', False):
             return f(*args, **kwargs)"""
-    
+
     new_code = """def require_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -59,13 +59,13 @@ def fix_1_authentication_bypass():
                 return jsonify({'error': 'Authentication required', 'status': 'error'}), 401
             telemetry_logger.get_logger().warning("⚠️ TESTING MODE ENABLED - Authentication bypassed for testing")
             return f(*args, **kwargs)"""
-    
+
     if old_code in content:
         content = content.replace(old_code, new_code)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print_status("✓ Fixed authentication bypass vulnerability", "SUCCESS")
         return True
     else:
@@ -75,15 +75,15 @@ def fix_1_authentication_bypass():
 def fix_2_rate_limiting_bypass():
     """Fix 1.3: Fix rate limiting bypass"""
     print_status("Applying Fix 1.3: Rate Limiting Bypass", "INFO")
-    
+
     filepath = "app_final.py"
     if not os.path.exists(filepath):
         print_status(f"File {filepath} not found", "ERROR")
         return False
-    
+
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Fix conditional_limit function
     old_code = """# Conditional limiter for testing
 def conditional_limit(limit_str):
@@ -92,7 +92,7 @@ def conditional_limit(limit_str):
             return f
         return limiter.limit(limit_str)(f)
     return decorator"""
-    
+
     new_code = """# Conditional limiter for testing - SECURITY FIX: Always apply limits
 def conditional_limit(limit_str):
     def decorator(f):
@@ -105,13 +105,13 @@ def conditional_limit(limit_str):
                 return limiter.limit(test_limit)(f)
         return limiter.limit(limit_str)(f)
     return decorator"""
-    
+
     if old_code in content:
         content = content.replace(old_code, new_code)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print_status("✓ Fixed rate limiting bypass", "SUCCESS")
         return True
     else:
@@ -121,15 +121,15 @@ def conditional_limit(limit_str):
 def fix_3_hardcoded_credentials():
     """Fix 1.4: Remove hardcoded test credentials"""
     print_status("Applying Fix 1.4: Hardcoded Test Credentials", "INFO")
-    
+
     filepath = "app_final.py"
     if not os.path.exists(filepath):
         print_status(f"File {filepath} not found", "ERROR")
         return False
-    
+
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Remove hardcoded users (keep only testing mode users)
     old_code = """# Always add test users for development/demo purposes
 users['testuser'] = {
@@ -144,16 +144,16 @@ users['davidleeper'] = {
     'token': 'david_token',
     'token_created_at': datetime.now(timezone.utc).isoformat()
 }"""
-    
+
     new_code = """# SECURITY FIX: Only add test users in testing mode, not in production
 # Test users removed from production code - use proper user registration"""
-    
+
     if old_code in content:
         content = content.replace(old_code, new_code)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print_status("✓ Removed hardcoded test credentials", "SUCCESS")
         return True
     else:
@@ -163,15 +163,15 @@ users['davidleeper'] = {
 def fix_4_error_responses():
     """Fix 1.5: Standardize error responses"""
     print_status("Applying Fix 1.5: Standardize Error Responses", "INFO")
-    
+
     filepath = "app_final.py"
     if not os.path.exists(filepath):
         print_status(f"File {filepath} not found", "ERROR")
         return False
-    
+
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Add helper functions after imports
     helper_functions = '''
 # SECURITY FIX: Standardized response helpers
@@ -195,16 +195,16 @@ def success_response(data, status_code=200):
     response.update(data)
     return jsonify(response), status_code
 '''
-    
+
     # Find a good place to insert (after anomaly_detector initialization)
     insert_marker = "# Initialize ML model\nanomalydetector = AnomalyDetector()"
-    
+
     if insert_marker in content and helper_functions not in content:
         content = content.replace(insert_marker, insert_marker + helper_functions)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print_status("✓ Added standardized error response helpers", "SUCCESS")
         return True
     else:
@@ -214,22 +214,22 @@ def success_response(data, status_code=200):
 def fix_5_token_auth_decorator():
     """Fix token_auth_required decorator"""
     print_status("Applying Fix: token_auth_required decorator", "INFO")
-    
+
     filepath = "app_final.py"
     if not os.path.exists(filepath):
         print_status(f"File {filepath} not found", "ERROR")
         return False
-    
+
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Fix token_auth_required function
     old_code = """def token_auth_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if app.config.get('TESTING', False):
             return f(*args, **kwargs)"""
-    
+
     new_code = """def token_auth_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -240,13 +240,13 @@ def fix_5_token_auth_decorator():
                 return jsonify({'error': 'Authentication required', 'status': 'error'}), 401
             telemetry_logger.get_logger().warning("⚠️ TESTING MODE ENABLED - Authentication bypassed for testing")
             return f(*args, **kwargs)"""
-    
+
     if old_code in content:
         content = content.replace(old_code, new_code)
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print_status("✓ Fixed token_auth_required decorator", "SUCCESS")
         return True
     else:
@@ -256,7 +256,7 @@ def fix_5_token_auth_decorator():
 def create_fix_summary():
     """Create a summary document of applied fixes"""
     print_status("Creating fix summary document", "INFO")
-    
+
     summary = f"""# Critical Fixes Applied - Summary
 **Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Script**: apply_critical_fixes.py
@@ -301,19 +301,19 @@ All modified files have been backed up with timestamp:
 ## Next Steps
 
 1. **Test the fixes**:
-   ```bash
-   python run_e2e_problem_analysis.py
-   ```
+    ```bash
+    python run_e2e_problem_analysis.py
+    ```
 
 2. **Review remaining issues**:
-   - See TODO_E2E_FIXES.md for Phase 2 tasks
+    - See TODO_E2E_FIXES.md for Phase 2 tasks
 
 3. **Deploy to staging**:
-   - Test in staging environment before production
+    - Test in staging environment before production
 
 4. **Monitor logs**:
-   - Watch for security warnings in logs
-   - Verify authentication is working correctly
+    - Watch for security warnings in logs
+    - Verify authentication is working correctly
 
 ## Verification Commands
 
@@ -326,8 +326,8 @@ echo $FLASK_ENV
 
 # Test authentication endpoint
 curl -X POST http://localhost:8000/telemetry \\
-  -H "Content-Type: application/json" \\
-  -d '{{"test": "data"}}'
+    -H "Content-Type: application/json" \\
+    -d '{{"test": "data"}}'
 
 # Should return 401 Unauthorized
 ```
@@ -354,10 +354,10 @@ See E2E_PROBLEM_ANALYSIS.md for:
 **Production Ready**: Closer, but Phase 2 still needed
 **Next Review**: After testing validation
 """
-    
+
     with open('CRITICAL_FIXES_APPLIED.md', 'w', encoding='utf-8') as f:
         f.write(summary)
-    
+
     print_status("✓ Created CRITICAL_FIXES_APPLIED.md", "SUCCESS")
 
 def main():
@@ -367,29 +367,29 @@ def main():
     print_status("="*70, "INFO")
     print_status(f"Timestamp: {datetime.now().isoformat()}", "INFO")
     print_status("", "INFO")
-    
+
     fixes_applied = 0
     fixes_total = 5
-    
+
     # Apply all fixes
     if fix_1_authentication_bypass():
         fixes_applied += 1
-    
+
     if fix_2_rate_limiting_bypass():
         fixes_applied += 1
-    
+
     if fix_3_hardcoded_credentials():
         fixes_applied += 1
-    
+
     if fix_4_error_responses():
         fixes_applied += 1
-    
+
     if fix_5_token_auth_decorator():
         fixes_applied += 1
-    
+
     # Create summary
     create_fix_summary()
-    
+
     # Final report
     print_status("", "INFO")
     print_status("="*70, "INFO")
@@ -397,7 +397,7 @@ def main():
     print_status("="*70, "INFO")
     print_status(f"Fixes Applied: {fixes_applied}/{fixes_total}", "SUCCESS" if fixes_applied == fixes_total else "WARNING")
     print_status("", "INFO")
-    
+
     if fixes_applied == fixes_total:
         print_status("✅ ALL CRITICAL FIXES APPLIED SUCCESSFULLY", "SUCCESS")
         print_status("", "INFO")
@@ -409,11 +409,11 @@ def main():
     else:
         print_status("⚠️ SOME FIXES MAY HAVE FAILED", "WARNING")
         print_status("Please review the output above for details", "WARNING")
-    
+
     print_status("", "INFO")
     print_status("Backup files created with timestamp", "INFO")
     print_status("Original files can be restored if needed", "INFO")
-    
+
     return fixes_applied == fixes_total
 
 if __name__ == '__main__':

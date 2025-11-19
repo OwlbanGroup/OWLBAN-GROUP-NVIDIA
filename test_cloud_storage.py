@@ -110,8 +110,8 @@ class TestCloudStorageManager:
 
         # Mock all upload methods
         with patch.object(manager, 'upload_to_aws_s3', return_value='SUCCESS: AWS upload complete'), \
-             patch.object(manager, 'upload_to_gcs', return_value='SUCCESS: GCS upload complete'), \
-             patch.object(manager, 'upload_to_azure', return_value='SUCCESS: Azure upload complete'):
+            patch.object(manager, 'upload_to_gcs', return_value='SUCCESS: GCS upload complete'), \
+            patch.object(manager, 'upload_to_azure', return_value='SUCCESS: Azure upload complete'):
 
             results = manager.export_telemetry_data(
                 data=self.sample_data,
@@ -272,8 +272,8 @@ class TestCloudStorageManager:
         manager = CloudStorageManager(self.mock_credentials)
 
         with patch.object(manager, 'upload_to_aws_s3', return_value='SUCCESS: AWS upload complete'), \
-             patch.object(manager, 'upload_to_gcs', return_value='SUCCESS: GCS upload complete'), \
-             patch.object(manager, 'upload_to_azure', return_value='SUCCESS: Azure upload complete'):
+            patch.object(manager, 'upload_to_gcs', return_value='SUCCESS: GCS upload complete'), \
+            patch.object(manager, 'upload_to_azure', return_value='SUCCESS: Azure upload complete'):
 
             results = manager.export_telemetry_data(
                 data=self.sample_data,

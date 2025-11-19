@@ -89,7 +89,7 @@ from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # typ
 # Phase 4: Polish & Deploy Modules
 from src.swagger_config import configure_swagger  # type: ignore
 
- BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -100,7 +100,7 @@ anomaly_detector = AnomalyDetector()
 try:
     from src.models.user import User
     from sqlalchemy import Index
-    
+
     # Create recommended indexes for better query performance
     for column in RECOMMENDED_INDEXES.get('User', []):
         try:
@@ -109,7 +109,7 @@ try:
             telemetry_logger.get_logger().info(f"Created index: {index_name}")
         except Exception as e:
             telemetry_logger.get_logger().warning(f"Index creation skipped for {column}: {e}")
-    
+
     # Create indexes for Business and Asset models
     for column in RECOMMENDED_INDEXES.get('Business', []):
         try:
@@ -117,14 +117,14 @@ try:
             Index(index_name, getattr(BusinessModel, column)).create(db_manager.engine, checkfirst=True)
         except Exception as e:
             pass
-    
+
     for column in RECOMMENDED_INDEXES.get('Asset', []):
         try:
             index_name = f"idx_asset_{column}"
             Index(index_name, getattr(AssetModel, column)).create(db_manager.engine, checkfirst=True)
         except Exception as e:
             pass
-    
+
     print_success("Database indexes created successfully")
 except Exception as e:
     telemetry_logger.get_logger().warning(f"Database index creation failed: {e}")
@@ -161,12 +161,12 @@ except Exception as e:
     print_warning(f"Swagger configuration failed: {e}")
     # Fallback to Flask-RESTX
     api = Api(app,
-              title='JPMorgan Telemetry API',
-              version=get_version(),
-              description='Enterprise-grade API for processing Microsoft Windows Store '
-                          'telemetry data with ML anomaly detection, cloud storage integration, '
-                          'and GitHub MCP connectivity.',
-              doc='/swagger/')
+                title='JPMorgan Telemetry API',
+                version=get_version(),
+                description='Enterprise-grade API for processing Microsoft Windows Store '
+                            'telemetry data with ML anomaly detection, cloud storage integration, '
+                            'and GitHub MCP connectivity.',
+                doc='/swagger/')
 
 
 # Initialize security headers

@@ -75,8 +75,8 @@ class ChaosTestSuite:
 
             # Test with database connection issues (if any)
             response = requests.post(f"{self.base_url}/telemetry",
-                                   json=SAMPLE_TELEMETRY_DATA,
-                                   timeout=5)
+                                    json=SAMPLE_TELEMETRY_DATA,
+                                    timeout=5)
 
             # Even if database is down, API should return proper error response
             success = response.status_code in [200, 500, 503]  # Accept service unavailable
@@ -105,8 +105,8 @@ class ChaosTestSuite:
                         "telemetry_data": [SAMPLE_TELEMETRY_DATA] * 1000
                     }
                     response = requests.post(f"{self.base_url}/telemetry/batch",
-                                           json=large_data,
-                                           timeout=30)
+                                            json=large_data,
+                                            timeout=30)
                     return response.status_code
                 except Exception as e:
                     return str(e)
@@ -183,8 +183,8 @@ class ChaosTestSuite:
         try:
             invalid_data = {"invalid": "data", "missing": "required_fields"}
             response = requests.post(f"{self.base_url}/telemetry",
-                                   json=invalid_data,
-                                   timeout=5)
+                                    json=invalid_data,
+                                    timeout=5)
             # Should get 400, not 500 (DB error)
             return response.status_code == 400
         except:
@@ -195,7 +195,7 @@ class ChaosTestSuite:
         # Test that system works without cache
         try:
             response = requests.get(f"{self.base_url}/telemetry/metrics?hours=1",
-                                  timeout=5)
+                                    timeout=5)
             return response.status_code == 200
         except:
             return False
@@ -206,7 +206,7 @@ class ChaosTestSuite:
         try:
             # Make request with very short timeout to simulate slow external service
             response = requests.get(f"{self.base_url}/health",
-                                  timeout=0.001)  # Very short timeout
+                                    timeout=0.001)  # Very short timeout
             return False  # Should have timed out
         except requests.exceptions.Timeout:
             return True  # Expected timeout
@@ -227,8 +227,8 @@ class ChaosTestSuite:
                     # Send requests that should fail
                     invalid_data = {"completely": "invalid"}
                     response = requests.post(f"{self.base_url}/telemetry",
-                                           json=invalid_data,
-                                           timeout=2)
+                                            json=invalid_data,
+                                            timeout=2)
                     if response.status_code != 200:
                         failed_requests += 1
                 except:
@@ -259,8 +259,8 @@ class ChaosTestSuite:
                     # Send multiple large requests simultaneously
                     large_data = {"telemetry_data": [SAMPLE_TELEMETRY_DATA] * 500}
                     response = requests.post(f"{self.base_url}/telemetry/batch",
-                                           json=large_data,
-                                           timeout=10)
+                                            json=large_data,
+                                            timeout=10)
                     return response.status_code
                 except requests.exceptions.Timeout:
                     return 504  # Gateway timeout

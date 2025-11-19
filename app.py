@@ -65,34 +65,34 @@ app.before_request(sanitize_request_data)
 app.before_request(audit_request)
 
 # Initialize Flask-RESTX API for documentation
-api = Api(app, 
-          title='JPMorgan Telemetry API',
-          version=get_version(),
-          description='Enterprise-grade API for processing Microsoft Windows Store telemetry data with ML anomaly detection, cloud storage integration, and GitHub MCP connectivity.',
-          doc='/swagger/')
+api = Api(app,
+            title='JPMorgan Telemetry API',
+            version=get_version(),
+            description='Enterprise-grade API for processing Microsoft Windows Store telemetry data with ML anomaly detection, cloud storage integration, and GitHub MCP connectivity.',
+            doc='/swagger/')
 
 # Initialize security headers with enhanced configuration
 Talisman(app,
-         content_security_policy={
-             'default-src': "'self'",
-             'script-src': "'self' 'unsafe-inline'",
-             'style-src': "'self' 'unsafe-inline'",
-             'img-src': "'self' data:",
-             'font-src': "'self'",
-             'connect-src': "'self'",
-             'media-src': "'self'",
-             'object-src': "'none'",
-             'frame-ancestors': "'none'",
-             'base-uri': "'self'",
-             'form-action': "'self'"
-         },
-         content_security_policy_nonce_in=['script-src', 'style-src'],
-         force_https=False,  # Disable HTTPS enforcement for local testing
-         strict_transport_security=True,
-         strict_transport_security_max_age=31536000,  # 1 year
-         strict_transport_security_include_subdomains=True,
-         frame_options='DENY',
-         referrer_policy='strict-origin-when-cross-origin'
+        content_security_policy={
+            'default-src': "'self'",
+            'script-src': "'self' 'unsafe-inline'",
+            'style-src': "'self' 'unsafe-inline'",
+            'img-src': "'self' data:",
+            'font-src': "'self'",
+            'connect-src': "'self'",
+            'media-src': "'self'",
+            'object-src': "'none'",
+            'frame-ancestors': "'none'",
+            'base-uri': "'self'",
+            'form-action': "'self'"
+        },
+        content_security_policy_nonce_in=['script-src', 'style-src'],
+        force_https=False,  # Disable HTTPS enforcement for local testing
+        strict_transport_security=True,
+        strict_transport_security_max_age=31536000,  # 1 year
+        strict_transport_security_include_subdomains=True,
+        frame_options='DENY',
+        referrer_policy='strict-origin-when-cross-origin'
 )
 
 # Initialize rate limiter with tiered access
@@ -172,7 +172,7 @@ def cache_database_query(expiration=600):
             # Create cache key based on function name and parameters
             func_name = f.__name__
             args_hash = hash(json.dumps(args, sort_keys=True, default=str) +
-                           json.dumps(kwargs, sort_keys=True, default=str))
+                            json.dumps(kwargs, sort_keys=True, default=str))
             cache_key = f"db_query:{func_name}:{args_hash}"
 
             try:
@@ -1311,13 +1311,13 @@ def dashboard():
 def get_jpmorgan_data():
     """
     Get live JPMorgan financial data for dashboard
-    
+
     Requires Authorization header with Bearer token
     """
     try:
         import random
         from datetime import datetime
-        
+
         # Generate mock live financial data
         # In production, this would fetch real data from JPMorgan APIs
         data = {
@@ -1348,9 +1348,9 @@ def get_jpmorgan_data():
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'status': 'live'
         }
-        
+
         return jsonify(data), 200
-        
+
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'get_jpmorgan_data'})
         return jsonify({
@@ -1363,7 +1363,7 @@ def get_jpmorgan_data():
 def user_login():
     """
     User login endpoint for dashboard
-    
+
     Expected JSON payload:
     {
         "username": "user",
@@ -1372,28 +1372,28 @@ def user_login():
     """
     try:
         request_data = request.get_json()
-        
+
         if not request_data or 'username' not in request_data or 'password' not in request_data:
             return jsonify({
                 'error': 'Username and password are required',
                 'status': 'error'
             }), 400
-        
+
         username = request_data['username']
         password = request_data['password']
-        
+
         # Authenticate user
         success, error_message = user_manager.authenticate_user(username, password)
-        
+
         if not success:
             return jsonify({
                 'error': error_message,
                 'status': 'error'
             }), 401
-        
+
         # Create session token
         session_token = user_manager.create_session_token(username)
-        
+
         return jsonify({
             'status': 'success',
             'message': 'Login successful',
@@ -1401,7 +1401,7 @@ def user_login():
             'user': user_manager.get_user_info(username),
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
-        
+
     except json.JSONDecodeError:
         return jsonify({
             'error': 'Invalid JSON format',

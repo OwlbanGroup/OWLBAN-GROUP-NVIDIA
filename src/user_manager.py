@@ -8,7 +8,7 @@ from src.database_fixed import db_manager
 
 class UserManager:
     """Manages user database operations"""
-    
+
     @staticmethod
     def create_user(username, password):
         """Create a new user"""
@@ -18,7 +18,7 @@ class UserManager:
             existing_user = session.query(User).filter_by(username=username).first()
             if existing_user:
                 return None, "User already exists"
-            
+
             # Create new user
             user = User(
                 username=username,
@@ -33,7 +33,7 @@ class UserManager:
             return None, f"Error creating user: {str(e)}"
         finally:
             session.close()
-    
+
     @staticmethod
     def verify_user(username, password):
         """Verify user credentials"""
@@ -42,13 +42,13 @@ class UserManager:
             user = session.query(User).filter_by(username=username).first()
             if not user:
                 return False, None
-            
+
             if check_password_hash(user.password_hash, password):
                 return True, user
             return False, None
         finally:
             session.close()
-    
+
     @staticmethod
     def update_token(username, token):
         """Update user token"""
@@ -66,7 +66,7 @@ class UserManager:
             return False
         finally:
             session.close()
-    
+
     @staticmethod
     def get_user_by_token(token):
         """Get user by token"""
@@ -76,7 +76,7 @@ class UserManager:
             return user
         finally:
             session.close()
-    
+
     @staticmethod
     def get_user_by_username(username):
         """Get user by username"""

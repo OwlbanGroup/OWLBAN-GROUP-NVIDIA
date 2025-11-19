@@ -41,21 +41,21 @@ def test_endpoints():
         # Test without auth (should fail)
         payload = {'training_data': [[1, 2, 3], [4, 5, 6]]}
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json')
+                                data=json.dumps(payload),
+                                content_type='application/json')
         print(f"   Without auth: Status {response.status_code}")
 
         # Test with invalid data
         response = client.post('/ml/train',
-                              data=json.dumps({}),
-                              content_type='application/json')
+                                data=json.dumps({}),
+                                content_type='application/json')
         print(f"   Invalid data: Status {response.status_code}")
 
         # Test with insufficient data
         payload = {'training_data': [[1, 2, 3]]}
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json')
+                                data=json.dumps(payload),
+                                content_type='application/json')
         print(f"   Insufficient data: Status {response.status_code}")
 
         print("\n3. Testing root endpoint documentation:")

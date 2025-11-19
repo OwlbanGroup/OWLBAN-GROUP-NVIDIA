@@ -192,7 +192,7 @@ def test_ngc_configuration():
         # Check if NGC CLI is available
         try:
             result = subprocess.run([config.NGC_CLI_PATH, '--version'],
-                                  capture_output=True, text=True, timeout=5)
+                                    capture_output=True, text=True, timeout=5)
             print(f"NGC CLI available: {result.returncode == 0}")
             if result.returncode == 0:
                 print(f"NGC CLI version: {result.stdout.strip()}")

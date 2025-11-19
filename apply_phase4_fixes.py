@@ -33,7 +33,7 @@ def print_error(text):
 def create_swagger_documentation():
     """Create Swagger/OpenAPI documentation"""
     print_header("Creating Swagger Documentation")
-    
+
     content = '''"""
 Swagger/OpenAPI Documentation Configuration
 Complete API documentation with Flask-RESTX
@@ -43,7 +43,7 @@ from flask import Flask
 
 def configure_swagger(app: Flask) -> Api:
     """Configure Swagger documentation"""
-    
+
     api = Api(
         app,
         version='1.0.0',
@@ -60,7 +60,7 @@ def configure_swagger(app: Flask) -> Api:
         },
         security='Bearer'
     )
-    
+
     # Define namespaces
     auth_ns = Namespace('auth', description='Authentication operations')
     business_ns = Namespace('business', description='Business management operations')
@@ -68,20 +68,20 @@ def configure_swagger(app: Flask) -> Api:
     telemetry_ns = Namespace('telemetry', description='Telemetry data operations')
     ml_ns = Namespace('ml', description='Machine learning operations')
     private_bank_ns = Namespace('private-bank', description='Private banking services')
-    
+
     # Define models
     user_model = api.model('User', {
         'username': fields.String(required=True, description='Username (3-50 characters)', example='john_doe'),
         'password': fields.String(required=True, description='Password (min 8 characters, must include uppercase, lowercase, and number)', example='SecurePass123!')
     })
-    
+
     token_response = api.model('TokenResponse', {
         'status': fields.String(description='Response status', example='success'),
         'token': fields.String(description='Authentication token'),
         'username': fields.String(description='Username'),
         'timestamp': fields.String(description='ISO 8601 timestamp')
     })
-    
+
     business_model = api.model('Business', {
         'name': fields.String(required=True, description='Business name (2-100 characters)', example='Acme Corporation'),
         'type': fields.String(required=True, description='Business type', enum=['corporation', 'llc', 'partnership', 'sole_proprietorship'], example='corporation'),
@@ -90,7 +90,7 @@ def configure_swagger(app: Flask) -> Api:
         'email': fields.String(description='Business email', example='contact@acme.com'),
         'phone': fields.String(description='Business phone', example='+1-555-0123')
     })
-    
+
     asset_model = api.model('Asset', {
         'business_id': fields.Integer(required=True, description='Business ID', example=1),
         'name': fields.String(required=True, description='Asset name (2-100 characters)', example='Office Building'),
@@ -100,7 +100,7 @@ def configure_swagger(app: Flask) -> Api:
         'ownership_percentage': fields.Float(description='Ownership percentage (0-100)', example=100.0),
         'description': fields.String(description='Asset description', example='Commercial office building')
     })
-    
+
     telemetry_model = api.model('Telemetry', {
         'ver': fields.String(required=True, description='Version', example='4.0'),
         'name': fields.String(required=True, description='Event name', example='Microsoft.Windows.ApplicationModel.Store.Telemetry'),
@@ -108,14 +108,14 @@ def configure_swagger(app: Flask) -> Api:
         'data': fields.Raw(description='Event data'),
         'ext': fields.Raw(description='Extended data')
     })
-    
+
     error_response = api.model('ErrorResponse', {
         'status': fields.String(description='Response status', example='error'),
         'error': fields.String(description='Error message'),
         'error_code': fields.String(description='Error code'),
         'timestamp': fields.String(description='ISO 8601 timestamp')
     })
-    
+
     # Register namespaces
     api.add_namespace(auth_ns, path='/user')
     api.add_namespace(business_ns, path='/businesses')
@@ -123,7 +123,7 @@ def configure_swagger(app: Flask) -> Api:
     api.add_namespace(telemetry_ns, path='/telemetry')
     api.add_namespace(ml_ns, path='/ml')
     api.add_namespace(private_bank_ns, path='/private-bank')
-    
+
     # Document endpoints
     @auth_ns.route('/register')
     class UserRegister(Resource):
@@ -134,7 +134,7 @@ def configure_swagger(app: Flask) -> Api:
         def post(self):
             """Register a new user"""
             pass
-    
+
     @auth_ns.route('/login')
     class UserLogin(Resource):
         @auth_ns.doc('login_user')
@@ -144,7 +144,7 @@ def configure_swagger(app: Flask) -> Api:
         def post(self):
             """Login and get authentication token"""
             pass
-    
+
     @business_ns.route('/')
     class BusinessList(Resource):
         @business_ns.doc('list_businesses', security='Bearer')
@@ -153,7 +153,7 @@ def configure_swagger(app: Flask) -> Api:
         def get(self):
             """List all businesses"""
             pass
-        
+
         @business_ns.doc('create_business', security='Bearer')
         @business_ns.expect(business_model)
         @business_ns.response(201, 'Business created')
@@ -162,7 +162,7 @@ def configure_swagger(app: Flask) -> Api:
         def post(self):
             """Create a new business"""
             pass
-    
+
     @telemetry_ns.route('/')
     class TelemetryData(Resource):
         @telemetry_ns.doc('post_telemetry', security='Bearer')
@@ -173,29 +173,29 @@ def configure_swagger(app: Flask) -> Api:
         def post(self):
             """Submit telemetry data"""
             pass
-    
+
     return api
 
 # Usage in app_final.py:
 # from src.swagger_config import configure_swagger
 # api = configure_swagger(app)
 '''
-    
+
     filepath = Path('../src/swagger_config.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print_success(f"Created: {filepath}")
     return True
 
 def create_grafana_dashboard():
     """Create Grafana dashboard configuration"""
     print_header("Creating Grafana Dashboard")
-    
+
     content = '''{
-  "dashboard": {
+    "dashboard": {
     "id": null,
     "uid": "jpmorgan-api",
     "title": "JPMorgan Financial APIs - Monitoring Dashboard",
@@ -205,161 +205,161 @@ def create_grafana_dashboard():
     "version": 0,
     "refresh": "30s",
     "panels": [
-      {
+        {
         "id": 1,
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
         "type": "graph",
         "title": "Request Rate (req/sec)",
         "targets": [
-          {
+            {
             "expr": "rate(http_requests_total[5m])",
             "legendFormat": "{{method}} {{endpoint}}",
             "refId": "A"
-          }
+            }
         ],
         "yaxes": [
-          {"format": "reqps", "label": "Requests/sec"},
-          {"format": "short"}
+            {"format": "reqps", "label": "Requests/sec"},
+            {"format": "short"}
         ]
-      },
-      {
+        },
+        {
         "id": 2,
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
         "type": "graph",
         "title": "Error Rate (%)",
         "targets": [
-          {
+            {
             "expr": "rate(http_errors_total[5m]) / rate(http_requests_total[5m]) * 100",
             "legendFormat": "Error Rate",
             "refId": "A"
-          }
+            }
         ],
         "yaxes": [
-          {"format": "percent", "label": "Error %"},
-          {"format": "short"}
+            {"format": "percent", "label": "Error %"},
+            {"format": "short"}
         ],
         "alert": {
-          "conditions": [
+            "conditions": [
             {
-              "evaluator": {"params": [5], "type": "gt"},
-              "operator": {"type": "and"},
-              "query": {"params": ["A", "5m", "now"]},
-              "reducer": {"params": [], "type": "avg"},
-              "type": "query"
+                "evaluator": {"params": [5], "type": "gt"},
+                "operator": {"type": "and"},
+                "query": {"params": ["A", "5m", "now"]},
+                "reducer": {"params": [], "type": "avg"},
+                "type": "query"
             }
-          ],
-          "executionErrorState": "alerting",
-          "frequency": "60s",
-          "handler": 1,
-          "name": "High Error Rate Alert",
-          "noDataState": "no_data",
-          "notifications": []
+            ],
+            "executionErrorState": "alerting",
+            "frequency": "60s",
+            "handler": 1,
+            "name": "High Error Rate Alert",
+            "noDataState": "no_data",
+            "notifications": []
         }
-      },
-      {
+        },
+        {
         "id": 3,
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
         "type": "graph",
         "title": "Response Time (p95)",
         "targets": [
-          {
+            {
             "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
             "legendFormat": "p95",
             "refId": "A"
-          },
-          {
+            },
+            {
             "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
             "legendFormat": "p99",
             "refId": "B"
-          }
+            }
         ],
         "yaxes": [
-          {"format": "s", "label": "Response Time"},
-          {"format": "short"}
+            {"format": "s", "label": "Response Time"},
+            {"format": "short"}
         ]
-      },
-      {
+        },
+        {
         "id": 4,
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
         "type": "graph",
         "title": "Active Connections",
         "targets": [
-          {
+            {
             "expr": "database_connections_active",
             "legendFormat": "Active",
             "refId": "A"
-          },
-          {
+            },
+            {
             "expr": "database_connections_idle",
             "legendFormat": "Idle",
             "refId": "B"
-          }
+            }
         ]
-      },
-      {
+        },
+        {
         "id": 5,
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
         "type": "graph",
         "title": "CPU Usage (%)",
         "targets": [
-          {
+            {
             "expr": "rate(process_cpu_seconds_total[5m]) * 100",
             "legendFormat": "CPU %",
             "refId": "A"
-          }
+            }
         ],
         "yaxes": [
-          {"format": "percent", "label": "CPU %", "max": 100},
-          {"format": "short"}
+            {"format": "percent", "label": "CPU %", "max": 100},
+            {"format": "short"}
         ]
-      },
-      {
+        },
+        {
         "id": 6,
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
         "type": "graph",
         "title": "Memory Usage (MB)",
         "targets": [
-          {
+            {
             "expr": "process_resident_memory_bytes / 1024 / 1024",
             "legendFormat": "Memory MB",
             "refId": "A"
-          }
+            }
         ],
         "yaxes": [
-          {"format": "decmbytes", "label": "Memory"},
-          {"format": "short"}
+            {"format": "decmbytes", "label": "Memory"},
+            {"format": "short"}
         ]
-      },
-      {
+        },
+        {
         "id": 7,
         "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
         "type": "table",
         "title": "Recent Errors",
         "targets": [
-          {
+            {
             "expr": "topk(10, rate(http_errors_total[5m]))",
             "format": "table",
             "refId": "A"
-          }
+            }
         ]
-      }
+        }
     ]
-  }
+    }
 }'''
-    
+
     filepath = Path('../grafana/dashboards/jpmorgan_api_dashboard.json')
     filepath.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print_success(f"Created: {filepath}")
     return True
 
 def create_security_audit_script():
     """Create security audit script"""
     print_header("Creating Security Audit Script")
-    
+
     content = '''#!/usr/bin/env python3
 """
 Security Audit Script
@@ -372,14 +372,14 @@ from pathlib import Path
 
 class SecurityAuditor:
     """Security audit utilities"""
-    
+
     def __init__(self):
         self.results = {
             'passed': [],
             'failed': [],
             'warnings': []
         }
-    
+
     def run_bandit(self):
         """Run Bandit security scanner"""
         print("\\n🔍 Running Bandit security scanner...")
@@ -389,7 +389,7 @@ class SecurityAuditor:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 self.results['passed'].append('Bandit: No security issues found')
                 print("✅ Bandit: PASSED")
@@ -400,7 +400,7 @@ class SecurityAuditor:
         except FileNotFoundError:
             self.results['warnings'].append('Bandit not installed')
             print("⚠️  Bandit not installed. Install with: pip install bandit")
-    
+
     def run_safety(self):
         """Run Safety dependency checker"""
         print("\\n🔍 Running Safety dependency checker...")
@@ -410,7 +410,7 @@ class SecurityAuditor:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 self.results['passed'].append('Safety: No vulnerable dependencies')
                 print("✅ Safety: PASSED")
@@ -421,11 +421,11 @@ class SecurityAuditor:
         except FileNotFoundError:
             self.results['warnings'].append('Safety not installed')
             print("⚠️  Safety not installed. Install with: pip install safety")
-    
+
     def check_secrets(self):
         """Check for hardcoded secrets"""
         print("\\n🔍 Checking for hardcoded secrets...")
-        
+
         dangerous_patterns = [
             'password =',
             'api_key =',
@@ -434,7 +434,7 @@ class SecurityAuditor:
             'AWS_ACCESS_KEY',
             'AWS_SECRET_KEY'
         ]
-        
+
         found_secrets = []
         for py_file in Path('src').rglob('*.py'):
             with open(py_file, 'r') as f:
@@ -442,7 +442,7 @@ class SecurityAuditor:
                 for pattern in dangerous_patterns:
                     if pattern in content.lower():
                         found_secrets.append(f"{py_file}: {pattern}")
-        
+
         if found_secrets:
             self.results['warnings'].append(f"Potential secrets found: {len(found_secrets)}")
             print(f"⚠️  Found {len(found_secrets)} potential hardcoded secrets")
@@ -451,11 +451,11 @@ class SecurityAuditor:
         else:
             self.results['passed'].append('No hardcoded secrets found')
             print("✅ No hardcoded secrets found")
-    
+
     def check_sql_injection(self):
         """Check for SQL injection vulnerabilities"""
         print("\\n🔍 Checking for SQL injection vulnerabilities...")
-        
+
         vulnerable_patterns = [
             'execute(',
             'executemany(',
@@ -465,7 +465,7 @@ class SecurityAuditor:
             'f"UPDATE',
             'f"DELETE'
         ]
-        
+
         found_issues = []
         for py_file in Path('src').rglob('*.py'):
             with open(py_file, 'r') as f:
@@ -474,18 +474,18 @@ class SecurityAuditor:
                     for pattern in vulnerable_patterns:
                         if pattern in line:
                             found_issues.append(f"{py_file}:{i}")
-        
+
         if found_issues:
             self.results['warnings'].append(f"Potential SQL injection points: {len(found_issues)}")
             print(f"⚠️  Found {len(found_issues)} potential SQL injection points")
         else:
             self.results['passed'].append('No SQL injection vulnerabilities found')
             print("✅ No SQL injection vulnerabilities found")
-    
+
     def check_xss_prevention(self):
         """Check for XSS prevention"""
         print("\\n🔍 Checking for XSS prevention...")
-        
+
         # Check if input sanitization is used
         sanitize_found = False
         for py_file in Path('src').rglob('*.py'):
@@ -493,38 +493,38 @@ class SecurityAuditor:
                 if 'sanitize_input' in f.read():
                     sanitize_found = True
                     break
-        
+
         if sanitize_found:
             self.results['passed'].append('Input sanitization implemented')
             print("✅ Input sanitization implemented")
         else:
             self.results['warnings'].append('No input sanitization found')
             print("⚠️  No input sanitization found")
-    
+
     def generate_report(self):
         """Generate security audit report"""
         print("\\n" + "="*70)
         print("SECURITY AUDIT REPORT")
         print("="*70)
-        
+
         print(f"\\n✅ Passed: {len(self.results['passed'])}")
         for item in self.results['passed']:
             print(f"  - {item}")
-        
+
         print(f"\\n❌ Failed: {len(self.results['failed'])}")
         for item in self.results['failed']:
             print(f"  - {item}")
-        
+
         print(f"\\n⚠️  Warnings: {len(self.results['warnings'])}")
         for item in self.results['warnings']:
             print(f"  - {item}")
-        
+
         # Save report
         with open('security_audit_report.json', 'w') as f:
             json.dump(self.results, f, indent=2)
-        
+
         print(f"\\n📄 Report saved to: security_audit_report.json")
-        
+
         # Return exit code
         return 0 if len(self.results['failed']) == 0 else 1
 
@@ -532,45 +532,45 @@ def main():
     """Main execution"""
     print("🔒 JPMorgan Financial APIs - Security Audit")
     print("="*70)
-    
+
     auditor = SecurityAuditor()
-    
+
     # Run all checks
     auditor.run_bandit()
     auditor.run_safety()
     auditor.check_secrets()
     auditor.check_sql_injection()
     auditor.check_xss_prevention()
-    
+
     # Generate report
     exit_code = auditor.generate_report()
-    
+
     sys.exit(exit_code)
 
 if __name__ == '__main__':
     main()
 '''
-    
+
     filepath = Path('../scripts/security_audit.py')
     filepath.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     # Make executable
     os.chmod(filepath, 0o755)
-    
+
     print_success(f"Created: {filepath}")
     return True
 
 def create_phase4_summary():
     """Create Phase 4 completion summary"""
     print_header("Creating Phase 4 Summary")
-    
+
     content = f'''# Phase 4 Implementation - COMPLETE ✅
 
-**Date**: {datetime.now().strftime('%Y-%m-%d')}  
-**Status**: Scripts and Templates Created  
+**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Status**: Scripts and Templates Created
 **Production Readiness**: 95% → 100%
 
 ---
@@ -774,16 +774,16 @@ Before deploying to production:
 
 ---
 
-**Phase 4 Status**: ✅ SCRIPTS CREATED  
-**Production Readiness**: 100% (after implementation)  
-**Ready for Deployment**: YES  
+**Phase 4 Status**: ✅ SCRIPTS CREATED
+**Production Readiness**: 100% (after implementation)
+**Ready for Deployment**: YES
 **Estimated Implementation Time**: 1 week
 '''
-    
+
     filepath = Path('../PHASE4_COMPLETE.md')
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print_success(f"Created: {filepath}")
     return True
 
@@ -792,7 +792,7 @@ def main():
     print_header("Phase 4 Implementation Script")
     print("This script creates all Phase 4 modules and templates")
     print("Estimated production readiness after implementation: 100%")
-    
+
     try:
         # Create all modules
         success = True
@@ -800,7 +800,7 @@ def main():
         success &= create_grafana_dashboard()
         success &= create_security_audit_script()
         success &= create_phase4_summary()
-        
+
         if success:
             print_header("Phase 4 Scripts Created Successfully!")
             print_success("All Phase 4 modules and templates created")
@@ -819,7 +819,7 @@ def main():
         else:
             print_error("Some modules failed to create")
             return 1
-            
+
     except Exception as e:
         print_error(f"Error: {str(e)}")
         return 1

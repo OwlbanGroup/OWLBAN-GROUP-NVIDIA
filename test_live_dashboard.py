@@ -30,7 +30,7 @@ def log_test(name: str, status: str, message: str = ""):
         "message": message,
         "timestamp": datetime.now().isoformat()
     })
-    
+
     if status == "PASS":
         test_results["passed"] += 1
         print(f"✅ {name}: PASSED")
@@ -40,7 +40,7 @@ def log_test(name: str, status: str, message: str = ""):
     else:
         test_results["skipped"] += 1
         print(f"⏭️  {name}: SKIPPED - {message}")
-    
+
     if message and status != "SKIP":
         print(f"   {message}")
 
@@ -49,7 +49,7 @@ async def test_dashboard_health():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{BASE_URL}/health", timeout=5.0)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if data.get("status") == "healthy":
@@ -72,19 +72,19 @@ async def test_services_health():
             # Note: This endpoint requires authentication in production
             # For testing, we'll check if it returns 401 (auth required) or 200 (success)
             response = await client.get(f"{BASE_URL}/api/health/services", timeout=10.0)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if data.get("status") == "success":
                     services = data.get("data", {}).get("services", {})
-                    log_test("Services Health Check", "PASS", 
+                    log_test("Services Health Check", "PASS",
                             f"Checked {len(services)} services")
                     return True
                 else:
                     log_test("Services Health Check", "FAIL", "Invalid response format")
                     return False
             elif response.status_code == 401:
-                log_test("Services Health Check", "SKIP", 
+                log_test("Services Health Check", "SKIP",
                         "Authentication required (expected in production)")
                 return True
             else:
@@ -99,19 +99,19 @@ async def test_infrastructure_health():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{BASE_URL}/api/health/infrastructure", timeout=10.0)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if data.get("status") == "success":
                     components = data.get("data", {}).get("components", {})
-                    log_test("Infrastructure Health Check", "PASS", 
+                    log_test("Infrastructure Health Check", "PASS",
                             f"Checked {len(components)} components")
                     return True
                 else:
                     log_test("Infrastructure Health Check", "FAIL", "Invalid response format")
                     return False
             elif response.status_code == 401:
-                log_test("Infrastructure Health Check", "SKIP", 
+                log_test("Infrastructure Health Check", "SKIP",
                         "Authentication required (expected in production)")
                 return True
             else:
@@ -126,7 +126,7 @@ async def test_prometheus_connectivity():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{PROMETHEUS_URL}/-/healthy", timeout=5.0)
-            
+
             if response.status_code == 200:
                 log_test("Prometheus Connectivity", "PASS", "Prometheus is accessible")
                 return True
@@ -134,7 +134,7 @@ async def test_prometheus_connectivity():
                 log_test("Prometheus Connectivity", "FAIL", f"HTTP {response.status_code}")
                 return False
     except Exception as e:
-        log_test("Prometheus Connectivity", "SKIP", 
+        log_test("Prometheus Connectivity", "SKIP",
                 f"Prometheus not running or not accessible: {str(e)}")
         return False
 
@@ -143,16 +143,16 @@ async def test_production_metrics():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{BASE_URL}/api/production/metrics", timeout=10.0)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if data.get("status") == "success":
                     metrics = data.get("data", {})
-                    expected_metrics = ["request_rate", "error_rate", "avg_response_time", 
-                                      "cpu_usage", "memory_usage"]
-                    
+                    expected_metrics = ["request_rate", "error_rate", "avg_response_time",
+                                        "cpu_usage", "memory_usage"]
+
                     if all(metric in metrics for metric in expected_metrics):
-                        log_test("Production Metrics", "PASS", 
+                        log_test("Production Metrics", "PASS",
                                 f"All {len(expected_metrics)} metrics present")
                         return True
                     else:
@@ -162,7 +162,7 @@ async def test_production_metrics():
                     log_test("Production Metrics", "FAIL", "Invalid response format")
                     return False
             elif response.status_code == 401:
-                log_test("Production Metrics", "SKIP", 
+                log_test("Production Metrics", "SKIP",
                         "Authentication required (expected in production)")
                 return True
             else:
@@ -177,7 +177,7 @@ async def test_dashboard_ui():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{BASE_URL}/", timeout=5.0)
-            
+
             if response.status_code == 200:
                 content = response.text
                 # Check for key UI elements
@@ -188,7 +188,7 @@ async def test_dashboard_ui():
                     log_test("Dashboard UI", "FAIL", "Dashboard content not found")
                     return False
             elif response.status_code == 401 or response.status_code == 302:
-                log_test("Dashboard UI", "SKIP", 
+                log_test("Dashboard UI", "SKIP",
                         "Redirected to login (expected with authentication)")
                 return True
             else:
@@ -204,7 +204,7 @@ async def run_tests():
     print("🧪 Live Production Data Dashboard - Critical-Path Testing")
     print("=" * 70)
     print()
-    
+
     # Run tests sequentially
     await test_dashboard_health()
     await test_services_health()
@@ -212,7 +212,7 @@ async def run_tests():
     await test_prometheus_connectivity()
     await test_production_metrics()
     await test_dashboard_ui()
-    
+
     # Print summary
     print()
     print("=" * 70)
@@ -223,7 +223,7 @@ async def run_tests():
     print(f"⏭️  Skipped: {test_results['skipped']}")
     print(f"📝 Total:   {len(test_results['tests'])}")
     print()
-    
+
     # Determine overall status
     if test_results['failed'] == 0:
         print("🎉 All critical tests passed or skipped (authentication required)")
@@ -231,9 +231,9 @@ async def run_tests():
     else:
         print("⚠️  Some tests failed - review the errors above")
         print("🔧 Fix the issues before deployment")
-    
+
     print()
-    
+
     # Save results to file
     with open("test_results.json", "w") as f:
         json.dump(test_results, f, indent=2)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     print()
     print("Starting tests...")
     print()
-    
+
     try:
         asyncio.run(run_tests())
     except KeyboardInterrupt:

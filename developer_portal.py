@@ -364,17 +364,17 @@ print(f"Annual Premium: ${quote_result['quote']['final_annual_premium']}")
 def portal_home():
     """Developer portal home page"""
     return render_template('dev_portal/index.html',
-                         config=PORTAL_CONFIG,
-                         api_specs=API_SPECS,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        api_specs=API_SPECS,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/docs', methods=['GET'])
 def api_documentation():
     """API documentation page"""
     return render_template('dev_portal/docs.html',
-                         config=PORTAL_CONFIG,
-                         api_specs=API_SPECS,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        api_specs=API_SPECS,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/docs/<api_name>', methods=['GET'])
 def api_detail(api_name):
@@ -383,19 +383,19 @@ def api_detail(api_name):
         return jsonify({'error': 'API not found'}), 404
 
     return render_template('dev_portal/api_detail.html',
-                         config=PORTAL_CONFIG,
-                         api_name=api_name,
-                         api_spec=API_SPECS[api_name],
-                         code_examples=CODE_EXAMPLES,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        api_name=api_name,
+                        api_spec=API_SPECS[api_name],
+                        code_examples=CODE_EXAMPLES,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/testing', methods=['GET'])
 def api_testing():
     """Interactive API testing interface"""
     return render_template('dev_portal/testing.html',
-                         config=PORTAL_CONFIG,
-                         api_specs=API_SPECS,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        api_specs=API_SPECS,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/testing/execute', methods=['POST'])
 def execute_test():
@@ -446,23 +446,23 @@ def execute_test():
 def code_examples():
     """Code examples page"""
     return render_template('dev_portal/examples.html',
-                         config=PORTAL_CONFIG,
-                         code_examples=CODE_EXAMPLES,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        code_examples=CODE_EXAMPLES,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/getting-started', methods=['GET'])
 def getting_started():
     """Getting started guide"""
     return render_template('dev_portal/getting_started.html',
-                         config=PORTAL_CONFIG,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/authentication', methods=['GET'])
 def authentication_guide():
     """Authentication guide"""
     return render_template('dev_portal/auth.html',
-                         config=PORTAL_CONFIG,
-                         timestamp=datetime.now(timezone.utc).isoformat())
+                        config=PORTAL_CONFIG,
+                        timestamp=datetime.now(timezone.utc).isoformat())
 
 @dev_portal_bp.route('/status', methods=['GET'])
 def portal_status():

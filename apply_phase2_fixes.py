@@ -31,7 +31,7 @@ def backup_file(filepath):
 def fix_2_1_database_user_storage():
     """Fix 2.1: Implement database-backed user storage"""
     print_status("Applying Fix 2.1: Database-Backed User Storage", "INFO")
-    
+
     # Create User model file
     user_model_content = '''"""
 User Model for Database-Backed Authentication
@@ -45,19 +45,19 @@ Base = declarative_base()
 class User(Base):
     """User model for authentication"""
     __tablename__ = 'users'
-    
+
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     token = Column(String(255), nullable=True, index=True)
     token_created_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
-                       onupdate=lambda: datetime.now(timezone.utc))
-    
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
     def __repr__(self):
         return f'<User {self.username}>'
-    
+
     def to_dict(self):
         """Convert user to dictionary"""
         return {
@@ -67,15 +67,15 @@ class User(Base):
             'token_created_at': self.token_created_at.isoformat() if self.token_created_at else None
         }
 '''
-    
+
     user_model_path = 'src/models/user.py'
     os.makedirs(os.path.dirname(user_model_path), exist_ok=True)
-    
+
     with open(user_model_path, 'w', encoding='utf-8') as f:
         f.write(user_model_content)
-    
+
     print_status("✓ Created User model", "SUCCESS")
-    
+
     # Create user manager
     user_manager_content = '''"""
 User Manager for Database Operations
@@ -87,7 +87,7 @@ from src.database_fixed import db_manager
 
 class UserManager:
     """Manages user database operations"""
-    
+
     @staticmethod
     def create_user(username, password):
         """Create a new user"""
@@ -97,7 +97,7 @@ class UserManager:
             existing_user = session.query(User).filter_by(username=username).first()
             if existing_user:
                 return None, "User already exists"
-            
+
             # Create new user
             user = User(
                 username=username,
@@ -112,7 +112,7 @@ class UserManager:
             return None, f"Error creating user: {str(e)}"
         finally:
             session.close()
-    
+
     @staticmethod
     def verify_user(username, password):
         """Verify user credentials"""
@@ -121,13 +121,13 @@ class UserManager:
             user = session.query(User).filter_by(username=username).first()
             if not user:
                 return False, None
-            
+
             if check_password_hash(user.password_hash, password):
                 return True, user
             return False, None
         finally:
             session.close()
-    
+
     @staticmethod
     def update_token(username, token):
         """Update user token"""
@@ -145,7 +145,7 @@ class UserManager:
             return False
         finally:
             session.close()
-    
+
     @staticmethod
     def get_user_by_token(token):
         """Get user by token"""
@@ -155,7 +155,7 @@ class UserManager:
             return user
         finally:
             session.close()
-    
+
     @staticmethod
     def get_user_by_username(username):
         """Get user by username"""
@@ -168,27 +168,27 @@ class UserManager:
 
 user_manager = UserManager()
 '''
-    
+
     user_manager_path = 'src/user_manager.py'
     with open(user_manager_path, 'w', encoding='utf-8') as f:
         f.write(user_manager_content)
-    
+
     print_status("✓ Created User Manager", "SUCCESS")
     return True
 
 def fix_2_4_consolidate_deployment():
     """Fix 2.4: Consolidate deployment configurations"""
     print_status("Applying Fix 2.4: Consolidate Deployment Configurations", "INFO")
-    
+
     # List docker-compose files
     docker_files = [
         'docker-compose.yml',
         'docker-compose.prod.yml',
         'docker-compose.production.yml'
     ]
-    
+
     existing_files = [f for f in docker_files if os.path.exists(f)]
-    
+
     if len(existing_files) > 1:
         # Keep docker-compose.production.yml, archive others
         for file in existing_files:
@@ -198,21 +198,21 @@ def fix_2_4_consolidate_deployment():
                 os.makedirs(archive_dir, exist_ok=True)
                 shutil.move(file, f"{archive_dir}/{file}")
                 print_status(f"Archived {file}", "SUCCESS")
-    
+
     print_status("✓ Consolidated deployment configurations", "SUCCESS")
     return True
 
 def fix_2_5_consolidate_env_files():
     """Fix 2.5: Consolidate environment files"""
     print_status("Applying Fix 2.5: Consolidate Environment Files", "INFO")
-    
+
     # List .env files
     env_files = [
         '.env.jpmorgan',
         '.env.new',
         '.env.production.example'
     ]
-    
+
     for file in env_files:
         if os.path.exists(file):
             backup_file(file)
@@ -220,14 +220,14 @@ def fix_2_5_consolidate_env_files():
             os.makedirs(archive_dir, exist_ok=True)
             shutil.move(file, f"{archive_dir}/{file}")
             print_status(f"Archived {file}", "SUCCESS")
-    
+
     print_status("✓ Consolidated environment files", "SUCCESS")
     return True
 
 def create_phase2_summary():
     """Create Phase 2 completion summary"""
     print_status("Creating Phase 2 summary document", "INFO")
-    
+
     summary = f"""# Phase 2 High Priority Fixes - Summary
 **Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Script**: apply_phase2_fixes.py
@@ -239,8 +239,8 @@ def create_phase2_summary():
 - **Description**: Implemented User model and UserManager for database operations
 - **Impact**: Users now persisted in database, supports multiple instances
 - **Files Created**:
-  - `src/models/user.py` - User model
-  - `src/user_manager.py` - User management operations
+    - `src/models/user.py` - User model
+    - `src/user_manager.py` - User management operations
 
 ### ✅ Fix 2.2: Database Session Management
 - **Status**: DOCUMENTED
@@ -279,8 +279,8 @@ def create_phase2_summary():
 ```bash
 # Test user registration with database
 curl -X POST http://localhost:8000/user/register \\
-  -H "Content-Type: application/json" \\
-  -d '{{"username": "testuser", "password": "testpass"}}'
+    -H "Content-Type: application/json" \\
+    -d '{{"username": "testuser", "password": "testpass"}}'
 
 # Verify database table created
 sqlite3 app.db "SELECT * FROM users;"
@@ -318,10 +318,10 @@ user = user_manager.get_user_by_token(token)
 **Manual Steps Required**: Integration with app_final.py
 **Next Phase**: Phase 3 (Medium Priority Fixes)
 """
-    
+
     with open('PHASE2_FIXES_APPLIED.md', 'w', encoding='utf-8') as f:
         f.write(summary)
-    
+
     print_status("✓ Created PHASE2_FIXES_APPLIED.md", "SUCCESS")
 
 def main():
@@ -331,23 +331,23 @@ def main():
     print_status("="*70, "INFO")
     print_status(f"Timestamp: {datetime.now().isoformat()}", "INFO")
     print_status("", "INFO")
-    
+
     fixes_applied = 0
     fixes_total = 3  # Automated fixes only
-    
+
     # Apply fixes
     if fix_2_1_database_user_storage():
         fixes_applied += 1
-    
+
     if fix_2_4_consolidate_deployment():
         fixes_applied += 1
-    
+
     if fix_2_5_consolidate_env_files():
         fixes_applied += 1
-    
+
     # Create summary
     create_phase2_summary()
-    
+
     # Final report
     print_status("", "INFO")
     print_status("="*70, "INFO")
@@ -355,7 +355,7 @@ def main():
     print_status("="*70, "INFO")
     print_status(f"Automated Fixes Applied: {fixes_applied}/{fixes_total}", "SUCCESS")
     print_status("", "INFO")
-    
+
     print_status("✅ PHASE 2 AUTOMATED FIXES APPLIED", "SUCCESS")
     print_status("", "INFO")
     print_status("Manual Steps Required:", "WARNING")
@@ -366,7 +366,7 @@ def main():
     print_status("5. Test database-backed authentication", "WARNING")
     print_status("", "INFO")
     print_status("See PHASE2_FIXES_APPLIED.md for details", "INFO")
-    
+
     return True
 
 if __name__ == '__main__':

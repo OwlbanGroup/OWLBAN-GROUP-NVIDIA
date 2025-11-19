@@ -27,7 +27,7 @@ class ProductionValidator:
     """Production validation class for checking system readiness."""
 
     def __init__(self, base_url="http://localhost:5000", db_url=None,
-                 redis_url=None):
+                redis_url=None):
         self.base_url = base_url.rstrip('/')
         default_db = (
             'postgresql://jpmorgan_user:password@postgresql:5432/'

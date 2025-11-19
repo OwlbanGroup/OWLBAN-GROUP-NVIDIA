@@ -370,7 +370,7 @@ class TelemetryHandler:
         return self.database.get_metrics_summary(hours)
 
     def export_events(self, operation: str = None, limit: int = 1000,
-                     output_file: str = None) -> List[Dict[str, Any]]:
+                    output_file: str = None) -> List[Dict[str, Any]]:
         """
         Export telemetry events to file or return as list
 

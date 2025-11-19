@@ -18,12 +18,12 @@ load_dotenv('.env.jpmorgan')
 
 async def test_live_login():
     """Test live JP Morgan login and data access"""
-    
+
     print("=" * 70)
     print("🏦 JP MORGAN LIVE LOGIN TEST")
     print("=" * 70)
     print()
-    
+
     # Initialize client
     client = JPMorganAPIClient(
         client_id=os.getenv("JPMORGAN_CLIENT_ID"),
@@ -31,17 +31,17 @@ async def test_live_login():
         auth_url=os.getenv("JPMORGAN_AUTH_URL"),
         api_base_url=os.getenv("JPMORGAN_API_BASE_URL")
     )
-    
+
     print("📡 Connecting to JP Morgan Payments API...")
     print(f"   Auth URL: {client.auth_url}")
     print(f"   API URL: {client.api_base_url}")
     print()
-    
+
     try:
         # Step 1: Authenticate
         print("🔐 Step 1: Authenticating...")
         token = await client.get_access_token()
-        
+
         if token:
             print("   ✅ Authentication SUCCESSFUL!")
             print(f"   📝 Token Type: Bearer")
@@ -51,18 +51,18 @@ async def test_live_login():
         else:
             print("   ❌ Authentication FAILED")
             return False
-        
+
         # Step 2: Test AI ACCOUNTS project
         print("🏦 Step 2: Accessing AI ACCOUNTS...")
         print("   Testing account access...")
-        
+
         accounts_response = await client.get_accounts()
-        
+
         if accounts_response.get("status") == "success":
             print("   ✅ Account access SUCCESSFUL!")
             accounts = accounts_response.get("data", {}).get("accounts", [])
             print(f"   📊 Found {len(accounts)} account(s)")
-            
+
             if accounts:
                 print("\n   Your Accounts:")
                 for i, account in enumerate(accounts[:3], 1):  # Show first 3
@@ -74,22 +74,22 @@ async def test_live_login():
             print("   ⚠️  No accounts found (this is normal for new API setup)")
             print("   💡 You may need to configure accounts in JP Morgan portal")
             print()
-        
+
         # Step 3: Test CORPORATE EXECUTIVE LOGIN
         print("👔 Step 3: Testing Corporate Executive Login...")
         print("   Checking corporate authentication endpoint...")
-        
+
         # Note: This would require actual corporate credentials
         print("   ℹ️  Corporate login requires executive credentials")
         print("   ✅ Endpoint is available and ready")
         print()
-        
+
         # Step 4: Test OWL PAYROLL
         print("💰 Step 4: Accessing OWL PAYROLL...")
         print("   Testing payroll data access...")
-        
+
         payroll_response = await client.get_payroll()
-        
+
         if payroll_response.get("status") == "success":
             print("   ✅ Payroll access SUCCESSFUL!")
             payroll_data = payroll_response.get("data", {})
@@ -99,13 +99,13 @@ async def test_live_login():
             print("   ⚠️  No payroll data found (normal for new setup)")
             print("   💡 Configure payroll in JP Morgan portal")
             print()
-        
+
         # Step 5: Test OWL PETTY CASH
         print("💵 Step 5: Accessing OWL PETTY CASH...")
         print("   Testing petty cash management...")
-        
+
         petty_cash_response = await client.get_petty_cash_balance()
-        
+
         if petty_cash_response.get("status") == "success":
             print("   ✅ Petty cash access SUCCESSFUL!")
             balance = petty_cash_response.get("data", {}).get("balance", 0)
@@ -115,13 +115,13 @@ async def test_live_login():
             print("   ⚠️  No petty cash data found (normal for new setup)")
             print("   💡 Configure petty cash in JP Morgan portal")
             print()
-        
+
         # Step 6: Test Owl1 Data Integration
         print("🔄 Step 6: Testing Owl1 Data Integration...")
         print("   Checking data synchronization...")
-        
+
         integration_response = await client.get_integration_status()
-        
+
         if integration_response.get("status") == "success":
             print("   ✅ Integration endpoint SUCCESSFUL!")
             print("   🔄 Data sync capabilities available")
@@ -130,7 +130,7 @@ async def test_live_login():
             print("   ⚠️  Integration not configured yet")
             print("   💡 Set up data sync in JP Morgan portal")
             print()
-        
+
         # Summary
         print("=" * 70)
         print("📊 LIVE LOGIN TEST SUMMARY")
@@ -159,9 +159,9 @@ async def test_live_login():
         print("=" * 70)
         print("🎉 YOU ARE SUCCESSFULLY LOGGED INTO JP MORGAN LIVE!")
         print("=" * 70)
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Error during live login test: {str(e)}")
         print()
@@ -170,7 +170,7 @@ async def test_live_login():
         print("2. Verify network connectivity")
         print("3. Ensure JP Morgan API is accessible")
         return False
-    
+
     finally:
         await client.close()
 
@@ -178,13 +178,13 @@ if __name__ == "__main__":
     print()
     result = asyncio.run(test_live_login())
     print()
-    
+
     if result:
         print("✅ Live login test PASSED!")
         print("🎊 You can now use JP Morgan APIs in your application!")
     else:
         print("❌ Live login test FAILED")
         print("Please check the error messages above")
-    
+
     print()
     exit(0 if result else 1)

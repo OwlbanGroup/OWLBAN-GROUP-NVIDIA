@@ -116,11 +116,11 @@ class APIContractTester:
                     response = requests.get(f"{self.base_url}{endpoint['path']}")
                 elif endpoint['method'] == 'POST':
                     response = requests.post(f"{self.base_url}{endpoint['path']}",
-                                           json=endpoint.get('data'))
+                                            json=endpoint.get('data'))
 
                 if response.status_code != 200:
                     self.log_result(f"schema_test_{endpoint['path']}", False,
-                                  error=f"HTTP {response.status_code}")
+                                    error=f"HTTP {response.status_code}")
                     continue
 
                 response_data = response.json()
@@ -129,18 +129,18 @@ class APIContractTester:
                 jsonschema.validate(instance=response_data, schema=endpoint['expected_schema'])
 
                 self.log_result(f"schema_test_{endpoint['path']}", True,
-                              {'response_size': len(json.dumps(response_data))})
+                                {'response_size': len(json.dumps(response_data))})
                 success_count += 1
 
             except jsonschema.ValidationError as e:
                 self.log_result(f"schema_test_{endpoint['path']}", False,
-                              error=f"Schema validation failed: {e.message}")
+                                error=f"Schema validation failed: {e.message}")
             except Exception as e:
                 self.log_result(f"schema_test_{endpoint['path']}", False, error=str(e))
 
         overall_success = success_count == len(endpoints_to_test)
         self.log_result('endpoint_response_schemas', overall_success,
-                       {'tested_endpoints': len(endpoints_to_test), 'successful': success_count})
+                        {'tested_endpoints': len(endpoints_to_test), 'successful': success_count})
 
         return overall_success
 
@@ -191,12 +191,12 @@ class APIContractTester:
                     response = requests.get(f"{self.base_url}{scenario['path']}", headers=headers)
                 elif scenario['method'] == 'POST':
                     response = requests.post(f"{self.base_url}{scenario['path']}",
-                                           data=scenario.get('data'),
-                                           headers=headers)
+                                            data=scenario.get('data'),
+                                            headers=headers)
 
                 if response.status_code != scenario['expected_status']:
                     self.log_result(f"error_format_{scenario['description'].replace(' ', '_')}", False,
-                                  error=f"Expected {scenario['expected_status']}, got {response.status_code}")
+                                    error=f"Expected {scenario['expected_status']}, got {response.status_code}")
                     continue
 
                 response_data = response.json()
@@ -212,7 +212,7 @@ class APIContractTester:
 
         overall_success = success_count == len(error_scenarios)
         self.log_result('error_response_formats', overall_success,
-                       {'tested_scenarios': len(error_scenarios), 'successful': success_count})
+                        {'tested_scenarios': len(error_scenarios), 'successful': success_count})
 
         return overall_success
 
@@ -272,17 +272,17 @@ class APIContractTester:
                 if content_type == expected_content_type:
                     success_count += 1
                     self.log_result(f"content_type_{path.replace('/', '_')}", True,
-                                  {'content_type': content_type})
+                                    {'content_type': content_type})
                 else:
                     self.log_result(f"content_type_{path.replace('/', '_')}", False,
-                                  error=f"Expected {expected_content_type}, got {content_type}")
+                                    error=f"Expected {expected_content_type}, got {content_type}")
 
             except Exception as e:
                 self.log_result(f"content_type_{path.replace('/', '_')}", False, error=str(e))
 
         overall_success = success_count == len(endpoints)
         self.log_result('content_type_headers', overall_success,
-                       {'tested_endpoints': len(endpoints), 'correct_types': success_count})
+                        {'tested_endpoints': len(endpoints), 'correct_types': success_count})
 
         return overall_success
 
@@ -311,17 +311,17 @@ class APIContractTester:
                 if response.status_code == expected_status:
                     success_count += 1
                     self.log_result(f"status_code_{path.replace('/', '_')}_{method}", True,
-                                  {'status_code': response.status_code})
+                                    {'status_code': response.status_code})
                 else:
                     self.log_result(f"status_code_{path.replace('/', '_')}_{method}", False,
-                                  error=f"Expected {expected_status}, got {response.status_code}")
+                                    error=f"Expected {expected_status}, got {response.status_code}")
 
             except Exception as e:
                 self.log_result(f"status_code_{path.replace('/', '_')}_{method}", False, error=str(e))
 
         overall_success = success_count == len(status_tests)
         self.log_result('http_status_codes', overall_success,
-                       {'tested_cases': len(status_tests), 'correct_codes': success_count})
+                        {'tested_cases': len(status_tests), 'correct_codes': success_count})
 
         return overall_success
 

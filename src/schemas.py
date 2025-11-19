@@ -41,7 +41,7 @@ class TelemetryEvent(BaseModel):
 class TelemetryBatchRequest(BaseModel):
     """Schema for batch telemetry processing requests"""
     telemetry_data: List[TelemetryEvent] = Field(..., min_items=1, max_items=1000,
-                                                  description="List of telemetry events to process")
+                                                    description="List of telemetry events to process")
 
     @field_validator('telemetry_data')
     @classmethod
@@ -67,7 +67,7 @@ class ExportRequest(BaseModel):
 class AnomalyDetectionRequest(BaseModel):
     """Schema for anomaly detection requests"""
     telemetry_data: List[TelemetryEvent] = Field(..., min_items=1, max_items=500,
-                                                  description="Telemetry data for anomaly detection")
+                                                    description="Telemetry data for anomaly detection")
 
 
 class CloudExportRequest(BaseModel):
@@ -76,7 +76,7 @@ class CloudExportRequest(BaseModel):
     limit: int = Field(default=1000, ge=1, le=10000, description="Records to export")
     format: str = Field(default="json", description="Export format")
     providers: List[str] = Field(default_factory=lambda: ["aws", "gcs", "azure"],
-                                 description="Cloud providers to export to")
+                                description="Cloud providers to export to")
     filename_prefix: str = Field(default="telemetry_export", description="Export filename prefix")
 
     @field_validator('providers')
@@ -231,7 +231,7 @@ class APIResponse(BaseModel):
     status: str = Field(..., description="Response status")
     message: Optional[str] = Field(None, description="Response message")
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(),
-                          description="Response timestamp")
+                            description="Response timestamp")
 
 
 class TelemetryResponse(APIResponse):
@@ -303,7 +303,7 @@ class ErrorResponse(BaseModel):
     status: str = Field(default="error", description="Error status")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(),
-                          description="Error timestamp")
+                            description="Error timestamp")
 
 
 # Validation utilities

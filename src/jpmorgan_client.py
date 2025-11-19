@@ -26,7 +26,7 @@ class JPMorganAPIClient:
             "https://auth.payments.jpmorgan.com"
         )
 
-        
+
         # Project credentials
         self.projects = {
             "ai_accounts": {
@@ -56,12 +56,12 @@ class JPMorganAPIClient:
             }
         }
 
-        
+
         # Token cache
         self.tokens: Dict[str, Dict[str, Any]] = {}
         self.client = httpx.AsyncClient(timeout=30.0)
 
-    
+
     async def get_access_token(self, project: str) -> str:
         """Get OAuth access token for a project"""
         try:
@@ -71,13 +71,13 @@ class JPMorganAPIClient:
                 if datetime.now() < token_data["expires_at"]:
                     return str(token_data["access_token"])
 
-            
+
             # Get new token
             credentials = self.projects.get(project)
             if not credentials or not credentials["client_id"]:
                 raise ValueError(f"Missing credentials for project: {project}")
 
-            
+
             response = await self.client.post(
                 f"{self.auth_url}/oauth/token",
                 data={
@@ -92,23 +92,23 @@ class JPMorganAPIClient:
             )
             response.raise_for_status()
 
-            
+
             token_data = response.json()
             access_token = str(token_data["access_token"])
             expires_in = int(token_data.get("expires_in", 3600))
 
-            
+
             # Cache token
             self.tokens[project] = {
                 "access_token": access_token,
                 "expires_at": datetime.now() + timedelta(seconds=expires_in - 60)
             }
 
-            
+
             logger.info("Obtained access token", project=project)
             return access_token
 
-            
+
         except httpx.HTTPError as e:
             logger.error("Failed to get access token", project=project, error=str(e))
             raise
@@ -116,7 +116,7 @@ class JPMorganAPIClient:
             logger.error("Invalid token response", project=project, error=str(e))
             raise
 
-    
+
     async def _make_request(
         self,
         method: str,
@@ -130,7 +130,7 @@ class JPMorganAPIClient:
             access_token = await self.get_access_token(project)
             credentials = self.projects[project]
 
-            
+
             headers = {
                 "Authorization": f"Bearer {access_token}",
                 "X-API-Key": credentials["api_key"],
@@ -138,10 +138,10 @@ class JPMorganAPIClient:
                 "Accept": "application/json"
             }
 
-            
+
             url = f"{self.base_url}{endpoint}"
 
-            
+
             response = await self.client.request(
                 method=method,
                 url=url,
@@ -151,10 +151,10 @@ class JPMorganAPIClient:
             )
             response.raise_for_status()
 
-            
+
             return response.json()
 
-            
+
         except httpx.HTTPStatusError as e:
             logger.error(
                 "API request failed",
@@ -173,12 +173,12 @@ class JPMorganAPIClient:
             )
             raise
 
-    
+
     # AI ACCOUNTS APIs
     async def get_accounts(self, account_type: str = "all") -> List[Dict[str, Any]]:
         """Get accounts from AI ACCOUNTS project
 
-        
+
         Args:
             account_type: 'corporate', 'business', 'personal', or 'all'
         """
@@ -187,7 +187,7 @@ class JPMorganAPIClient:
             if account_type != "all":
                 params["type"] = account_type
 
-            
+
             result = await self._make_request(
                 "GET",
                 "/v1/accounts",
@@ -206,7 +206,7 @@ class JPMorganAPIClient:
             logger.error("Failed to get accounts", error=str(e))
             return []
 
-    
+
     async def get_account_balance(self, account_id: str) -> Dict[str, Any]:
         """Get account balance"""
         try:
@@ -224,7 +224,7 @@ class JPMorganAPIClient:
             )
             return {}
 
-    
+
     async def get_account_transactions(
         self,
         account_id: str,
@@ -241,7 +241,6 @@ class JPMorganAPIClient:
                 params["end_date"] = end_date
 
 
-            
             result = await self._make_request(
                 "GET",
                 f"/v1/accounts/{account_id}/transactions",
@@ -257,7 +256,7 @@ class JPMorganAPIClient:
             )
             return []
 
-    
+
     # CORPORATE EXECUTIVE LOGIN APIs
     async def corporate_login(self, username: str, password: str) -> Dict[str, Any]:
         """Corporate executive login"""
@@ -277,7 +276,7 @@ class JPMorganAPIClient:
             logger.error("Corporate login failed", username=username, error=str(e))
             raise
 
-    
+
     async def get_corporate_user_info(self, user_id: str) -> Dict[str, Any]:
         """Get corporate user information"""
         try:
@@ -295,7 +294,7 @@ class JPMorganAPIClient:
             )
             return {}
 
-    
+
     # OWL PAYROLL APIs
     async def get_payroll_data(
         self,
@@ -313,7 +312,7 @@ class JPMorganAPIClient:
             if end_date:
                 params["end_date"] = end_date
 
-            
+
             result = await self._make_request(
                 "GET",
                 "/v1/payroll",
@@ -325,7 +324,7 @@ class JPMorganAPIClient:
             logger.error("Failed to get payroll data", error=str(e))
             return []
 
-    
+
     async def process_payroll(self, payroll_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process payroll payment"""
         try:
@@ -341,7 +340,7 @@ class JPMorganAPIClient:
             logger.error("Failed to process payroll", error=str(e))
             raise
 
-    
+
     # OWL PETTY CASH APIs
     async def get_petty_cash_balance(self) -> Dict[str, Any]:
         """Get petty cash balance"""
@@ -356,7 +355,7 @@ class JPMorganAPIClient:
             logger.error("Failed to get petty cash balance", error=str(e))
             return {}
 
-    
+
     async def create_petty_cash_request(
         self,
         request_data: Dict[str, Any]
@@ -375,7 +374,7 @@ class JPMorganAPIClient:
             logger.error("Failed to create petty cash request", error=str(e))
             raise
 
-    
+
     async def get_petty_cash_transactions(
         self,
         start_date: Optional[str] = None,
@@ -388,7 +387,7 @@ class JPMorganAPIClient:
                 params["start_date"] = start_date
             if end_date:
                 params["end_date"] = end_date
-            
+
             result = await self._make_request(
                 "GET",
                 "/v1/petty-cash/transactions",
@@ -400,7 +399,7 @@ class JPMorganAPIClient:
             logger.error("Failed to get petty cash transactions", error=str(e))
             return []
 
-    
+
     # Owl1 Data Integration APIs
     async def sync_data(self, data_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sync data with Owl1 integration"""
@@ -417,7 +416,7 @@ class JPMorganAPIClient:
             logger.error("Failed to sync data", data_type=data_type, error=str(e))
             raise
 
-    
+
     async def get_integration_status(self) -> Dict[str, Any]:
         """Get Owl1 integration status"""
         try:

@@ -97,7 +97,7 @@ def get_query_performance_stats() -> Dict[str, Any]:
                 'avg_time': round(stats['avg_time'], 4),
                 'max_time': round(stats['max_time'], 4),
                 'min_time': (round(stats['min_time'], 4)
-                           if stats['min_time'] != float('inf') else 0),
+                            if stats['min_time'] != float('inf') else 0),
                 'total_time': round(stats['total_time'], 2)
             }
             for query_name, stats in query_performance_stats.items()

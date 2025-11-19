@@ -176,8 +176,8 @@ def test_single_telemetry_processing(client):
 def test_batch_telemetry_processing(client):
     """Test processing a batch of telemetry events"""
     response = client.post('/telemetry/batch',
-                          data=json.dumps(SAMPLE_BATCH_DATA),
-                          content_type='application/json')
+                            data=json.dumps(SAMPLE_BATCH_DATA),
+                            content_type='application/json')
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data['status'] == 'success'
@@ -199,8 +199,8 @@ def test_telemetry_metrics(client):
 def test_ml_anomaly_detection(client):
     """Test ML anomaly detection"""
     response = client.post('/ml/anomalies',
-                          data=json.dumps(SAMPLE_BATCH_DATA),
-                          content_type='application/json')
+                            data=json.dumps(SAMPLE_BATCH_DATA),
+                            content_type='application/json')
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data['status'] == 'success'
@@ -251,8 +251,8 @@ def test_telemetry_export(client):
 def test_error_handling_invalid_json(client):
     """Test error handling for invalid JSON"""
     response = client.post('/telemetry',
-                          data='invalid json',
-                          content_type='application/json')
+                            data='invalid json',
+                            content_type='application/json')
     assert response.status_code == 400  # Should be 400, not 500
     data = json.loads(response.data)
     assert data['status'] == 'error'
@@ -262,8 +262,8 @@ def test_error_handling_invalid_json(client):
 def test_error_handling_missing_data(client):
     """Test error handling for missing telemetry data"""
     response = client.post('/telemetry',
-                          data=json.dumps({}),
-                          content_type='application/json')
+                            data=json.dumps({}),
+                            content_type='application/json')
     assert response.status_code == 400
     data = json.loads(response.data)
     assert data['status'] == 'error'

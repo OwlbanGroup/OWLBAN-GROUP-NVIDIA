@@ -107,10 +107,10 @@ async def corporate_login(
     try:
         username = credentials.get("username")
         password = credentials.get("password")
-        
+
         if not username or not password:
             raise HTTPException(status_code=400, detail="Username and password required")
-        
+
         result = await client.corporate_login(username, password)
         return APIResponse(
             status="success",
@@ -311,7 +311,7 @@ async def jpmorgan_health(
     try:
         # Test connection to each project
         projects_status = {}
-        
+
         for project_name in client.projects.keys():
             try:
                 token = await client.get_access_token(project_name)
@@ -325,13 +325,13 @@ async def jpmorgan_health(
                     "error": str(proj_error)
                 }
 
-        
+
         all_connected = all(
             p["status"] == "connected"
             for p in projects_status.values()
         )
 
-        
+
         return APIResponse(
             status="success" if all_connected else "partial",
             message="JP Morgan integration health check",

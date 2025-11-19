@@ -140,9 +140,9 @@ class TestMLTrain:
         }
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -161,9 +161,9 @@ class TestMLTrain:
         payload = {'training_data': [[1, 2, 3]]}
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer invalid_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer invalid_token'})
 
         assert response.status_code == 401
         data = json.loads(response.data)
@@ -174,8 +174,8 @@ class TestMLTrain:
         payload = {'training_data': [[1, 2, 3]]}
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json')
+                                data=json.dumps(payload),
+                                content_type='application/json')
 
         assert response.status_code == 401
         data = json.loads(response.data)
@@ -189,9 +189,9 @@ class TestMLTrain:
         payload = {}  # Missing training_data
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -205,9 +205,9 @@ class TestMLTrain:
         payload = {'training_data': 'not_a_list'}  # Should be a list
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -221,9 +221,9 @@ class TestMLTrain:
         payload = {'training_data': [[1, 2, 3]]}  # Only 1 sample, need at least 10
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -241,9 +241,9 @@ class TestMLTrain:
         }
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -261,9 +261,9 @@ class TestMLTrain:
         }
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -279,9 +279,9 @@ class TestMLTrain:
         payload = {'training_data': training_data}  # No contamination specified
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -299,9 +299,9 @@ class TestMLTrain:
         payload = {'training_data': training_data}
 
         response = client.post('/ml/train',
-                              data=json.dumps(payload),
-                              content_type='application/json',
-                              headers={'Authorization': 'Bearer test_token'})
+                                data=json.dumps(payload),
+                                content_type='application/json',
+                                headers={'Authorization': 'Bearer test_token'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -310,8 +310,8 @@ class TestMLTrain:
     def test_train_ml_model_invalid_json(self, client):
         """Test ML training with invalid JSON"""
         response = client.post('/ml/train',
-                              data='invalid json',
-                              content_type='application/json')
+                                data='invalid json',
+                                content_type='application/json')
 
         assert response.status_code == 400
         data = json.loads(response.data)

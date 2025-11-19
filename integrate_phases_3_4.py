@@ -150,23 +150,23 @@ except Exception as e:
     print_warning(f"Swagger configuration failed: {e}")
     # Fallback to Flask-RESTX
     api = Api(app,
-              title='JPMorgan Telemetry API',
-              version=get_version(),
-              description='Enterprise-grade API for processing Microsoft Windows Store '
-                          'telemetry data with ML anomaly detection, cloud storage integration, '
-                          'and GitHub MCP connectivity.',
-              doc='/swagger/')
+                title='JPMorgan Telemetry API',
+                version=get_version(),
+                description='Enterprise-grade API for processing Microsoft Windows Store '
+                            'telemetry data with ML anomaly detection, cloud storage integration, '
+                            'and GitHub MCP connectivity.',
+                doc='/swagger/')
 """
 
     # Replace existing API initialization
     old_api_init = """# Initialize Flask-RESTX API for documentation
 api = Api(app,
-          title='JPMorgan Telemetry API',
-          version=get_version(),
-          description='Enterprise-grade API for processing Microsoft Windows Store '
-                      'telemetry data with ML anomaly detection, cloud storage integration, '
-                      'and GitHub MCP connectivity.',
-          doc='/swagger/')"""
+            title='JPMorgan Telemetry API',
+            version=get_version(),
+            description='Enterprise-grade API for processing Microsoft Windows Store '
+                        'telemetry data with ML anomaly detection, cloud storage integration, '
+                        'and GitHub MCP connectivity.',
+            doc='/swagger/')"""
 
     if old_api_init in content:
         content = content.replace(old_api_init, swagger_config)

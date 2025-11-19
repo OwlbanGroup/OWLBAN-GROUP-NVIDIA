@@ -11,38 +11,38 @@ import traceback
 
 class StructuredLogger:
     """Structured JSON logger for consistent logging"""
-    
+
     def __init__(self, name: str = 'jpmorgan_api', level: str = 'INFO'):
         """
         Initialize structured logger
-        
+
         Args:
             name: Logger name
             level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         """
         self.logger = logging.getLogger(name)
         self.logger.setLevel(getattr(logging, level.upper()))
-        
+
         # Remove existing handlers
         self.logger.handlers = []
-        
+
         # Create console handler with JSON formatter
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(JSONFormatter())
         self.logger.addHandler(handler)
-        
-    def _create_log_entry(self, level: str, message: str, 
-                         context: Optional[Dict[str, Any]] = None,
-                         error: Optional[Exception] = None) -> Dict[str, Any]:
+
+    def _create_log_entry(self, level: str, message: str,
+                        context: Optional[Dict[str, Any]] = None,
+                        error: Optional[Exception] = None) -> Dict[str, Any]:
         """
         Create structured log entry
-        
+
         Args:
             level: Log level
             message: Log message
             context: Additional context
             error: Exception object if applicable
-            
+
         Returns:
             dict: Structured log entry
         """
@@ -52,51 +52,51 @@ class StructuredLogger:
             'message': message,
             'logger': self.logger.name
         }
-        
+
         if context:
             entry['context'] = context
-            
+
         if error:
             entry['error'] = {
                 'type': type(error).__name__,
                 'message': str(error),
                 'traceback': traceback.format_exc()
             }
-            
+
         return entry
-        
+
     def debug(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Log debug message"""
         entry = self._create_log_entry('DEBUG', message, context)
         self.logger.debug(json.dumps(entry))
-        
+
     def info(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Log info message"""
         entry = self._create_log_entry('INFO', message, context)
         self.logger.info(json.dumps(entry))
-        
+
     def warning(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Log warning message"""
         entry = self._create_log_entry('WARNING', message, context)
         self.logger.warning(json.dumps(entry))
-        
+
     def error(self, message: str, context: Optional[Dict[str, Any]] = None,
-              error: Optional[Exception] = None):
+                error: Optional[Exception] = None):
         """Log error message"""
         entry = self._create_log_entry('ERROR', message, context, error)
         self.logger.error(json.dumps(entry))
-        
+
     def critical(self, message: str, context: Optional[Dict[str, Any]] = None,
                 error: Optional[Exception] = None):
         """Log critical message"""
         entry = self._create_log_entry('CRITICAL', message, context, error)
         self.logger.critical(json.dumps(entry))
-        
+
     def log_request(self, method: str, path: str, status_code: int,
-                   duration_ms: float, user_id: Optional[str] = None):
+                    duration_ms: float, user_id: Optional[str] = None):
         """
         Log HTTP request
-        
+
         Args:
             method: HTTP method
             path: Request path
@@ -112,17 +112,17 @@ class StructuredLogger:
                 'duration_ms': duration_ms
             }
         }
-        
+
         if user_id:
             context['user_id'] = user_id
-            
+
         self.info(f"{method} {path} - {status_code}", context)
-        
+
     def log_database_query(self, query: str, duration_ms: float,
-                          rows_affected: Optional[int] = None):
+                            rows_affected: Optional[int] = None):
         """
         Log database query
-        
+
         Args:
             query: SQL query
             duration_ms: Query duration in milliseconds
@@ -134,17 +134,17 @@ class StructuredLogger:
                 'duration_ms': duration_ms
             }
         }
-        
+
         if rows_affected is not None:
             context['database']['rows_affected'] = rows_affected
-            
+
         self.debug("Database query executed", context)
-        
+
     def log_api_call(self, service: str, endpoint: str, status_code: int,
                     duration_ms: float):
         """
         Log external API call
-        
+
         Args:
             service: Service name
             endpoint: API endpoint
@@ -159,14 +159,14 @@ class StructuredLogger:
                 'duration_ms': duration_ms
             }
         }
-        
+
         self.info(f"API call to {service}", context)
-        
+
     def log_authentication(self, username: str, success: bool,
-                          reason: Optional[str] = None):
+                            reason: Optional[str] = None):
         """
         Log authentication attempt
-        
+
         Args:
             username: Username
             success: Whether authentication succeeded
@@ -178,23 +178,23 @@ class StructuredLogger:
                 'success': success
             }
         }
-        
+
         if reason:
             context['authentication']['reason'] = reason
-            
+
         level = 'info' if success else 'warning'
         message = f"Authentication {'succeeded' if success else 'failed'} for {username}"
-        
+
         if success:
             self.info(message, context)
         else:
             self.warning(message, context)
-            
+
     def log_security_event(self, event_type: str, severity: str,
-                          details: Dict[str, Any]):
+                            details: Dict[str, Any]):
         """
         Log security event
-        
+
         Args:
             event_type: Type of security event
             severity: Severity level
@@ -207,17 +207,17 @@ class StructuredLogger:
                 'details': details
             }
         }
-        
+
         if severity.upper() in ['HIGH', 'CRITICAL']:
             self.error(f"Security event: {event_type}", context)
         else:
             self.warning(f"Security event: {event_type}", context)
-            
+
     def log_performance_metric(self, metric_name: str, value: float,
-                              unit: str = 'ms'):
+                                unit: str = 'ms'):
         """
         Log performance metric
-        
+
         Args:
             metric_name: Name of the metric
             value: Metric value
@@ -230,19 +230,19 @@ class StructuredLogger:
                 'unit': unit
             }
         }
-        
+
         self.info(f"Performance metric: {metric_name}", context)
 
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for log records"""
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """
         Format log record as JSON
-        
+
         Args:
             record: Log record
-            
+
         Returns:
             str: JSON formatted log entry
         """
@@ -261,7 +261,7 @@ class JSONFormatter(logging.Formatter):
                 'function': record.funcName,
                 'line': record.lineno
             }
-            
+
             # Add exception info if present
             if record.exc_info:
                 log_entry['exception'] = {
@@ -269,7 +269,7 @@ class JSONFormatter(logging.Formatter):
                     'message': str(record.exc_info[1]),
                     'traceback': self.formatException(record.exc_info)
                 }
-                
+
             return json.dumps(log_entry)
 
 # Global logger instance
@@ -281,7 +281,7 @@ def log_info(message: str, context: Optional[Dict[str, Any]] = None):
     app_logger.info(message, context)
 
 def log_error(message: str, context: Optional[Dict[str, Any]] = None,
-              error: Optional[Exception] = None):
+                error: Optional[Exception] = None):
     """Log error message"""
     app_logger.error(message, context, error)
 

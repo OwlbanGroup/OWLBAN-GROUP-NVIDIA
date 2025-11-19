@@ -40,8 +40,8 @@ def test_business_endpoints():
         }
 
         response = client.post('/businesses',
-                             json=business_data,
-                             headers={'Authorization': 'Bearer test_token'})
+                            json=business_data,
+                            headers={'Authorization': 'Bearer test_token'})
         print(f"   Status: {response.status_code}")
         if response.status_code == 201:
             business_response = response.get_json()
@@ -89,7 +89,7 @@ def test_business_endpoints():
         # Test 5: Delete business
         print("5. Deleting business...")
         response = client.delete(f'/businesses/{business_id}',
-                               headers={'Authorization': 'Bearer test_token'})
+                                headers={'Authorization': 'Bearer test_token'})
         print(f"   Status: {response.status_code}")
         if response.status_code != 200:
             print(f"   Error: {response.get_json()}")
@@ -126,8 +126,8 @@ def test_asset_endpoints():
         }
 
         response = client.post('/businesses',
-                             json=business_data,
-                             headers={'Authorization': 'Bearer test_token'})
+                            json=business_data,
+                            headers={'Authorization': 'Bearer test_token'})
         business_id = response.get_json()['business']['id']
 
         # Test 1: Create asset
@@ -144,8 +144,8 @@ def test_asset_endpoints():
         }
 
         response = client.post('/assets',
-                             json=asset_data,
-                             headers={'Authorization': 'Bearer test_token'})
+                            json=asset_data,
+                            headers={'Authorization': 'Bearer test_token'})
         print(f"   Status: {response.status_code}")
         if response.status_code == 201:
             asset_response = response.get_json()
@@ -210,8 +210,8 @@ def test_asset_endpoints():
         }
 
         response = client.post(f'/businesses/{business_id}/assets',
-                             json=new_asset_data,
-                             headers={'Authorization': 'Bearer test_token'})
+                            json=new_asset_data,
+                            headers={'Authorization': 'Bearer test_token'})
         print(f"   Status: {response.status_code}")
         if response.status_code != 201:
             print(f"   Error: {response.get_json()}")
@@ -220,7 +220,7 @@ def test_asset_endpoints():
         # Test 7: Delete asset
         print("7. Deleting asset...")
         response = client.delete(f'/assets/{asset_id}',
-                               headers={'Authorization': 'Bearer test_token'})
+                                headers={'Authorization': 'Bearer test_token'})
         print(f"   Status: {response.status_code}")
         if response.status_code != 200:
             print(f"   Error: {response.get_json()}")

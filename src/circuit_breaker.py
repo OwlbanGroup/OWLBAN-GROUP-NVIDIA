@@ -23,12 +23,12 @@ class CircuitBreaker:
     """
 
     def __init__(self,
-                 failure_threshold: int = 5,
-                 recovery_timeout: float = 60.0,
-                 expected_exception: Exception = Exception,
-                 success_threshold: int = 3,
-                 timeout: float = 10.0,
-                 name: str = "default"):
+                failure_threshold: int = 5,
+                recovery_timeout: float = 60.0,
+                expected_exception: Exception = Exception,
+                success_threshold: int = 3,
+                timeout: float = 10.0,
+                name: str = "default"):
         """
         Initialize circuit breaker.
 

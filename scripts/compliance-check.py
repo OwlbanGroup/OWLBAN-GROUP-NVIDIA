@@ -51,19 +51,19 @@ class ComplianceChecker:
 
         # Check for data processing agreements
         dpa_files = list(self.project_root.glob("**/dpa*.md")) + \
-                   list(self.project_root.glob("**/data-processing*.md"))
+                    list(self.project_root.glob("**/data-processing*.md"))
         if not dpa_files:
             self.log_issue("GDPR", "HIGH", "No data processing agreement found")
 
         # Check for data retention policies
         retention_files = list(self.project_root.glob("**/retention*.md")) + \
-                         list(self.project_root.glob("**/data-retention*.md"))
+                        list(self.project_root.glob("**/data-retention*.md"))
         if not retention_files:
             self.log_issue("GDPR", "HIGH", "No data retention policy found")
 
         # Check for privacy policy
         privacy_files = list(self.project_root.glob("**/privacy*.md")) + \
-                       list(self.project_root.glob("**/gdpr*.md"))
+                        list(self.project_root.glob("**/gdpr*.md"))
         if not privacy_files:
             self.log_issue("GDPR", "HIGH", "No privacy policy found")
 
@@ -91,15 +91,15 @@ class ComplianceChecker:
                 if 'password' in content.lower() or 'ssn' in content.lower():
                     if 'encrypt' not in content.lower() and 'hash' not in content.lower():
                         self.log_issue("GDPR", "HIGH",
-                                     "Sensitive data handling without encryption",
-                                     file_path)
+                                    "Sensitive data handling without encryption",
+                                    file_path)
 
                 # Check for data logging without masking
                 if 'log.' in content.lower() and ('email' in content.lower() or 'phone' in content.lower()):
                     if 'mask' not in content.lower():
                         self.log_issue("GDPR", "MEDIUM",
-                                     "Personal data logged without masking",
-                                     file_path)
+                                    "Personal data logged without masking",
+                                    file_path)
 
             except Exception as e:
                 logger.warning(f"Could not check file {file_path}: {e}")
@@ -116,13 +116,13 @@ class ComplianceChecker:
 
         # Check for audit logging
         audit_files = list(self.project_root.glob("**/audit*.py")) + \
-                     list(self.project_root.glob("**/logging*.py"))
+                    list(self.project_root.glob("**/logging*.py"))
         if not audit_files:
             self.log_issue("SOC2", "HIGH", "No audit logging implementation found")
 
         # Check for change management
         change_files = list(self.project_root.glob("**/change*.md")) + \
-                      list(self.project_root.glob("**/deployment*.md"))
+                        list(self.project_root.glob("**/deployment*.md"))
         if not change_files:
             self.log_issue("SOC2", "MEDIUM", "No change management procedures found")
 
@@ -134,7 +134,7 @@ class ComplianceChecker:
 
         # Check for access reviews
         access_files = list(self.project_root.glob("**/access*.md")) + \
-                      list(self.project_root.glob("**/rbac*.md"))
+                        list(self.project_root.glob("**/rbac*.md"))
         if not access_files:
             self.log_issue("SOC2", "MEDIUM", "No access control documentation found")
 
@@ -162,8 +162,8 @@ class ComplianceChecker:
         """Check for hardcoded secrets in code"""
         python_files = list(self.project_root.glob("**/*.py"))
         config_files = list(self.project_root.glob("**/*.json")) + \
-                      list(self.project_root.glob("**/*.yaml")) + \
-                      list(self.project_root.glob("**/*.yml"))
+                        list(self.project_root.glob("**/*.yaml")) + \
+                        list(self.project_root.glob("**/*.yml"))
 
         secret_patterns = [
             r'password\s*=\s*["\'][^"\']+["\']',
@@ -184,8 +184,8 @@ class ComplianceChecker:
                         # Filter out test files and config examples
                         if not any(skip in str(file_path) for skip in ['test', 'example', 'sample']):
                             self.log_issue("SECURITY", "CRITICAL",
-                                         f"Potential hardcoded secret found: {pattern}",
-                                         file_path)
+                                        f"Potential hardcoded secret found: {pattern}",
+                                        file_path)
             except Exception as e:
                 logger.warning(f"Could not check file {file_path}: {e}")
 
@@ -202,21 +202,21 @@ class ComplianceChecker:
                 if 'execute(' in content and ('%' in content or '+' in content):
                     if 'text(' not in content and 'bindparams' not in content:
                         self.log_issue("SECURITY", "HIGH",
-                                     "Potential SQL injection vulnerability",
-                                     file_path)
+                                    "Potential SQL injection vulnerability",
+                                    file_path)
 
                 # Check for XSS vulnerabilities
                 if 'render_template' in content and '<' in content:
                     if 'escape' not in content and 'Markup' not in content:
                         self.log_issue("SECURITY", "MEDIUM",
-                                     "Potential XSS vulnerability in template rendering",
-                                     file_path)
+                                    "Potential XSS vulnerability in template rendering",
+                                    file_path)
 
                 # Check for insecure deserialization
                 if 'pickle.loads' in content or 'yaml.load' in content:
                     self.log_issue("SECURITY", "HIGH",
-                                 "Insecure deserialization detected",
-                                 file_path)
+                                "Insecure deserialization detected",
+                                file_path)
 
             except Exception as e:
                 logger.warning(f"Could not check file {file_path}: {e}")
@@ -226,13 +226,13 @@ class ComplianceChecker:
         try:
             # Check if safety is available
             result = subprocess.run([sys.executable, '-m', 'safety', 'check'],
-                                  capture_output=True, text=True, cwd=self.project_root)
+                                    capture_output=True, text=True, cwd=self.project_root)
 
             if result.returncode != 0:
                 vulnerabilities = result.stdout.strip()
                 if vulnerabilities:
                     self.log_issue("SECURITY", "HIGH",
-                                 f"Dependency vulnerabilities found: {vulnerabilities}")
+                                f"Dependency vulnerabilities found: {vulnerabilities}")
                 else:
                     self.log_pass("Dependency security check")
             else:
@@ -271,7 +271,7 @@ class ComplianceChecker:
         missing_headers = set(security_headers) - headers_found
         if missing_headers:
             self.log_issue("SECURITY", "MEDIUM",
-                         f"Missing security headers: {', '.join(missing_headers)}")
+                        f"Missing security headers: {', '.join(missing_headers)}")
 
     def check_performance_compliance(self) -> bool:
         """Check performance compliance requirements"""
@@ -290,7 +290,7 @@ class ComplianceChecker:
 
         # Check for database optimization
         db_files = list(self.project_root.glob("**/database*.py")) + \
-                  list(self.project_root.glob("**/models*.py"))
+                    list(self.project_root.glob("**/models*.py"))
         if db_files:
             self._check_database_optimization(db_files)
 
@@ -306,8 +306,8 @@ class ComplianceChecker:
                 # Check for N+1 query patterns
                 if '.all()' in content and 'select_related' not in content:
                     self.log_issue("PERFORMANCE", "MEDIUM",
-                                 "Potential N+1 query issue",
-                                 file_path)
+                                "Potential N+1 query issue",
+                                file_path)
 
                 # Check for missing indexes (basic check)
                 if 'where' in content.lower() and 'index' not in content.lower():
@@ -374,7 +374,7 @@ class ComplianceChecker:
 def main():
     parser = argparse.ArgumentParser(description='Compliance Checker for JPMorgan Financial APIs')
     parser.add_argument('--project-root', default='.',
-                       help='Project root directory (default: current directory)')
+                        help='Project root directory (default: current directory)')
     parser.add_argument('--output', '-o', help='Output file for JSON report')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
 

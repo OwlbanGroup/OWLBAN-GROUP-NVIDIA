@@ -43,14 +43,14 @@ def verify_token(token: str) -> TokenData:
         username: Optional[str] = payload.get("sub")
         user_id: Optional[str] = payload.get("user_id")
         scopes: list[str] = payload.get("scopes", [])
-        
+
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         return TokenData(username=username, user_id=user_id, scopes=scopes)
     except JWTError as e:
         raise HTTPException(

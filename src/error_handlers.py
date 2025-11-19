@@ -61,7 +61,7 @@ class ErrorHandler:
 
     @staticmethod
     def log_error(error: Exception, context: Optional[Dict[str, Any]] = None,
-                  level: str = "error") -> None:
+                    level: str = "error") -> None:
         """Log error with structured logging"""
         error_context = {
             'error_type': type(error).__name__,
