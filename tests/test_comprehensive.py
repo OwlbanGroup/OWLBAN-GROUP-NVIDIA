@@ -12,19 +12,19 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import validators
-from src.validators_comprehensive import (
+from src.validators_comprehensive import (  # type: ignore
     ComprehensiveValidators, ValidationError,
     validate_business, validate_asset, validate_telemetry, validate_user
 )
 
 # Import response helpers
-from src.response_helpers import error_response, success_response
+from src.response_helpers import error_response, success_response  # type: ignore
 
 # Import database optimizer
-from src.database_optimizer import DatabaseOptimizer
+from src.database_optimizer import DatabaseOptimizer  # type: ignore
 
 # Import structured logger
-from src.structured_logger import StructuredLogger
+from src.structured_logger import StructuredLogger  # type: ignore
 
 class TestComprehensiveValidators:
     """Test comprehensive validators"""

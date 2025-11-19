@@ -1,0 +1,11 @@
+[MASTER]
+init-hook='import sys; sys.path.insert(0, ".")'
+
+[MESSAGES CONTROL]
+disable=
+    import-error,
+    no-name-in-module,
+    wrong-import-position
+
+[TYPECHECK]
+ignored-modules=src
