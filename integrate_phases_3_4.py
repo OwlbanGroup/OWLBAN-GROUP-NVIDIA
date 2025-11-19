@@ -112,10 +112,12 @@ from src.swagger_config import configure_swagger  # type: ignore
 
     # Find Phase 3 imports and add Phase 4 after
     if 'from src.database_optimizer import' in content:
-        content = content.replace(
-            'from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore',
-            'from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore' + phase4_imports
+        old_import = (
+            'from src.database_optimizer import '
+            'DatabaseOptimizer, RECOMMENDED_INDEXES  '
+            '# type: ignore'
         )
+        content = content.replace(old_import, old_import + phase4_imports)
 
         with open(app_file, 'w', encoding='utf-8') as f:
             f.write(content)

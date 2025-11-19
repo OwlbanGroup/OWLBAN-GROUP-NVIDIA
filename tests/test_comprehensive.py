@@ -4,8 +4,13 @@ Achieves 90%+ code coverage for JPMorgan Financial APIs
 """
 import pytest
 import json
+import sys
+import os
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch, MagicMock
+
+# Add parent directory to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import validators
 from src.validators_comprehensive import (
