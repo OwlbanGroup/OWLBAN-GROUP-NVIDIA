@@ -31,19 +31,19 @@ function Test-Check {
     try {
         $result = & $Test
         if ($result) {
-            Write-Host " ✓ PASS" -ForegroundColor Green
-            Write-Host "  → $SuccessMessage" -ForegroundColor Gray
+            Write-Host " PASS" -ForegroundColor Green
+            Write-Host "  -> $SuccessMessage" -ForegroundColor Gray
             $script:results.Passed++
             return $true
         } else {
-            Write-Host " ✗ FAIL" -ForegroundColor Red
-            Write-Host "  → $FailureMessage" -ForegroundColor Gray
+            Write-Host " FAIL" -ForegroundColor Red
+            Write-Host "  -> $FailureMessage" -ForegroundColor Gray
             $script:results.Failed++
             return $false
         }
     } catch {
-        Write-Host " ✗ ERROR" -ForegroundColor Red
-        Write-Host "  → $($_.Exception.Message)" -ForegroundColor Gray
+        Write-Host " ERROR" -ForegroundColor Red
+        Write-Host "  -> $($_.Exception.Message)" -ForegroundColor Gray
         $script:results.Failed++
         return $false
     }
@@ -143,15 +143,15 @@ Write-Host "Checking Docker containers..." -ForegroundColor Yellow
 try {
     $containers = docker-compose -f docker-compose.production.yml ps 2>&1
     if ($containers -match "Up") {
-        Write-Host "  ✓ Production containers are running" -ForegroundColor Green
+        Write-Host "  Production containers are running" -ForegroundColor Green
         $script:results.Passed++
     } else {
-        Write-Host "  ⚠ Production containers not running" -ForegroundColor Yellow
-        Write-Host "  → Run: docker-compose -f docker-compose.production.yml up -d" -ForegroundColor Gray
+        Write-Host "  Production containers not running" -ForegroundColor Yellow
+        Write-Host "  -> Run: docker-compose -f docker-compose.production.yml up -d" -ForegroundColor Gray
         $script:results.Warnings++
     }
 } catch {
-    Write-Host "  ⚠ Could not check container status" -ForegroundColor Yellow
+    Write-Host "  Could not check container status" -ForegroundColor Yellow
     $script:results.Warnings++
 }
 
@@ -254,7 +254,7 @@ Write-Host "Pass Rate: $passRate%" -ForegroundColor $(if ($passRate -ge 90) { "G
 Write-Host ""
 
 if ($results.Failed -eq 0 -and $passRate -ge 90) {
-    Write-Host "✓ PRODUCTION READINESS: VERIFIED" -ForegroundColor Green
+    Write-Host "PRODUCTION READINESS: VERIFIED" -ForegroundColor Green
     Write-Host ""
     Write-Host "Next Steps:" -ForegroundColor Cyan
     Write-Host "1. Run comprehensive tests: pytest tests/test_comprehensive.py -v" -ForegroundColor White
@@ -262,7 +262,7 @@ if ($results.Failed -eq 0 -and $passRate -ge 90) {
     Write-Host "3. Review PRODUCTION_READINESS_EXECUTION_PLAN.md" -ForegroundColor White
     Write-Host "4. Proceed with deployment when ready" -ForegroundColor White
 } elseif ($results.Failed -gt 0) {
-    Write-Host "✗ PRODUCTION READINESS: ISSUES FOUND" -ForegroundColor Red
+    Write-Host "PRODUCTION READINESS: ISSUES FOUND" -ForegroundColor Red
     Write-Host ""
     Write-Host "Action Required:" -ForegroundColor Yellow
     Write-Host "1. Review failed checks above" -ForegroundColor White
@@ -270,7 +270,7 @@ if ($results.Failed -eq 0 -and $passRate -ge 90) {
     Write-Host "3. Re-run this verification script" -ForegroundColor White
     Write-Host "4. Consult PRODUCTION_READINESS_EXECUTION_PLAN.md for guidance" -ForegroundColor White
 } else {
-    Write-Host "⚠ PRODUCTION READINESS: WARNINGS PRESENT" -ForegroundColor Yellow
+    Write-Host "PRODUCTION READINESS: WARNINGS PRESENT" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Recommended Actions:" -ForegroundColor Yellow
     Write-Host "1. Review warnings above" -ForegroundColor White

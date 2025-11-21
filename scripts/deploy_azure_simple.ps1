@@ -11,7 +11,7 @@ param(
     [string]$ResourceGroup = "jpmorgan-financial-apis-rg",
     
     [Parameter(Mandatory=$false)]
-    [string]$Location = "eastus"
+    [string]$Location = "eastus2"
 )
 
 # Color output functions
@@ -64,7 +64,6 @@ function Register-AzureProvider {
         $provider = az provider show --namespace $ProviderNamespace 2>$null | ConvertFrom-Json
         $state = $provider.registrationState
         
-        $progress = [math]::Round(($elapsedSeconds / $timeoutSeconds) * 100)
         Write-Host "." -NoNewline
         
         if ($state -eq "Registered") {
@@ -100,6 +99,7 @@ Write-Info "Registration may take 2-5 minutes per provider if not already regist
 $requiredProviders = @(
     "Microsoft.ContainerService",      # For AKS
     "Microsoft.OperationalInsights",   # For AKS monitoring
+    "Microsoft.Insights",              # For AKS monitoring metrics
     "Microsoft.ContainerRegistry",     # For ACR
     "Microsoft.DBforPostgreSQL",       # For PostgreSQL
     "Microsoft.Cache",                 # For Redis
