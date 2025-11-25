@@ -218,7 +218,7 @@ class TestOpenBankingAPI:
             client, 'get_access_token', new_callable=AsyncMock
         ) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
+
             mock_response = MagicMock()
             mock_response.raise_for_status = MagicMock()
             mock_response.json.return_value = {
@@ -252,7 +252,7 @@ class TestAPIGateway:
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {"status": "healthy"}
-        
+
         with patch.object(client.client, 'get', new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_response
 
@@ -273,7 +273,7 @@ class TestAPIGateway:
             client, 'get_access_token', new_callable=AsyncMock
         ) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
+
             mock_response = MagicMock()
             mock_response.raise_for_status = MagicMock()
             mock_response.json.return_value = {
@@ -307,7 +307,7 @@ class TestAPIGateway:
             client, 'get_access_token', new_callable=AsyncMock
         ) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
+
             mock_response = MagicMock()
             mock_response.raise_for_status = MagicMock()
             mock_response.json.return_value = {
@@ -339,7 +339,7 @@ class TestAPIGateway:
             client, 'get_access_token', new_callable=AsyncMock
         ) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
+
             mock_response = MagicMock()
             mock_response.raise_for_status = MagicMock()
             mock_response.json.return_value = {
@@ -468,54 +468,53 @@ class TestErrorHandling:
                 client.client, 'get', new_callable=AsyncMock
             ) as mock_get:
                 mock_get.side_effect = httpx.HTTPError("Network error")
-                
+
                 # Should return empty list on error
                 accounts = await client.openbanking_get_accounts(user_id="user123")
                 assert accounts == []
-        
+
         await client.close()
-    
+
     @pytest.mark.asyncio
     async def test_http_error_handling(self):
         """Test handling of HTTP errors"""
         client = JPMorganAPIClient(environment="production")
-        
+
         with patch.object(client, 'get_access_token', new_callable=AsyncMock) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
-            import httpx
+
             with patch.object(client.client, 'get', new_callable=AsyncMock) as mock_get:
                 mock_get.side_effect = httpx.HTTPError("HTTP 500 Error")
-                
+
                 # Should return empty dict on error
                 balance = await client.openbanking_get_balance(account_id="ACC001")
                 assert balance == {}
-        
+
         await client.close()
 
 
 class TestIntegration:
     """Integration tests for complete workflows"""
-    
+
     @pytest.mark.asyncio
     async def test_complete_openbanking_workflow(self):
         """Test complete OpenBanking workflow"""
         client = JPMorganAPIClient(environment="production")
-        
+
         with patch.object(client, 'get_access_token', new_callable=AsyncMock) as mock_token:
             mock_token.return_value = "mock_access_token"
-            
+
             # Mock health check
             health_response = MagicMock()
             health_response.raise_for_status = MagicMock()
-            
+
             # Mock accounts response
             accounts_response = MagicMock()
             accounts_response.raise_for_status = MagicMock()
             accounts_response.json.return_value = {
                 "accounts": [{"account_id": "ACC001", "account_type": "checking"}]
             }
-            
+
             # Mock balance response
             balance_response = MagicMock()
             balance_response.raise_for_status = MagicMock()
@@ -524,42 +523,42 @@ class TestIntegration:
                 "balance": 5000.00,
                 "currency": "USD"
             }
-            
+
             with patch.object(client.client, 'get', new_callable=AsyncMock) as mock_get:
                 mock_get.side_effect = [health_response, accounts_response, balance_response]
-                
+
                 # 1. Health check
                 health = await client.openbanking_health_check()
                 assert health["status"] == "healthy"
-                
+
                 # 2. Get accounts
                 accounts = await client.openbanking_get_accounts(user_id="user123")
                 assert len(accounts) == 1
-                
+
                 # 3. Get balance
                 balance = await client.openbanking_get_balance(account_id="ACC001")
                 assert balance["balance"] == 5000.00
-        
+
         await client.close()
-    
+
     @pytest.mark.asyncio
     async def test_multi_environment_workflow(self):
         """Test workflow across multiple environments"""
         # Test in production
         prod_client = get_jpmorgan_client("production")
         assert prod_client.environment == "production"
-        
+
         # Test in UAT
         uat_client = get_jpmorgan_client("uat")
         assert uat_client.environment == "uat"
         assert uat_client is not prod_client
-        
+
         # Test in QAF
         qaf_client = get_jpmorgan_client("qaf")
         assert qaf_client.environment == "qaf"
         assert qaf_client is not prod_client
         assert qaf_client is not uat_client
-        
+
         await prod_client.close()
         await uat_client.close()
         await qaf_client.close()
