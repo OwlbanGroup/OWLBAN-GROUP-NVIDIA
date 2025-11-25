@@ -11,6 +11,39 @@ class Config:
     API_BASE_URL = os.getenv('API_BASE_URL', 'https://api.jpmorgan.com')
     API_VERSION = os.getenv('API_VERSION', 'v1')
 
+    # JPMorgan Environment Configuration
+    JPMORGAN_ENVIRONMENT = os.getenv('JPMORGAN_ENVIRONMENT', 'production')  # production, uat, qaf
+    
+    # JPMorgan OpenBanking API Endpoints
+    JPMORGAN_OPENBANKING_PRODUCTION_URL = os.getenv(
+        'JPMORGAN_OPENBANKING_PRODUCTION_URL',
+        'https://openbanking.jpmorgan.com/accessapi'
+    )
+    JPMORGAN_OPENBANKING_UAT_URL = os.getenv(
+        'JPMORGAN_OPENBANKING_UAT_URL',
+        'https://openbankinguat.jpmorgan.com/accessapi'
+    )
+    
+    # JPMorgan API Gateway Endpoints
+    JPMORGAN_APIGATEWAY_PRODUCTION_URL = os.getenv(
+        'JPMORGAN_APIGATEWAY_PRODUCTION_URL',
+        'https://apigateway.jpmorgan.com/accessapi'
+    )
+    JPMORGAN_APIGATEWAY_QAF_URL = os.getenv(
+        'JPMORGAN_APIGATEWAY_QAF_URL',
+        'https://apigatewayqaf.jpmorgan.com/accessapi'
+    )
+    
+    # OpenBanking API Credentials
+    JPMORGAN_OPENBANKING_CLIENT_ID = os.getenv('JPMORGAN_OPENBANKING_CLIENT_ID')
+    JPMORGAN_OPENBANKING_CLIENT_SECRET = os.getenv('JPMORGAN_OPENBANKING_CLIENT_SECRET')
+    JPMORGAN_OPENBANKING_API_KEY = os.getenv('JPMORGAN_OPENBANKING_API_KEY')
+    
+    # API Gateway Credentials
+    JPMORGAN_APIGATEWAY_CLIENT_ID = os.getenv('JPMORGAN_APIGATEWAY_CLIENT_ID')
+    JPMORGAN_APIGATEWAY_CLIENT_SECRET = os.getenv('JPMORGAN_APIGATEWAY_CLIENT_SECRET')
+    JPMORGAN_APIGATEWAY_API_KEY = os.getenv('JPMORGAN_APIGATEWAY_API_KEY')
+
     # Logging Settings
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
     LOG_FILE = os.getenv('LOG_FILE', 'logs/telemetry.log')
@@ -80,6 +113,31 @@ class Config:
             return cls.DATABASE_URL
 
     @classmethod
+    def get_jpmorgan_endpoint_url(cls, service: str) -> str:
+        """Get JPMorgan endpoint URL based on environment and service
+        
+        Args:
+            service: 'openbanking' or 'apigateway'
+            
+        Returns:
+            The appropriate endpoint URL for the current environment
+        """
+        environment = cls.JPMORGAN_ENVIRONMENT.lower()
+        
+        if service == 'openbanking':
+            if environment == 'uat':
+                return cls.JPMORGAN_OPENBANKING_UAT_URL
+            else:  # production (default)
+                return cls.JPMORGAN_OPENBANKING_PRODUCTION_URL
+        elif service == 'apigateway':
+            if environment == 'qaf':
+                return cls.JPMORGAN_APIGATEWAY_QAF_URL
+            else:  # production (default)
+                return cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL
+        else:
+            raise ValueError(f"Unknown service: {service}. Must be 'openbanking' or 'apigateway'")
+    
+    @classmethod
     def get_all_settings(cls) -> Dict[str, Any]:
         """Get all configuration settings as a dictionary"""
         return {
@@ -105,7 +163,12 @@ class Config:
             'mcp_server_command': cls.MCP_SERVER_COMMAND,
             'github_personal_access_token': cls.GITHUB_PERSONAL_ACCESS_TOKEN,
             'mcp_server_toolsets': cls.MCP_SERVER_TOOLSETS,
-            'mcp_server_host': cls.MCP_SERVER_HOST
+            'mcp_server_host': cls.MCP_SERVER_HOST,
+            'jpmorgan_environment': cls.JPMORGAN_ENVIRONMENT,
+            'jpmorgan_openbanking_production_url': cls.JPMORGAN_OPENBANKING_PRODUCTION_URL,
+            'jpmorgan_openbanking_uat_url': cls.JPMORGAN_OPENBANKING_UAT_URL,
+            'jpmorgan_apigateway_production_url': cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL,
+            'jpmorgan_apigateway_qaf_url': cls.JPMORGAN_APIGATEWAY_QAF_URL
         }
 
 
