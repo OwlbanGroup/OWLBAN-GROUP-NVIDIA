@@ -118,7 +118,7 @@ Write-Header "STEP 3: VERIFYING DATABASE CONNECTIVITY"
 
 Write-Info "Testing PostgreSQL connection..."
 try {
-    $dbTest = docker exec jpmorgan-postgres-prod pg_isready -U jpmorgan_prod
+    docker exec jpmorgan-postgres-prod pg_isready -U jpmorgan_prod | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Success "PostgreSQL: Connected and ready"
     } else {

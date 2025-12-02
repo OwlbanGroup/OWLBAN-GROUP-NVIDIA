@@ -1,0 +1,684 @@
+{
+  "dashboard": {
+    "title": "Prometheus Monitoring Dashboard - JPMorgan APIs",
+    "tags": ["prometheus", "monitoring", "jpmorgan", "metrics"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Prometheus Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"prometheus\"}",
+            "refId": "A",
+            "legendFormat": "Prometheus"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 0,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "fields": "",
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  },
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  }
+                }
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "red"
+                },
+                {
+                  "value": 1,
+                  "color": "green"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "All Services Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 4,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "values": false,
+            "fields": "",
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  },
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  }
+                }
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "red"
+                },
+                {
+                  "value": 1,
+                  "color": "green"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Prometheus Targets",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(up == 1)",
+            "refId": "A",
+            "legendFormat": "Up"
+          },
+          {
+            "expr": "count(up == 0)",
+            "refId": "B",
+            "legendFormat": "Down"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 12,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "fields": "",
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "value_and_name"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Scrape Duration",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "scrape_duration_seconds",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 16,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "fields": "",
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "green"
+                },
+                {
+                  "value": 0.5,
+                  "color": "yellow"
+                },
+                {
+                  "value": 1,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Prometheus Scrape Samples",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
+            "refId": "A",
+            "legendFormat": "Samples/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Samples/sec"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "pointradius": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 6,
+        "title": "Prometheus Query Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(prometheus_http_requests_total[5m])",
+            "refId": "A",
+            "legendFormat": "{{handler}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Requests/sec"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true
+        }
+      },
+      {
+        "id": 7,
+        "title": "Target Scrape Health",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "up",
+            "refId": "A",
+            "legendFormat": "{{job}} - {{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 12
+        },
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Status (1=UP, 0=DOWN)",
+            "min": 0,
+            "max": 1
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 0,
+        "linewidth": 2,
+        "steppedLine": true,
+        "legend": {
+          "show": true,
+          "values": false,
+          "alignAsTable": true,
+          "rightSide": true
+        }
+      },
+      {
+        "id": 8,
+        "title": "Prometheus Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"prometheus\"}",
+            "refId": "A",
+            "legendFormat": "Resident Memory"
+          },
+          {
+            "expr": "process_virtual_memory_bytes{job=\"prometheus\"}",
+            "refId": "B",
+            "legendFormat": "Virtual Memory"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "yaxes": [
+          {
+            "format": "bytes",
+            "label": "Memory"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 9,
+        "title": "Prometheus CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"prometheus\"}[5m]) * 100",
+            "refId": "A",
+            "legendFormat": "CPU %"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "CPU Usage %",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 10,
+        "title": "TSDB Head Series",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "prometheus_tsdb_head_series",
+            "refId": "A",
+            "legendFormat": "Series Count"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 28
+        },
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Series"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 11,
+        "title": "TSDB Chunks",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "prometheus_tsdb_head_chunks",
+            "refId": "A",
+            "legendFormat": "Head Chunks"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 28
+        },
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Chunks"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 12,
+        "title": "Scrape Duration by Job",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "scrape_duration_seconds",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 36
+        },
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 13,
+        "title": "Scrape Samples by Job",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "scrape_samples_scraped",
+            "refId": "A",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 36
+        },
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Samples"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 14,
+        "title": "Rule Evaluation Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(prometheus_rule_evaluation_duration_seconds_sum[5m])",
+            "refId": "A",
+            "legendFormat": "Rule Evaluation"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 44
+        },
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2
+      },
+      {
+        "id": 15,
+        "title": "Storage Size",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "prometheus_tsdb_storage_blocks_bytes",
+            "refId": "A",
+            "legendFormat": "Storage Size"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 44
+        },
+        "yaxes": [
+          {
+            "format": "bytes",
+            "label": "Size"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 16,
+        "title": "HTTP Request Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(prometheus_http_request_duration_seconds_bucket[5m]))",
+            "refId": "A",
+            "legendFormat": "99th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(prometheus_http_request_duration_seconds_bucket[5m]))",
+            "refId": "B",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(prometheus_http_request_duration_seconds_bucket[5m]))",
+            "refId": "C",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 52
+        },
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      }
+    ]
+  }
+}

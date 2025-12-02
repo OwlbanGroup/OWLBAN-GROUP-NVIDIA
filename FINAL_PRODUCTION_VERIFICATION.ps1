@@ -113,7 +113,7 @@ Write-Host ""
 
 # Test 6: PostgreSQL
 try {
-    $dbTest = docker exec jpmorgan-postgres-prod pg_isready -U jpmorgan_prod 2>&1
+    docker exec jpmorgan-postgres-prod pg_isready -U jpmorgan_prod 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✅ PostgreSQL Database" -ForegroundColor Green
         $results.Passed++
