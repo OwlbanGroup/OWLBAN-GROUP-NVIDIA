@@ -81,21 +81,24 @@ from src.cloud_storage import setup_cloud_storage  # type: ignore
 from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
-from src.schemas import
+from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 # Phase 3: Quality & Testing Modules
 from src.validators_comprehensive import ComprehensiveValidators  # type: ignore
 from src.structured_logger import app_logger  # type: ignore
 from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore
 # Phase 4: Polish & Deploy Modules
 from src.swagger_config import configure_swagger  # type: ignore
-
-BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+# Phase 5: Audit Logging Modules
+from src.audit_logger import AuditLogger  # type: ignore
+from src.audit_reports import AuditReportGenerator  # type: ignore
+from src.audit_alerts import AuditAlertManager  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
 
 # Initialize ML model
 anomaly_detector = AnomalyDetector()
+
 # Initialize Database Indexes (Phase 3)
 try:
     from src.models.user import User
@@ -125,7 +128,7 @@ try:
         except Exception as e:
             pass
 
-    print_success("Database indexes created successfully")
+    telemetry_logger.get_logger().info("✅ Database indexes created successfully")
 except Exception as e:
     telemetry_logger.get_logger().warning(f"Database index creation failed: {e}")
 
@@ -152,13 +155,33 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 if os.environ.get('TESTING') == '1':
     app.config['TESTING'] = True
 
+# Initialize Audit Logging System (after Flask app is created)
+try:
+    if config.AUDIT_LOG_ENABLED:
+        audit_logger = AuditLogger(db_manager)
+        audit_report_generator = AuditReportGenerator(db_manager)
+        audit_alert_manager = AuditAlertManager(db_manager)
+        app.audit_logger = audit_logger
+        app.audit_report_generator = audit_report_generator
+        app.audit_alert_manager = audit_alert_manager
+        telemetry_logger.get_logger().info("✅ Audit logging system initialized successfully")
+    else:
+        audit_logger = None
+        audit_report_generator = None
+        audit_alert_manager = None
+        telemetry_logger.get_logger().info("⚠️ Audit logging disabled by configuration")
+except Exception as e:
+    telemetry_logger.get_logger().error(f"Failed to initialize audit logging: {e}")
+    audit_logger = None
+    audit_report_generator = None
+    audit_alert_manager = None
 
 # Initialize Swagger Documentation (Phase 4)
 try:
     api = configure_swagger(app)
-    print_success("Swagger documentation configured at /api/docs/")
+    telemetry_logger.get_logger().info("✅ Swagger documentation configured at /api/docs/")
 except Exception as e:
-    print_warning(f"Swagger configuration failed: {e}")
+    telemetry_logger.get_logger().warning(f"⚠️ Swagger configuration failed: {e}")
     # Fallback to Flask-RESTX
     api = Api(app,
                 title='JPMorgan Telemetry API',
@@ -306,6 +329,7 @@ def register_user():
     """
     Register a new user with username and password
     """
+    start_time = datetime.now(timezone.utc)
     try:
         data = request.get_json(force=True)
         username = data.get('username')
@@ -314,6 +338,24 @@ def register_user():
             return jsonify({'error': 'Username and password are required', 'status': 'error'}), 400
 
         success, message = create_user(username, password)
+        
+        # Log registration attempt
+        if audit_logger:
+            response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            audit_logger.log_event(
+                action='user_registration',
+                resource_type='user',
+                resource_id=username,
+                status_code=201 if success else 400,
+                request_data={'username': username},
+                response_data={'success': success, 'message': message},
+                severity='info' if success else 'warning',
+                category='authentication',
+                compliance_tags=['GDPR', 'SOX'],
+                username=username,
+                response_time_ms=response_time_ms
+            )
+        
         if success:
             return jsonify({'status': 'success', 'message': message}), 201
         else:
@@ -329,6 +371,8 @@ def login_user():
     """
     Login user and return a token
     """
+    start_time = datetime.now(timezone.utc)
+    username = None
     try:
         data = request.get_json(force=True)
         username = data.get('username')
@@ -342,8 +386,36 @@ def login_user():
             # Store token in Redis or in-memory for validation (here in-memory for demo)
             users[username]['token'] = token
             users[username]['token_created_at'] = datetime.now(timezone.utc).isoformat()
+            
+            # Log successful login
+            if audit_logger:
+                response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+                audit_logger.log_authentication_attempt(
+                    username=username,
+                    success=True,
+                    auth_method='password'
+                )
+            
             return jsonify({'status': 'success', 'token': token}), 200
         else:
+            # Log failed login
+            if audit_logger:
+                response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+                audit_logger.log_authentication_attempt(
+                    username=username,
+                    success=False,
+                    reason='Invalid username or password',
+                    auth_method='password'
+                )
+            
+            # Check for brute force attempts
+            if audit_alert_manager:
+                audit_alert_manager.check_failed_login_attempts(
+                    username=username,
+                    lookback_minutes=15,
+                    threshold=config.AUDIT_FAILED_LOGIN_THRESHOLD
+                )
+            
             return jsonify({'error': 'Invalid username or password', 'status': 'error'}), 401
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'login_user'})
@@ -1222,12 +1294,12 @@ def index():
     return jsonify({
         'message': 'Welcome to JPMorgan Financial APIs',
         'version': get_version(),
-        'description': 'Enterprise-grade API for telemetry processing, ML anomaly detection, cloud integration, business asset management, and JPMorgan Private Bank services',
+        'description': 'Enterprise-grade API for telemetry processing, ML anomaly detection, cloud integration, business asset management, JPMorgan Private Bank services, and comprehensive audit logging',
         'endpoints': [
             '/health - Health check',
             '/metrics - Prometheus metrics',
-            '/user/register - User registration',
-            '/user/login - User login',
+            '/user/register - User registration (with audit logging)',
+            '/user/login - User login (with audit logging & brute force detection)',
             '/user/profile - User profile (requires token)',
             '/telemetry - Process telemetry events',
             '/telemetry/batch - Batch telemetry processing',
@@ -1243,7 +1315,24 @@ def index():
             '/private-bank/sync - App synchronization for private banking',
             '/private-bank/wealth - Wealth management services',
             '/private-bank/investments - Investment portfolio management',
+            '/audit/logs - Query audit logs (requires token)',
+            '/audit/summary - Get audit statistics (requires token)',
+            '/audit/reports/user-activity - User activity report (requires token)',
+            '/audit/reports/security - Security incident report (requires token)',
+            '/audit/reports/compliance - Compliance report (requires token)',
+            '/audit/alerts - Get active security alerts (requires token)',
+            '/audit/alerts/<id>/acknowledge - Acknowledge alert (requires token)',
+            '/audit/verify-integrity - Verify hash chain integrity (requires token)',
+            '/audit/export - Export audit logs (requires token)',
             '/dashboard - Web dashboard'
+        ],
+        'features': [
+            'Tamper-proof audit logging with SHA-256 hash chain',
+            'Real-time security threat detection',
+            'Compliance reporting (PCI-DSS, GDPR, SOX)',
+            'Brute force attack prevention',
+            'Suspicious activity detection',
+            'Comprehensive audit trail'
         ],
         'timestamp': datetime.now(timezone.utc).isoformat()
     }), 200
@@ -1491,6 +1580,226 @@ def handle_train_ml_model(data):
             'error': str(e),
             'timestamp': datetime.now(timezone.utc).isoformat()
         })
+
+# Audit Logging Query Endpoints
+@app.route('/audit/logs', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_audit_logs():
+    """Query audit logs with filters"""
+    try:
+        if not audit_logger:
+            return jsonify({'error': 'Audit logging not enabled', 'status': 'error'}), 503
+        
+        # Get query parameters
+        user_id = request.args.get('user_id')
+        action = request.args.get('action')
+        resource_type = request.args.get('resource_type')
+        severity = request.args.get('severity')
+        limit = request.args.get('limit', 100, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        
+        # Get audit logs
+        logs = audit_logger.get_audit_trail(
+            user_id=user_id,
+            action=action,
+            resource_type=resource_type,
+            severity=severity,
+            limit=limit,
+            offset=offset
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'logs': [log.to_dict() for log in logs],
+            'count': len(logs),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_audit_logs'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/summary', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_audit_summary():
+    """Get audit log summary statistics"""
+    try:
+        if not audit_logger:
+            return jsonify({'error': 'Audit logging not enabled', 'status': 'error'}), 503
+        
+        summary = audit_logger.get_audit_summary()
+        
+        return jsonify({
+            'status': 'success',
+            'summary': summary.to_dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_audit_summary'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/reports/user-activity', methods=['GET'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def get_user_activity_report():
+    """Generate user activity report"""
+    try:
+        if not audit_report_generator:
+            return jsonify({'error': 'Audit reporting not enabled', 'status': 'error'}), 503
+        
+        username = request.args.get('username')
+        report = audit_report_generator.generate_user_activity_report(username=username)
+        
+        return jsonify({
+            'status': 'success',
+            'report': report,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_user_activity_report'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/reports/security', methods=['GET'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def get_security_report():
+    """Generate security incident report"""
+    try:
+        if not audit_report_generator:
+            return jsonify({'error': 'Audit reporting not enabled', 'status': 'error'}), 503
+        
+        report = audit_report_generator.generate_security_report()
+        
+        return jsonify({
+            'status': 'success',
+            'report': report,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_security_report'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/reports/compliance', methods=['GET'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def get_compliance_report():
+    """Generate compliance report"""
+    try:
+        if not audit_report_generator:
+            return jsonify({'error': 'Audit reporting not enabled', 'status': 'error'}), 503
+        
+        standard = request.args.get('standard', 'PCI-DSS')
+        report = audit_report_generator.generate_compliance_report(compliance_standard=standard)
+        
+        return jsonify({
+            'status': 'success',
+            'report': report,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_compliance_report'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/alerts', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_audit_alerts():
+    """Get active security alerts"""
+    try:
+        if not audit_alert_manager:
+            return jsonify({'error': 'Audit alerting not enabled', 'status': 'error'}), 503
+        
+        alerts = audit_alert_manager.get_active_alerts(acknowledged=False)
+        
+        return jsonify({
+            'status': 'success',
+            'alerts': [alert.to_dict() for alert in alerts],
+            'count': len(alerts),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_audit_alerts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/alerts/<alert_id>/acknowledge', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def acknowledge_alert(alert_id):
+    """Acknowledge a security alert"""
+    try:
+        if not audit_alert_manager:
+            return jsonify({'error': 'Audit alerting not enabled', 'status': 'error'}), 503
+        
+        success = audit_alert_manager.acknowledge_alert(alert_id)
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': f'Alert {alert_id} acknowledged',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+        else:
+            return jsonify({'error': 'Alert not found', 'status': 'error'}), 404
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'acknowledge_alert'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/verify-integrity', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def verify_audit_integrity():
+    """Verify audit log hash chain integrity"""
+    try:
+        if not audit_logger:
+            return jsonify({'error': 'Audit logging not enabled', 'status': 'error'}), 503
+        
+        is_valid, error_message = audit_logger.verify_integrity()
+        
+        return jsonify({
+            'status': 'success',
+            'integrity_valid': is_valid,
+            'error_message': error_message,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'verify_audit_integrity'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/audit/export', methods=['POST'])
+@token_auth_required
+@conditional_limit("2 per minute")
+def export_audit_logs():
+    """Export audit logs"""
+    try:
+        if not audit_logger:
+            return jsonify({'error': 'Audit logging not enabled', 'status': 'error'}), 503
+        
+        data = request.get_json(force=True)
+        format_type = data.get('format', 'json')
+        filters = data.get('filters', {})
+        
+        exported_data = audit_logger.export_audit_logs(format_type=format_type, filters=filters)
+        
+        if format_type == 'csv':
+            return exported_data, 200, {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': 'attachment; filename=audit_logs.csv'
+            }
+        else:
+            return exported_data, 200, {'Content-Type': 'application/json'}
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'export_audit_logs'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
 
 @app.errorhandler(404)
 def not_found(error):
