@@ -103,6 +103,19 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev_secret')
     # if not SECRET_KEY and os.getenv('ALLOW_MISSING_TOKENS', '').lower() != 'true':
     #     raise ValueError("SECRET_KEY environment variable is required for session security")
+    
+    # Audit Logging Settings
+    AUDIT_LOG_ENABLED = os.getenv('AUDIT_LOG_ENABLED', 'true').lower() == 'true'
+    AUDIT_LOG_RETENTION_DAYS = int(os.getenv('AUDIT_LOG_RETENTION_DAYS', '90'))  # Keep logs for 90 days
+    AUDIT_LOG_MAX_SIZE = int(os.getenv('AUDIT_LOG_MAX_SIZE', '10000000'))  # 10MB max log size
+    AUDIT_ALERT_ENABLED = os.getenv('AUDIT_ALERT_ENABLED', 'true').lower() == 'true'
+    AUDIT_FAILED_LOGIN_THRESHOLD = int(os.getenv('AUDIT_FAILED_LOGIN_THRESHOLD', '5'))  # Alert after 5 failed logins
+    AUDIT_RATE_LIMIT_THRESHOLD = int(os.getenv('AUDIT_RATE_LIMIT_THRESHOLD', '100'))  # Alert after 100 requests/min
+    AUDIT_BRUTE_FORCE_THRESHOLD = int(os.getenv('AUDIT_BRUTE_FORCE_THRESHOLD', '10'))  # Alert after 10 failed logins
+    AUDIT_SUSPICIOUS_IP_THRESHOLD = int(os.getenv('AUDIT_SUSPICIOUS_IP_THRESHOLD', '5'))  # Alert if IP accesses 5+ accounts
+    AUDIT_ALERT_NOTIFICATION_METHOD = os.getenv('AUDIT_ALERT_NOTIFICATION_METHOD', 'log')  # log, email, slack
+    AUDIT_CLEANUP_ENABLED = os.getenv('AUDIT_CLEANUP_ENABLED', 'true').lower() == 'true'  # Auto-cleanup old logs
+    AUDIT_HASH_CHAIN_ENABLED = os.getenv('AUDIT_HASH_CHAIN_ENABLED', 'true').lower() == 'true'  # Enable tamper-proof hash chain
 
     @classmethod
     def get_database_url(cls) -> str:
@@ -168,7 +181,12 @@ class Config:
             'jpmorgan_openbanking_production_url': cls.JPMORGAN_OPENBANKING_PRODUCTION_URL,
             'jpmorgan_openbanking_uat_url': cls.JPMORGAN_OPENBANKING_UAT_URL,
             'jpmorgan_apigateway_production_url': cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL,
-            'jpmorgan_apigateway_qaf_url': cls.JPMORGAN_APIGATEWAY_QAF_URL
+            'jpmorgan_apigateway_qaf_url': cls.JPMORGAN_APIGATEWAY_QAF_URL,
+            'audit_log_enabled': cls.AUDIT_LOG_ENABLED,
+            'audit_log_retention_days': cls.AUDIT_LOG_RETENTION_DAYS,
+            'audit_alert_enabled': cls.AUDIT_ALERT_ENABLED,
+            'audit_failed_login_threshold': cls.AUDIT_FAILED_LOGIN_THRESHOLD,
+            'audit_rate_limit_threshold': cls.AUDIT_RATE_LIMIT_THRESHOLD
         }
 
 

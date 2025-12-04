@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
 from contextlib import contextmanager
-from typing import Generator
+from typing import Generator, List, Optional
 import os
 from datetime import datetime, timezone
 try:
@@ -18,6 +18,13 @@ except ImportError:
     config = Config()
 
 Base = declarative_base()
+
+# Import AuditLogModel after Base is defined
+try:
+    from src.models.audit_log import AuditLogModel
+except ImportError:
+    # AuditLogModel will be imported later if not available
+    AuditLogModel = None
 
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
@@ -133,8 +140,16 @@ class DatabaseManager:
             echo=False
         )
         self.SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=self.engine))
-        # Create tables
+        
+        # Create tables (including audit_logs if AuditLogModel is available)
         Base.metadata.create_all(bind=self.engine)
+        
+        # Create audit_logs table if AuditLogModel is available
+        if AuditLogModel is not None:
+            try:
+                AuditLogModel.__table__.create(bind=self.engine, checkfirst=True)
+            except Exception as e:
+                print(f"Note: Audit log table creation skipped: {e}")
 
     @contextmanager
     def get_session(self) -> Generator[Session, None, None]:
@@ -164,6 +179,121 @@ class DatabaseManager:
             self.SessionLocal.remove()
         if self.engine:
             self.engine.dispose()
+    
+    # Audit Log Methods
+    def get_audit_logs(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List:
+        """
+        Get audit logs with filters
+        
+        Args:
+            user_id: Filter by user ID
+            action: Filter by action
+            start_date: Start date filter
+            end_date: End date filter
+            limit: Maximum number of records
+            offset: Offset for pagination
+            
+        Returns:
+            List of audit log records
+        """
+        if AuditLogModel is None:
+            return []
+        
+        try:
+            with self.get_session() as session:
+                query = session.query(AuditLogModel)
+                
+                if user_id:
+                    query = query.filter(AuditLogModel.user_id == user_id)
+                if action:
+                    query = query.filter(AuditLogModel.action == action)
+                if start_date:
+                    query = query.filter(AuditLogModel.timestamp >= start_date)
+                if end_date:
+                    query = query.filter(AuditLogModel.timestamp <= end_date)
+                
+                query = query.order_by(AuditLogModel.timestamp.desc())
+                query = query.limit(limit).offset(offset)
+                
+                return query.all()
+        except Exception as e:
+            print(f"Failed to get audit logs: {e}")
+            return []
+    
+    def get_audit_log_count(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> int:
+        """
+        Get count of audit logs matching filters
+        
+        Args:
+            user_id: Filter by user ID
+            action: Filter by action
+            start_date: Start date filter
+            end_date: End date filter
+            
+        Returns:
+            Count of matching audit logs
+        """
+        if AuditLogModel is None:
+            return 0
+        
+        try:
+            with self.get_session() as session:
+                query = session.query(AuditLogModel)
+                
+                if user_id:
+                    query = query.filter(AuditLogModel.user_id == user_id)
+                if action:
+                    query = query.filter(AuditLogModel.action == action)
+                if start_date:
+                    query = query.filter(AuditLogModel.timestamp >= start_date)
+                if end_date:
+                    query = query.filter(AuditLogModel.timestamp <= end_date)
+                
+                return query.count()
+        except Exception as e:
+            print(f"Failed to get audit log count: {e}")
+            return 0
+    
+    def cleanup_old_audit_logs(self, retention_days: int = 90) -> int:
+        """
+        Clean up audit logs older than retention period
+        
+        Args:
+            retention_days: Number of days to retain logs
+            
+        Returns:
+            Number of logs deleted
+        """
+        if AuditLogModel is None:
+            return 0
+        
+        try:
+            from datetime import timedelta
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+            
+            with self.get_session() as session:
+                deleted = session.query(AuditLogModel).filter(
+                    AuditLogModel.timestamp < cutoff_date
+                ).delete()
+                session.commit()
+                return deleted
+        except Exception as e:
+            print(f"Failed to cleanup audit logs: {e}")
+            return 0
 
 class DummyQuery:
     def __init__(self, items):

@@ -1,508 +1,645 @@
 """
-Comprehensive Audit Logging System for JPMorgan Financial APIs
-Provides tamper-proof logging of all critical operations and financial transactions
+Core Audit Logger Module
+Provides comprehensive audit logging with tamper-proof hash chain
 """
-import hashlib
 import json
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
-from enum import Enum
-import structlog
-from sqlalchemy import Column, Integer, String, DateTime, Text, Index
-from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime, timezone, timedelta
+from typing import Optional, Dict, Any, List
+from contextlib import contextmanager
+from flask import request, g
+import hashlib
 
-from .logger import telemetry_logger
-
-Base = declarative_base()
-
-class AuditEventType(str, Enum):
-    """Types of audit events"""
-    # Authentication events
-    LOGIN_SUCCESS = "login_success"
-    LOGIN_FAILURE = "login_failure"
-    LOGOUT = "logout"
-    TOKEN_GENERATED = "token_generated"
-    TOKEN_REVOKED = "token_revoked"
-    PASSWORD_CHANGED = "password_changed"
-    PASSWORD_RESET = "password_reset"
-    
-    # Authorization events
-    ACCESS_GRANTED = "access_granted"
-    ACCESS_DENIED = "access_denied"
-    PERMISSION_CHANGED = "permission_changed"
-    ROLE_ASSIGNED = "role_assigned"
-    ROLE_REVOKED = "role_revoked"
-    
-    # Data access events
-    DATA_READ = "data_read"
-    DATA_CREATED = "data_created"
-    DATA_UPDATED = "data_updated"
-    DATA_DELETED = "data_deleted"
-    DATA_EXPORTED = "data_exported"
-    
-    # Financial transaction events
-    TRANSACTION_INITIATED = "transaction_initiated"
-    TRANSACTION_COMPLETED = "transaction_completed"
-    TRANSACTION_FAILED = "transaction_failed"
-    TRANSACTION_REVERSED = "transaction_reversed"
-    
-    # Business operations
-    BUSINESS_CREATED = "business_created"
-    BUSINESS_UPDATED = "business_updated"
-    BUSINESS_DELETED = "business_deleted"
-    ASSET_CREATED = "asset_created"
-    ASSET_UPDATED = "asset_updated"
-    ASSET_DELETED = "asset_deleted"
-    
-    # Security events
-    RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
-    INVALID_INPUT = "invalid_input"
-    SUSPICIOUS_ACTIVITY = "suspicious_activity"
-    SECURITY_VIOLATION = "security_violation"
-    
-    # System events
-    CONFIG_CHANGED = "config_changed"
-    SYSTEM_ERROR = "system_error"
-    BACKUP_CREATED = "backup_created"
-    BACKUP_RESTORED = "backup_restored"
-    
-    # Compliance events
-    DATA_RETENTION_APPLIED = "data_retention_applied"
-    DATA_PURGED = "data_purged"
-    GDPR_REQUEST = "gdpr_request"
-    COMPLIANCE_REPORT_GENERATED = "compliance_report_generated"
-
-
-class AuditLog(Base):
-    """Audit log database model"""
-    __tablename__ = 'audit_logs'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    event_type = Column(String(50), nullable=False, index=True)
-    user_id = Column(String(100), index=True)
-    username = Column(String(100), index=True)
-    ip_address = Column(String(45))  # IPv6 compatible
-    user_agent = Column(String(500))
-    endpoint = Column(String(200), index=True)
-    method = Column(String(10))
-    status_code = Column(Integer)
-    resource_type = Column(String(50), index=True)
-    resource_id = Column(String(100), index=True)
-    action = Column(String(50))
-    details = Column(Text)  # JSON string
-    previous_value = Column(Text)  # JSON string for updates
-    new_value = Column(Text)  # JSON string for updates
-    success = Column(String(10))  # 'true' or 'false'
-    error_message = Column(Text)
-    session_id = Column(String(100), index=True)
-    request_id = Column(String(100))
-    duration_ms = Column(Integer)  # Request duration in milliseconds
-    hash_chain = Column(String(64))  # SHA-256 hash for tamper detection
-    
-    # Indexes for common queries
-    __table_args__ = (
-        Index('idx_audit_timestamp', 'timestamp'),
-        Index('idx_audit_user', 'user_id', 'username'),
-        Index('idx_audit_event', 'event_type', 'timestamp'),
-        Index('idx_audit_resource', 'resource_type', 'resource_id'),
-    )
-    
-    def __repr__(self):
-        return f"<AuditLog(id={self.id}, event_type={self.event_type}, user={self.username}, timestamp={self.timestamp})>"
+try:
+    from src.models.audit_log import AuditLogModel, AuditLogSummary
+    from src.database_fixed import DatabaseManager
+    from src.logger import telemetry_logger
+except ImportError:
+    # Fallback for testing
+    pass
 
 
 class AuditLogger:
     """
     Comprehensive audit logging system with tamper-proof hash chain
+    
+    Features:
+    - Tamper-proof hash chain for log integrity
+    - Automatic user context extraction
+    - Sensitive data sanitization
+    - Real-time security alerting
+    - Compliance-ready audit trails
     """
     
-    def __init__(self, db_session=None):
-        """Initialize audit logger"""
-        self.db_session = db_session
-        self.logger = structlog.get_logger()
-        self.last_hash = "0" * 64  # Initial hash for chain
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize audit logger
+        
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db_manager = db_manager
+        self.logger = telemetry_logger.get_logger()
+        
+    def _get_last_hash(self) -> Optional[str]:
+        """Get the hash of the last audit log entry"""
+        try:
+            with self.db_manager.get_session() as session:
+                last_log = session.query(AuditLogModel).order_by(
+                    AuditLogModel.id.desc()
+                ).first()
+                return last_log.current_hash if last_log else None
+        except Exception as e:
+            self.logger.error(f"Failed to get last hash: {e}")
+            return None
+    
+    def _sanitize_data(self, data: Any, max_length: int = 5000) -> str:
+        """
+        Sanitize data for logging (remove sensitive information)
+        
+        Args:
+            data: Data to sanitize
+            max_length: Maximum length of sanitized data
+            
+        Returns:
+            Sanitized JSON string
+        """
+        if data is None:
+            return None
+        
+        try:
+            # Convert to dict if needed
+            if not isinstance(data, dict):
+                data = {'value': str(data)}
+            
+            # Create a copy to avoid modifying original
+            sanitized = data.copy()
+            
+            # Remove sensitive fields
+            sensitive_fields = [
+                'password', 'token', 'secret', 'api_key', 'private_key',
+                'credit_card', 'ssn', 'social_security', 'authorization'
+            ]
+            
+            for field in sensitive_fields:
+                if field in sanitized:
+                    sanitized[field] = '***REDACTED***'
+            
+            # Convert to JSON and truncate if needed
+            json_str = json.dumps(sanitized, default=str)
+            if len(json_str) > max_length:
+                json_str = json_str[:max_length] + '...[TRUNCATED]'
+            
+            return json_str
+        except Exception as e:
+            self.logger.error(f"Failed to sanitize data: {e}")
+            return json.dumps({'error': 'Failed to sanitize data'})
+    
+    def _extract_user_context(self) -> Dict[str, Any]:
+        """Extract user context from Flask request"""
+        context = {
+            'user_id': None,
+            'username': None,
+            'session_id': None,
+            'ip_address': None,
+            'user_agent': None
+        }
+        
+        try:
+            # Get IP address
+            if request:
+                context['ip_address'] = request.remote_addr
+                context['user_agent'] = request.headers.get('User-Agent', '')
+                
+                # Try to get user info from Flask g object
+                if hasattr(g, 'user_id'):
+                    context['user_id'] = g.user_id
+                if hasattr(g, 'username'):
+                    context['username'] = g.username
+                if hasattr(g, 'session_id'):
+                    context['session_id'] = g.session_id
+        except Exception as e:
+            self.logger.warning(f"Failed to extract user context: {e}")
+        
+        return context
     
     def log_event(
         self,
-        event_type: AuditEventType,
-        user_id: Optional[str] = None,
-        username: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        endpoint: Optional[str] = None,
-        method: Optional[str] = None,
-        status_code: Optional[int] = None,
+        action: str,
         resource_type: Optional[str] = None,
         resource_id: Optional[str] = None,
-        action: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-        previous_value: Optional[Dict[str, Any]] = None,
-        new_value: Optional[Dict[str, Any]] = None,
-        success: bool = True,
+        status_code: Optional[int] = None,
+        request_data: Optional[Dict[str, Any]] = None,
+        response_data: Optional[Dict[str, Any]] = None,
         error_message: Optional[str] = None,
-        session_id: Optional[str] = None,
-        request_id: Optional[str] = None,
-        duration_ms: Optional[int] = None
-    ) -> Optional[AuditLog]:
+        severity: str = 'info',
+        category: str = 'general',
+        compliance_tags: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        username: Optional[str] = None,
+        response_time_ms: Optional[int] = None
+    ) -> Optional[AuditLogModel]:
         """
-        Log an audit event with all relevant information
+        Log an audit event
         
         Args:
-            event_type: Type of event (from AuditEventType enum)
-            user_id: User identifier
-            username: Username
-            ip_address: Client IP address
-            user_agent: User agent string
+            action: Action being performed (e.g., 'login', 'api_call', 'db_update')
+            resource_type: Type of resource (e.g., 'user', 'business', 'asset')
+            resource_id: ID of the resource
+            status_code: HTTP status code
+            request_data: Request payload (will be sanitized)
+            response_data: Response payload (will be sanitized)
+            error_message: Error message if operation failed
+            severity: Severity level (info, warning, error, critical)
+            category: Category (authentication, authorization, data_access, etc.)
+            compliance_tags: List of compliance tags (e.g., ['PCI-DSS', 'GDPR'])
+            user_id: User ID (if not in request context)
+            username: Username (if not in request context)
+            response_time_ms: Response time in milliseconds
+            
+        Returns:
+            Created AuditLogModel instance or None if failed
+        """
+        try:
+            # Extract user context
+            context = self._extract_user_context()
+            
+            # Override with provided values
+            if user_id:
+                context['user_id'] = user_id
+            if username:
+                context['username'] = username
+            
+            # Get request details
+            endpoint = None
+            request_method = None
+            if request:
+                endpoint = request.path
+                request_method = request.method
+            
+            # Get previous hash for chain
+            previous_hash = self._get_last_hash()
+            
+            # Prepare log data
+            log_data = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'user_id': context['user_id'],
+                'username': context['username'],
+                'session_id': context['session_id'],
+                'action': action,
+                'resource_type': resource_type,
+                'resource_id': str(resource_id) if resource_id else None,
+                'ip_address': context['ip_address'],
+                'user_agent': context['user_agent'],
+                'request_method': request_method,
+                'endpoint': endpoint,
+                'status_code': status_code,
+                'response_time_ms': response_time_ms,
+                'request_data': self._sanitize_data(request_data),
+                'response_data': self._sanitize_data(response_data),
+                'error_message': error_message,
+                'severity': severity,
+                'category': category,
+                'compliance_tags': json.dumps(compliance_tags or []),
+                'previous_hash': previous_hash
+            }
+            
+            # Calculate current hash
+            current_hash = AuditLogModel.calculate_hash(log_data, previous_hash)
+            log_data['current_hash'] = current_hash
+            
+            # Create audit log entry
+            with self.db_manager.get_session() as session:
+                audit_log = AuditLogModel(**log_data)
+                session.add(audit_log)
+                session.commit()
+                session.refresh(audit_log)
+                
+                self.logger.info(f"Audit log created: {action} by {context['username'] or 'anonymous'}")
+                return audit_log
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create audit log: {e}")
+            return None
+    
+    def log_authentication_attempt(
+        self,
+        username: str,
+        success: bool,
+        reason: Optional[str] = None,
+        auth_method: str = 'password'
+    ) -> Optional[AuditLogModel]:
+        """
+        Log authentication attempt
+        
+        Args:
+            username: Username attempting authentication
+            success: Whether authentication was successful
+            reason: Reason for failure (if applicable)
+            auth_method: Authentication method used
+            
+        Returns:
+            Created AuditLogModel instance
+        """
+        return self.log_event(
+            action='authentication_attempt',
+            resource_type='user',
+            resource_id=username,
+            status_code=200 if success else 401,
+            request_data={'auth_method': auth_method, 'username': username},
+            response_data={'success': success},
+            error_message=reason if not success else None,
+            severity='info' if success else 'warning',
+            category='authentication',
+            compliance_tags=['PCI-DSS', 'SOX'],
+            username=username
+        )
+    
+    def log_api_call(
+        self,
+        endpoint: str,
+        method: str,
+        status_code: int,
+        response_time_ms: int,
+        request_data: Optional[Dict[str, Any]] = None,
+        response_data: Optional[Dict[str, Any]] = None,
+        error_message: Optional[str] = None
+    ) -> Optional[AuditLogModel]:
+        """
+        Log API call
+        
+        Args:
             endpoint: API endpoint
             method: HTTP method
             status_code: HTTP status code
-            resource_type: Type of resource (business, asset, etc.)
-            resource_id: Resource identifier
-            action: Action performed
-            details: Additional details as dictionary
-            previous_value: Previous value (for updates)
-            new_value: New value (for updates)
-            success: Whether operation was successful
+            response_time_ms: Response time in milliseconds
+            request_data: Request payload
+            response_data: Response payload
             error_message: Error message if failed
-            session_id: Session identifier
-            request_id: Request identifier
-            duration_ms: Request duration in milliseconds
             
         Returns:
-            AuditLog object if successful, None otherwise
+            Created AuditLogModel instance
         """
-        try:
-            # Create audit log entry
-            audit_log = AuditLog(
-                timestamp=datetime.now(timezone.utc),
-                event_type=event_type.value if isinstance(event_type, AuditEventType) else event_type,
-                user_id=user_id,
-                username=username,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                endpoint=endpoint,
-                method=method,
-                status_code=status_code,
-                resource_type=resource_type,
-                resource_id=resource_id,
-                action=action,
-                details=json.dumps(details) if details else None,
-                previous_value=json.dumps(previous_value) if previous_value else None,
-                new_value=json.dumps(new_value) if new_value else None,
-                success='true' if success else 'false',
-                error_message=error_message,
-                session_id=session_id,
-                request_id=request_id,
-                duration_ms=duration_ms
-            )
-            
-            # Calculate hash chain for tamper detection
-            audit_log.hash_chain = self._calculate_hash(audit_log)
-            
-            # Save to database if session available
-            if self.db_session:
-                self.db_session.add(audit_log)
-                self.db_session.commit()
-                self.last_hash = audit_log.hash_chain
-            
-            # Also log to structured logger
-            self.logger.info(
-                "audit_event",
-                event_type=event_type.value if isinstance(event_type, AuditEventType) else event_type,
-                user_id=user_id,
-                username=username,
-                resource_type=resource_type,
-                resource_id=resource_id,
-                success=success
-            )
-            
-            return audit_log
-            
-        except Exception as e:
-            self.logger.error("Failed to log audit event", error=str(e), event_type=event_type)
-            telemetry_logger.log_error(e, {'context': 'audit_logging'})
-            return None
+        severity = 'info'
+        if status_code >= 500:
+            severity = 'error'
+        elif status_code >= 400:
+            severity = 'warning'
+        
+        return self.log_event(
+            action='api_call',
+            resource_type='endpoint',
+            resource_id=endpoint,
+            status_code=status_code,
+            request_data=request_data,
+            response_data=response_data,
+            error_message=error_message,
+            severity=severity,
+            category='api_access',
+            compliance_tags=['GDPR'],
+            response_time_ms=response_time_ms
+        )
     
-    def _calculate_hash(self, audit_log: AuditLog) -> str:
+    def log_database_operation(
+        self,
+        operation: str,
+        table: str,
+        record_id: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
+        success: bool = True,
+        error_message: Optional[str] = None
+    ) -> Optional[AuditLogModel]:
         """
-        Calculate SHA-256 hash for tamper detection
-        Creates a hash chain by including the previous hash
-        """
-        # Combine all relevant fields
-        data = f"{self.last_hash}|{audit_log.timestamp}|{audit_log.event_type}|{audit_log.user_id}|{audit_log.endpoint}|{audit_log.details}"
-        return hashlib.sha256(data.encode('utf-8')).hexdigest()
-    
-    def verify_integrity(self, start_id: Optional[int] = None, end_id: Optional[int] = None) -> Dict[str, Any]:
-        """
-        Verify the integrity of audit logs by checking hash chain
+        Log database operation
         
         Args:
-            start_id: Starting audit log ID (optional)
-            end_id: Ending audit log ID (optional)
+            operation: Operation type (create, read, update, delete)
+            table: Database table name
+            record_id: Record ID
+            data: Data being modified
+            success: Whether operation was successful
+            error_message: Error message if failed
             
         Returns:
-            Dictionary with verification results
+            Created AuditLogModel instance
         """
-        if not self.db_session:
-            return {'error': 'No database session available'}
+        return self.log_event(
+            action=f'db_{operation}',
+            resource_type='database',
+            resource_id=f'{table}:{record_id}' if record_id else table,
+            status_code=200 if success else 500,
+            request_data={'operation': operation, 'table': table, 'data': data},
+            error_message=error_message,
+            severity='info' if success else 'error',
+            category='data_access',
+            compliance_tags=['GDPR', 'SOX']
+        )
+    
+    def log_security_event(
+        self,
+        event_type: str,
+        description: str,
+        severity: str = 'warning',
+        additional_data: Optional[Dict[str, Any]] = None
+    ) -> Optional[AuditLogModel]:
+        """
+        Log security event
         
-        try:
-            query = self.db_session.query(AuditLog).order_by(AuditLog.id)
+        Args:
+            event_type: Type of security event
+            description: Description of the event
+            severity: Severity level
+            additional_data: Additional event data
             
-            if start_id:
-                query = query.filter(AuditLog.id >= start_id)
-            if end_id:
-                query = query.filter(AuditLog.id <= end_id)
+        Returns:
+            Created AuditLogModel instance
+        """
+        return self.log_event(
+            action='security_event',
+            resource_type='security',
+            resource_id=event_type,
+            request_data=additional_data,
+            error_message=description,
+            severity=severity,
+            category='security',
+            compliance_tags=['PCI-DSS', 'SOX', 'GDPR']
+        )
+    
+    def log_failed_attempt(
+        self,
+        action: str,
+        reason: str,
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None
+    ) -> Optional[AuditLogModel]:
+        """
+        Log failed attempt
+        
+        Args:
+            action: Action that failed
+            reason: Reason for failure
+            resource_type: Type of resource
+            resource_id: Resource ID
             
-            logs = query.all()
-            
-            if not logs:
-                return {'verified': True, 'message': 'No logs to verify'}
-            
-            # Verify hash chain
-            previous_hash = "0" * 64
-            tampered_logs = []
-            
-            for log in logs:
-                # Recalculate hash
-                data = f"{previous_hash}|{log.timestamp}|{log.event_type}|{log.user_id}|{log.endpoint}|{log.details}"
-                expected_hash = hashlib.sha256(data.encode('utf-8')).hexdigest()
-                
-                if log.hash_chain != expected_hash:
-                    tampered_logs.append({
-                        'id': log.id,
-                        'timestamp': log.timestamp.isoformat(),
-                        'expected_hash': expected_hash,
-                        'actual_hash': log.hash_chain
-                    })
-                
-                previous_hash = log.hash_chain
-            
-            if tampered_logs:
-                return {
-                    'verified': False,
-                    'message': f'Found {len(tampered_logs)} tampered logs',
-                    'tampered_logs': tampered_logs
-                }
-            
-            return {
-                'verified': True,
-                'message': f'All {len(logs)} logs verified successfully',
-                'logs_checked': len(logs)
-            }
-            
-        except Exception as e:
-            self.logger.error("Failed to verify audit log integrity", error=str(e))
-            return {'error': str(e)}
+        Returns:
+            Created AuditLogModel instance
+        """
+        return self.log_event(
+            action=f'failed_{action}',
+            resource_type=resource_type,
+            resource_id=resource_id,
+            status_code=403,
+            error_message=reason,
+            severity='warning',
+            category='security',
+            compliance_tags=['PCI-DSS']
+        )
     
     def get_audit_trail(
         self,
         user_id: Optional[str] = None,
+        action: Optional[str] = None,
         resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        event_type: Optional[AuditEventType] = None,
+        severity: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        limit: int = 100
-    ) -> List[Dict[str, Any]]:
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[AuditLogModel]:
         """
-        Retrieve audit trail with filters
+        Get audit trail with filters
         
         Args:
             user_id: Filter by user ID
+            action: Filter by action
             resource_type: Filter by resource type
-            resource_id: Filter by resource ID
-            event_type: Filter by event type
-            start_date: Start date for filtering
-            end_date: End date for filtering
-            limit: Maximum number of records to return
+            severity: Filter by severity
+            start_date: Start date for time range
+            end_date: End date for time range
+            limit: Maximum number of records
+            offset: Offset for pagination
             
         Returns:
-            List of audit log dictionaries
+            List of AuditLogModel instances
         """
-        if not self.db_session:
-            return []
-        
         try:
-            query = self.db_session.query(AuditLog).order_by(AuditLog.timestamp.desc())
-            
-            if user_id:
-                query = query.filter(AuditLog.user_id == user_id)
-            if resource_type:
-                query = query.filter(AuditLog.resource_type == resource_type)
-            if resource_id:
-                query = query.filter(AuditLog.resource_id == resource_id)
-            if event_type:
-                query = query.filter(AuditLog.event_type == event_type.value)
-            if start_date:
-                query = query.filter(AuditLog.timestamp >= start_date)
-            if end_date:
-                query = query.filter(AuditLog.timestamp <= end_date)
-            
-            logs = query.limit(limit).all()
-            
-            return [self._log_to_dict(log) for log in logs]
-            
+            with self.db_manager.get_session() as session:
+                query = session.query(AuditLogModel)
+                
+                # Apply filters
+                if user_id:
+                    query = query.filter(AuditLogModel.user_id == user_id)
+                if action:
+                    query = query.filter(AuditLogModel.action == action)
+                if resource_type:
+                    query = query.filter(AuditLogModel.resource_type == resource_type)
+                if severity:
+                    query = query.filter(AuditLogModel.severity == severity)
+                if start_date:
+                    query = query.filter(AuditLogModel.timestamp >= start_date)
+                if end_date:
+                    query = query.filter(AuditLogModel.timestamp <= end_date)
+                
+                # Order by timestamp descending
+                query = query.order_by(AuditLogModel.timestamp.desc())
+                
+                # Apply pagination
+                query = query.limit(limit).offset(offset)
+                
+                return query.all()
         except Exception as e:
-            self.logger.error("Failed to retrieve audit trail", error=str(e))
+            self.logger.error(f"Failed to get audit trail: {e}")
             return []
     
-    def _log_to_dict(self, log: AuditLog) -> Dict[str, Any]:
-        """Convert audit log to dictionary"""
-        return {
-            'id': log.id,
-            'timestamp': log.timestamp.isoformat(),
-            'event_type': log.event_type,
-            'user_id': log.user_id,
-            'username': log.username,
-            'ip_address': log.ip_address,
-            'endpoint': log.endpoint,
-            'method': log.method,
-            'status_code': log.status_code,
-            'resource_type': log.resource_type,
-            'resource_id': log.resource_id,
-            'action': log.action,
-            'details': json.loads(log.details) if log.details else None,
-            'previous_value': json.loads(log.previous_value) if log.previous_value else None,
-            'new_value': json.loads(log.new_value) if log.new_value else None,
-            'success': log.success == 'true',
-            'error_message': log.error_message,
-            'session_id': log.session_id,
-            'request_id': log.request_id,
-            'duration_ms': log.duration_ms
-        }
-    
-    def generate_compliance_report(
+    def get_audit_summary(
         self,
-        start_date: datetime,
-        end_date: datetime,
-        report_type: str = 'summary'
-    ) -> Dict[str, Any]:
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> AuditLogSummary:
         """
-        Generate compliance report for audit logs
+        Get audit log summary statistics
         
         Args:
-            start_date: Report start date
-            end_date: Report end date
-            report_type: Type of report ('summary', 'detailed', 'security')
+            start_date: Start date for time range
+            end_date: End date for time range
             
         Returns:
-            Dictionary containing report data
+            AuditLogSummary instance
         """
-        if not self.db_session:
-            return {'error': 'No database session available'}
-        
         try:
-            query = self.db_session.query(AuditLog).filter(
-                AuditLog.timestamp >= start_date,
-                AuditLog.timestamp <= end_date
-            )
-            
-            logs = query.all()
-            
-            # Calculate statistics
-            total_events = len(logs)
-            successful_events = sum(1 for log in logs if log.success == 'true')
-            failed_events = total_events - successful_events
-            
-            # Count by event type
-            event_counts = {}
-            for log in logs:
-                event_counts[log.event_type] = event_counts.get(log.event_type, 0) + 1
-            
-            # Count by user
-            user_counts = {}
-            for log in logs:
-                if log.username:
-                    user_counts[log.username] = user_counts.get(log.username, 0) + 1
-            
-            # Security events
-            security_events = [log for log in logs if log.event_type in [
-                AuditEventType.LOGIN_FAILURE.value,
-                AuditEventType.ACCESS_DENIED.value,
-                AuditEventType.RATE_LIMIT_EXCEEDED.value,
-                AuditEventType.SUSPICIOUS_ACTIVITY.value,
-                AuditEventType.SECURITY_VIOLATION.value
-            ]]
-            
-            report = {
-                'report_type': report_type,
-                'period': {
-                    'start': start_date.isoformat(),
-                    'end': end_date.isoformat()
-                },
-                'summary': {
-                    'total_events': total_events,
-                    'successful_events': successful_events,
-                    'failed_events': failed_events,
-                    'success_rate': (successful_events / total_events * 100) if total_events > 0 else 0
-                },
-                'event_breakdown': event_counts,
-                'top_users': dict(sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:10]),
-                'security_events': {
-                    'count': len(security_events),
-                    'events': [self._log_to_dict(log) for log in security_events[:20]]
-                },
-                'generated_at': datetime.now(timezone.utc).isoformat()
-            }
-            
-            if report_type == 'detailed':
-                report['all_events'] = [self._log_to_dict(log) for log in logs]
-            
-            return report
-            
+            with self.db_manager.get_session() as session:
+                query = session.query(AuditLogModel)
+                
+                # Apply date filters
+                if start_date:
+                    query = query.filter(AuditLogModel.timestamp >= start_date)
+                if end_date:
+                    query = query.filter(AuditLogModel.timestamp <= end_date)
+                
+                logs = query.all()
+                
+                # Calculate statistics
+                total_logs = len(logs)
+                by_action = {}
+                by_severity = {}
+                by_user = {}
+                failed_attempts = 0
+                
+                for log in logs:
+                    # Count by action
+                    by_action[log.action] = by_action.get(log.action, 0) + 1
+                    
+                    # Count by severity
+                    by_severity[log.severity] = by_severity.get(log.severity, 0) + 1
+                    
+                    # Count by user
+                    if log.username:
+                        by_user[log.username] = by_user.get(log.username, 0) + 1
+                    
+                    # Count failed attempts
+                    if log.status_code and log.status_code >= 400:
+                        failed_attempts += 1
+                
+                # Get time range
+                time_range = (
+                    min(log.timestamp for log in logs) if logs else None,
+                    max(log.timestamp for log in logs) if logs else None
+                )
+                
+                return AuditLogSummary(
+                    total_logs=total_logs,
+                    by_action=by_action,
+                    by_severity=by_severity,
+                    by_user=by_user,
+                    failed_attempts=failed_attempts,
+                    time_range=time_range
+                )
         except Exception as e:
-            self.logger.error("Failed to generate compliance report", error=str(e))
-            return {'error': str(e)}
+            self.logger.error(f"Failed to get audit summary: {e}")
+            return AuditLogSummary(0, {}, {}, {}, 0, (None, None))
+    
+    def verify_integrity(
+        self,
+        start_id: Optional[int] = None,
+        end_id: Optional[int] = None
+    ):
+        """
+        Verify audit log chain integrity
+        
+        Args:
+            start_id: Start log ID (optional)
+            end_id: End log ID (optional)
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        try:
+            with self.db_manager.get_session() as session:
+                query = session.query(AuditLogModel).order_by(AuditLogModel.id)
+                
+                if start_id:
+                    query = query.filter(AuditLogModel.id >= start_id)
+                if end_id:
+                    query = query.filter(AuditLogModel.id <= end_id)
+                
+                logs = query.all()
+                return AuditLogModel.verify_chain_integrity(logs)
+        except Exception as e:
+            self.logger.error(f"Failed to verify integrity: {e}")
+            return False, f"Verification failed: {str(e)}"
+    
+    def export_audit_logs(
+        self,
+        format_type: str = 'json',
+        filters: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Export audit logs in specified format
+        
+        Args:
+            format_type: Export format (json, csv)
+            filters: Filters to apply
+            
+        Returns:
+            Exported data as string
+        """
+        filters = filters or {}
+        logs = self.get_audit_trail(**filters)
+        
+        if format_type == 'json':
+            return json.dumps([log.to_dict() for log in logs], indent=2, default=str)
+        elif format_type == 'csv':
+            import csv
+            import io
+            
+            output = io.StringIO()
+            if logs:
+                fieldnames = logs[0].to_dict().keys()
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                for log in logs:
+                    writer.writerow(log.to_dict())
+            
+            return output.getvalue()
+        else:
+            raise ValueError(f"Unsupported format: {format_type}")
 
 
-# Global audit logger instance
-audit_logger = AuditLogger()
-
-
-def init_audit_logger(db_session):
-    """Initialize audit logger with database session"""
-    global audit_logger
-    audit_logger = AuditLogger(db_session)
-    return audit_logger
-
-
-## Implementing security enhancements  
-- Starting Phase 1 by focusing on enhanced security headers and CORS policies.  
-- Enhancing Flask-Talisman configuration to improve application security.  
-- Updating CORS policies in the main application to ensure proper access controls.  
-- Editing the app file to integrate these security improvements.
-
-## Configuring security headers  
-- Updating Talisman configuration with a detailed content security policy (CSP).  
-- CSP settings include restrictions for default, script, style, image, font, and connection sources, all defaulting to "'self'".
-
-Assistant: Now let me enhance the CORS configuration to be more restrictive and secure:
-
-<edit_file>
-<path>../../app_final.py</path>
-<content>
-<<<<<<< SEARCH
-CORS(app)
-=======
-# Enhanced CORS configuration for security
-cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:8000').split(',')
-
-# In production, restrict origins to known domains only
-if os.environ.get('FLASK_ENV') == 'production':
-    # Add your production domains here
-    cors_origins = [
-        'https://yourdomain.com',
-        'https://api.yourdomain.com',
-        'https://app.yourdomain.com'
-    ]
-
-CORS(app,
-    origins=[origin.strip() for origin in cors_origins],
-    methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-    allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    expose_headers=['Content-Length', 'X-Kuma-Revision'],
-    supports_credentials=True,
-    max_age=86400  # 24 hours
-)
+# Decorator for automatic audit logging
+def audit_log(action: str, resource_type: Optional[str] = None, category: str = 'api_access'):
+    """
+    Decorator to automatically log API endpoint calls
+    
+    Usage:
+        @app.route('/api/endpoint')
+        @audit_log(action='api_call', resource_type='endpoint')
+        def my_endpoint():
+            ...
+    """
+    def decorator(f):
+        from functools import wraps
+        
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            start_time = datetime.now(timezone.utc)
+            error_message = None
+            status_code = 200
+            response_data = None
+            
+            try:
+                # Execute the function
+                result = f(*args, **kwargs)
+                
+                # Extract status code and response data
+                if isinstance(result, tuple):
+                    response_data = result[0] if len(result) > 0 else None
+                    status_code = result[1] if len(result) > 1 else 200
+                else:
+                    response_data = result
+                
+                return result
+            except Exception as e:
+                error_message = str(e)
+                status_code = 500
+                raise
+            finally:
+                # Calculate response time
+                response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+                
+                # Log the event (assuming audit_logger is available in app context)
+                try:
+                    from flask import current_app
+                    if hasattr(current_app, 'audit_logger'):
+                        current_app.audit_logger.log_event(
+                            action=action,
+                            resource_type=resource_type,
+                            status_code=status_code,
+                            response_time_ms=response_time_ms,
+                            error_message=error_message,
+                            category=category
+                        )
+                except Exception as log_error:
+                    # Don't fail the request if logging fails
+                    print(f"Audit logging failed: {log_error}")
+        
+        return wrapper
+    return decorator
