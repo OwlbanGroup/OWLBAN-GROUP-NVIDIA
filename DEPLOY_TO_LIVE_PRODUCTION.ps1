@@ -99,7 +99,8 @@ function Backup-CurrentDeployment {
         }
         
         Write-Log "✓ Backup completed: $backupDir" -Color Green
-    } catch {
+    }
+    catch {
         Write-Log "⚠ Backup failed: $_" -Color Yellow
         Write-Log "Continuing with deployment..." -Color Yellow
     }
@@ -166,7 +167,7 @@ AUDIT_ALERT_ENABLED=true
 
 # API Settings
 API_BASE_URL=https://api.yourdomain.com
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+ALLOWED_ORIGINS=https://yourdomain.com
 
 # JPMorgan API (Update with your credentials)
 JPMORGAN_ENVIRONMENT=production
@@ -183,7 +184,7 @@ JPMORGAN_API_KEY=your_api_key_here
 
 function Run-PreDeploymentTests {
     if ($SkipTests) {
-        Write-Log "`n[STEP 5] Skipping tests (--SkipTests flag set)" -Color Yellow
+        Write-Log "`n[STEP 5] Skipping tests (SkipTests flag set)" -Color Yellow
         return
     }
     
@@ -271,7 +272,7 @@ function Deploy-Services {
 
 function Run-PostDeploymentTests {
     if ($SkipTests) {
-        Write-Log "`n[STEP 7] Skipping post-deployment tests" -Color Yellow
+        Write-Log "`n[STEP 7] Skipping post-deployment tests (SkipTests flag set)" -Color Yellow
         return
     }
     

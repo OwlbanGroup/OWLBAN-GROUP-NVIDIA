@@ -14,7 +14,25 @@ class Config:
     # JPMorgan Environment Configuration
     JPMORGAN_ENVIRONMENT = os.getenv('JPMORGAN_ENVIRONMENT', 'production')  # production, uat, qaf
 
-    # JPMorgan OpenBanking API Endpoints
+    # JPMorgan Merchant API Endpoints (Treasury Services API)
+    JPMORGAN_MERCHANT_PRODUCTION_URL = os.getenv(
+        'JPMORGAN_MERCHANT_PRODUCTION_URL',
+        'https://api.merchant.jpmorgan.com/tsapi/v1'
+    )
+    JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL = os.getenv(
+        'JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL',
+        'https://api-mtls.merchant.jpmorgan.com/tsapi/v1'
+    )
+    JPMORGAN_MERCHANT_UAT_URL = os.getenv(
+        'JPMORGAN_MERCHANT_UAT_URL',
+        'https://api-pci-uat.jpmorgan.com/tsapi/v1'
+    )
+    JPMORGAN_MERCHANT_MTLS_UAT_URL = os.getenv(
+        'JPMORGAN_MERCHANT_MTLS_UAT_URL',
+        'https://api-mtls-pci-uat.jpmorgan.com/tsapi/v1'
+    )
+
+    # JPMorgan OpenBanking API Endpoints (Legacy)
     JPMORGAN_OPENBANKING_PRODUCTION_URL = os.getenv(
         'JPMORGAN_OPENBANKING_PRODUCTION_URL',
         'https://openbanking.jpmorgan.com/accessapi'
@@ -24,7 +42,7 @@ class Config:
         'https://openbankinguat.jpmorgan.com/accessapi'
     )
 
-    # JPMorgan API Gateway Endpoints
+    # JPMorgan API Gateway Endpoints (Legacy)
     JPMORGAN_APIGATEWAY_PRODUCTION_URL = os.getenv(
         'JPMORGAN_APIGATEWAY_PRODUCTION_URL',
         'https://apigateway.jpmorgan.com/accessapi'
@@ -150,18 +168,26 @@ class Config:
             return cls.DATABASE_URL
 
     @classmethod
-    def get_jpmorgan_endpoint_url(cls, service: str) -> str:
+    def get_jpmorgan_endpoint_url(cls, service: str, use_mtls: bool = False) -> str:
         """Get JPMorgan endpoint URL based on environment and service
 
         Args:
-            service: 'openbanking' or 'apigateway'
+            service: 'merchant', 'openbanking', or 'apigateway'
+            use_mtls: Whether to use mTLS endpoint (for merchant service)
 
         Returns:
             The appropriate endpoint URL for the current environment
         """
         environment = cls.JPMORGAN_ENVIRONMENT.lower()
 
-        if service == 'openbanking':
+        if service == 'merchant':
+            if environment == 'uat':
+                return (cls.JPMORGAN_MERCHANT_MTLS_UAT_URL if use_mtls
+                        else cls.JPMORGAN_MERCHANT_UAT_URL)
+            else:  # production (default)
+                return (cls.JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL if use_mtls
+                        else cls.JPMORGAN_MERCHANT_PRODUCTION_URL)
+        elif service == 'openbanking':
             if environment == 'uat':
                 return cls.JPMORGAN_OPENBANKING_UAT_URL
             else:  # production (default)
@@ -172,7 +198,7 @@ class Config:
             else:  # production (default)
                 return cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL
         else:
-            raise ValueError(f"Unknown service: {service}. Must be 'openbanking' or 'apigateway'")
+            raise ValueError(f"Unknown service: {service}. Must be 'merchant', 'openbanking', or 'apigateway'")
 
     @classmethod
     def get_all_settings(cls) -> Dict[str, Any]:
@@ -202,6 +228,10 @@ class Config:
             'mcp_server_toolsets': cls.MCP_SERVER_TOOLSETS,
             'mcp_server_host': cls.MCP_SERVER_HOST,
             'jpmorgan_environment': cls.JPMORGAN_ENVIRONMENT,
+            'jpmorgan_merchant_production_url': cls.JPMORGAN_MERCHANT_PRODUCTION_URL,
+            'jpmorgan_merchant_mtls_production_url': cls.JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL,
+            'jpmorgan_merchant_uat_url': cls.JPMORGAN_MERCHANT_UAT_URL,
+            'jpmorgan_merchant_mtls_uat_url': cls.JPMORGAN_MERCHANT_MTLS_UAT_URL,
             'jpmorgan_openbanking_production_url': cls.JPMORGAN_OPENBANKING_PRODUCTION_URL,
             'jpmorgan_openbanking_uat_url': cls.JPMORGAN_OPENBANKING_UAT_URL,
             'jpmorgan_apigateway_production_url': cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL,
