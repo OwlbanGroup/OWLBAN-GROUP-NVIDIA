@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "tests/.mypy_cache"
+		},
+		{
+			"path": "../../OneDrive/Documents/GitHub/M1-"
+		}
+	],
+	"settings": {
+		"powershell.cwd": "M1-"
+	}
+}
