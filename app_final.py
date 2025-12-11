@@ -94,7 +94,7 @@ from src.audit_reports import AuditReportGenerator  # type: ignore
 from src.audit_alerts import AuditAlertManager  # type: ignore
 # Phase 6: Revenue Tracking Modules
 from src.revenue_service import revenue_service  # type: ignore
-from src.models.revenue import RevenueType, TransactionStatus  # type: ignore
+from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -133,6 +133,21 @@ try:
         try:
             index_name = f"idx_asset_{column}"
             Index(index_name, getattr(AssetModel, column)).create(db_manager.engine, checkfirst=True)
+        except Exception as e:
+            pass
+
+    # Create indexes for Revenue models
+    for column in RECOMMENDED_INDEXES.get('RevenueTransaction', []):
+        try:
+            index_name = f"idx_revenue_transaction_{column}"
+            Index(index_name, getattr(RevenueTransaction, column)).create(db_manager.engine, checkfirst=True)
+        except Exception as e:
+            pass
+
+    for column in RECOMMENDED_INDEXES.get('RevenueMetrics', []):
+        try:
+            index_name = f"idx_revenue_metrics_{column}"
+            Index(index_name, getattr(RevenueMetrics, column)).create(db_manager.engine, checkfirst=True)
         except Exception as e:
             pass
 
