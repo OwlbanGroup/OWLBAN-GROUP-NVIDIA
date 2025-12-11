@@ -92,6 +92,9 @@ from src.swagger_config import configure_swagger  # type: ignore
 from src.audit_logger import AuditLogger  # type: ignore
 from src.audit_reports import AuditReportGenerator  # type: ignore
 from src.audit_alerts import AuditAlertManager  # type: ignore
+# Phase 6: Revenue Tracking Modules
+from src.revenue_service import revenue_service  # type: ignore
+from src.models.revenue import RevenueType, TransactionStatus  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -1896,6 +1899,227 @@ def export_audit_logs():
             return exported_data, 200, {'Content-Type': 'application/json'}
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'export_audit_logs'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# Revenue Tracking Endpoints
+@app.route('/revenue/transactions', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def create_revenue_transaction():
+    """
+    Create a new revenue transaction
+    """
+    try:
+        data = request.get_json(force=True)
+
+        # Validate required fields
+        required_fields = ['user_id', 'revenue_type', 'amount']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}', 'status': 'error'}), 400
+
+        # Validate revenue type
+        try:
+            revenue_type = RevenueType(data['revenue_type'])
+        except ValueError:
+            return jsonify({'error': f'Invalid revenue type. Valid types: {[t.value for t in RevenueType]}', 'status': 'error'}), 400
+
+        # Create transaction
+        transaction = revenue_service.create_transaction(
+            user_id=data['user_id'],
+            revenue_type=revenue_type,
+            amount=float(data['amount']),
+            currency=data.get('currency', 'USD'),
+            description=data.get('description'),
+            merchant_name=data.get('merchant_name'),
+            category=data.get('category'),
+            payment_method=data.get('payment_method'),
+            business_id=data.get('business_id'),
+            external_reference=data.get('external_reference'),
+            metadata=data.get('metadata')
+        )
+
+        return jsonify({
+            'status': 'success',
+            'transaction': transaction.to_dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_revenue_transaction'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/revenue/transactions/<transaction_id>/process', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def process_revenue_transaction(transaction_id):
+    """
+    Process a pending revenue transaction
+    """
+    try:
+        data = request.get_json(force=True)
+        success = data.get('success', True)
+        settlement_date_str = data.get('settlement_date')
+
+        settlement_date = None
+        if settlement_date_str:
+            try:
+                settlement_date = datetime.fromisoformat(settlement_date_str.replace('Z', '+00:00'))
+            except ValueError:
+                return jsonify({'error': 'Invalid settlement_date format. Use ISO format.', 'status': 'error'}), 400
+
+        success = revenue_service.process_transaction(transaction_id, success, settlement_date)
+
+        if not success:
+            return jsonify({'error': 'Transaction not found or cannot be processed', 'status': 'error'}), 404
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Transaction {transaction_id} processed successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'process_revenue_transaction'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/revenue/transactions/<transaction_id>', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_revenue_transaction(transaction_id):
+    """
+    Get revenue transaction details by ID
+    """
+    try:
+        transaction = revenue_service.get_transaction(transaction_id)
+
+        if not transaction:
+            return jsonify({'error': 'Transaction not found', 'status': 'error'}), 404
+
+        return jsonify({
+            'status': 'success',
+            'transaction': transaction.to_dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_revenue_transaction'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/revenue/transactions', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_user_revenue_transactions():
+    """
+    Get revenue transactions for a user
+    """
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'user_id parameter is required', 'status': 'error'}), 400
+
+        limit = request.args.get('limit', 50, type=int)
+        offset = request.args.get('offset', 0, type=int)
+
+        if limit <= 0 or limit > 1000:
+            return jsonify({'error': 'Limit must be between 1 and 1000', 'status': 'error'}), 400
+
+        transactions = revenue_service.get_user_transactions(user_id, limit, offset)
+
+        return jsonify({
+            'status': 'success',
+            'transactions': [t.to_dict() for t in transactions],
+            'count': len(transactions),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_user_revenue_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/revenue/metrics', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_revenue_metrics():
+    """
+    Get revenue metrics for a date range
+    """
+    try:
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        revenue_type_str = request.args.get('revenue_type')
+
+        if not start_date_str or not end_date_str:
+            return jsonify({'error': 'start_date and end_date parameters are required', 'status': 'error'}), 400
+
+        try:
+            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use ISO format.', 'status': 'error'}), 400
+
+        if start_date >= end_date:
+            return jsonify({'error': 'start_date must be before end_date', 'status': 'error'}), 400
+
+        # Validate revenue type if provided
+        revenue_type = None
+        if revenue_type_str:
+            try:
+                revenue_type = RevenueType(revenue_type_str)
+            except ValueError:
+                return jsonify({'error': f'Invalid revenue type. Valid types: {[t.value for t in RevenueType]}', 'status': 'error'}), 400
+
+        metrics = revenue_service.get_revenue_metrics(start_date, end_date, revenue_type)
+
+        return jsonify({
+            'status': 'success',
+            'metrics': metrics,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_revenue_metrics'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/revenue/metrics/update', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def update_daily_revenue_metrics():
+    """
+    Update daily revenue metrics aggregation
+    """
+    try:
+        data = request.get_json(force=True)
+        date_str = data.get('date')
+
+        target_date = None
+        if date_str:
+            try:
+                target_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use ISO format.', 'status': 'error'}), 400
+
+        success = revenue_service.update_daily_metrics(target_date)
+
+        if not success:
+            return jsonify({'error': 'Failed to update metrics', 'status': 'error'}), 500
+
+        date_display = target_date.date().isoformat() if target_date else datetime.now(timezone.utc).date().isoformat()
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Daily revenue metrics updated for {date_display}',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'update_daily_revenue_metrics'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
