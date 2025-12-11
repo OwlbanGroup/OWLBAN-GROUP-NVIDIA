@@ -151,12 +151,15 @@ class AuditLogModel(Base):
             SHA-256 hash string
         """
         # Create a deterministic string representation of the log data
+        # Don't modify the original log_data dictionary
         timestamp = log_data.get('timestamp', '')
         if isinstance(timestamp, datetime):
-            timestamp = timestamp.isoformat()
+            timestamp_str = timestamp.isoformat()
+        else:
+            timestamp_str = str(timestamp)
 
         hash_input = {
-            'timestamp': timestamp,
+            'timestamp': timestamp_str,
             'user_id': log_data.get('user_id', ''),
             'action': log_data.get('action', ''),
             'resource_type': log_data.get('resource_type', ''),

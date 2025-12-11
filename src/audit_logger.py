@@ -209,7 +209,30 @@ class AuditLogger:
             
             # Create audit log entry
             with self.db_manager.get_session() as session:
-                audit_log = AuditLogModel(**log_data)
+                # Explicitly create the model to ensure correct types
+                audit_log = AuditLogModel(
+                    timestamp=log_data['timestamp'],
+                    user_id=log_data['user_id'],
+                    username=log_data['username'],
+                    session_id=log_data['session_id'],
+                    action=log_data['action'],
+                    resource_type=log_data['resource_type'],
+                    resource_id=log_data['resource_id'],
+                    ip_address=log_data['ip_address'],
+                    user_agent=log_data['user_agent'],
+                    request_method=log_data['request_method'],
+                    endpoint=log_data['endpoint'],
+                    status_code=log_data['status_code'],
+                    response_time_ms=log_data['response_time_ms'],
+                    request_data=log_data['request_data'],
+                    response_data=log_data['response_data'],
+                    error_message=log_data['error_message'],
+                    severity=log_data['severity'],
+                    category=log_data['category'],
+                    compliance_tags=log_data['compliance_tags'],
+                    previous_hash=log_data['previous_hash'],
+                    current_hash=log_data['current_hash']
+                )
                 session.add(audit_log)
                 session.commit()
                 session.refresh(audit_log)
