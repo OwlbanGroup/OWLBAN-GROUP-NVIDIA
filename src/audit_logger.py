@@ -181,7 +181,7 @@ class AuditLogger:
             
             # Prepare log data
             log_data = {
-                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'timestamp': datetime.now(timezone.utc),
                 'user_id': context['user_id'],
                 'username': context['username'],
                 'session_id': context['session_id'],

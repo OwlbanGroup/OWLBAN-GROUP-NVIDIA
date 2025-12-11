@@ -97,7 +97,12 @@ from src.audit_alerts import AuditAlertManager  # type: ignore
 setup_cloud_storage(config.get_all_settings())
 
 # Initialize ML model
-anomaly_detector = AnomalyDetector()
+try:
+    anomaly_detector = AnomalyDetector()
+    telemetry_logger.get_logger().info("✅ ML anomaly detector initialized successfully")
+except Exception as e:
+    anomaly_detector = None
+    telemetry_logger.get_logger().warning(f"⚠️ ML anomaly detector initialization failed: {e}. ML features will be disabled.")
 
 # Initialize Database Indexes (Phase 3)
 try:
