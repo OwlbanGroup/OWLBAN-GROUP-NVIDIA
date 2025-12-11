@@ -59,7 +59,7 @@ class RevenueTransaction(Base):
     # Metadata
     source_system = Column(String(100), default='api')
     external_reference = Column(String(200))
-    additional_metadata = Column(Text)  # JSON string for additional data
+    additional_data = Column(Text)  # JSON string for additional data
 
     # Audit fields
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
