@@ -65,8 +65,7 @@ class RevenueTransaction(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    # Relationships
-    business = relationship("BusinessModel", back_populates="revenue_transactions")
+
 
     def to_dict(self):
         """Convert to dictionary"""
