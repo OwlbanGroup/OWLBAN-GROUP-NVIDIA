@@ -801,15 +801,62 @@ def list_businesses():
     """
     List all businesses
     """
+    start_time = datetime.now(timezone.utc)
+    username = None
     try:
+        # Extract username from token for audit logging
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            for user in users.values():
+                if user.get('token') == token:
+                    username = list(users.keys())[list(users.values()).index(user)]
+                    break
+
         businesses = db_manager.get_all_businesses()
-        return jsonify({
+        response_data = {
             'status': 'success',
             'businesses': [BusinessResponse.from_orm(business).dict() for business in businesses],
             'count': len(businesses),
             'timestamp': datetime.now(timezone.utc).isoformat()
-        }), 200
+        }
+
+        # Log successful business listing
+        if audit_logger:
+            response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            audit_logger.log_event(
+                action='list_businesses',
+                resource_type='business',
+                resource_id='all',
+                status_code=200,
+                request_data={},
+                response_data={'count': len(businesses)},
+                severity='info',
+                category='data_access',
+                compliance_tags=['GDPR', 'SOX'],
+                username=username,
+                response_time_ms=response_time_ms
+            )
+
+        return jsonify(response_data), 200
     except Exception as e:
+        # Log failed business listing
+        if audit_logger:
+            response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            audit_logger.log_event(
+                action='list_businesses',
+                resource_type='business',
+                resource_id='all',
+                status_code=500,
+                request_data={},
+                response_data={'error': str(e)},
+                severity='error',
+                category='data_access',
+                compliance_tags=['GDPR', 'SOX'],
+                username=username,
+                response_time_ms=response_time_ms
+            )
+
         telemetry_logger.log_error(e, {'context': 'list_businesses'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
@@ -821,16 +868,62 @@ def create_business():
     """
     Create a new business
     """
+    start_time = datetime.now(timezone.utc)
+    username = None
     try:
+        # Extract username from token for audit logging
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            for user in users.values():
+                if user.get('token') == token:
+                    username = list(users.keys())[list(users.values()).index(user)]
+                    break
+
         data = request.get_json(force=True)
         business_data = BusinessCreate(**data)
         business = db_manager.create_business(business_data.dict())
+
+        # Log successful business creation
+        if audit_logger:
+            response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            audit_logger.log_event(
+                action='create_business',
+                resource_type='business',
+                resource_id=str(business.id),
+                status_code=201,
+                request_data=data,
+                response_data={'business_id': business.id, 'name': business.name},
+                severity='info',
+                category='data_modification',
+                compliance_tags=['GDPR', 'SOX'],
+                username=username,
+                response_time_ms=response_time_ms
+            )
+
         return jsonify({
             'status': 'success',
             'business': BusinessResponse.from_orm(business).dict(),
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 201
     except Exception as e:
+        # Log failed business creation
+        if audit_logger:
+            response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            audit_logger.log_event(
+                action='create_business',
+                resource_type='business',
+                resource_id='new',
+                status_code=500,
+                request_data=data if 'data' in locals() else {},
+                response_data={'error': str(e)},
+                severity='error',
+                category='data_modification',
+                compliance_tags=['GDPR', 'SOX'],
+                username=username,
+                response_time_ms=response_time_ms
+            )
+
         telemetry_logger.log_error(e, {'context': 'create_business'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
