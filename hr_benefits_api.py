@@ -201,6 +201,7 @@ def get_employee(employee_id):
 # Benefits Management Endpoints
 @hr_bp.route('/benefits/plans', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_benefits_plans', resource_type='benefits_plan', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_benefits_plans():
     """Get all benefits plans"""
     try:
@@ -234,7 +235,7 @@ def get_benefits_plan(plan_id):
 
 # Enrollment Management Endpoints
 @hr_bp.route('/benefits/enrollments', methods=['GET'])
-    """Get all benefits enrollments"""
+@hr_token_required
 @audit_log(action='get_enrollments', resource_type='enrollment', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_enrollments():
     try:
@@ -250,6 +251,7 @@ def get_enrollments():
 
 @hr_bp.route('/benefits/enrollments', methods=['POST'])
 @hr_token_required
+@audit_log(action='create_enrollment', resource_type='enrollment', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def create_enrollment():
     """Create new benefits enrollment"""
     try:
@@ -290,6 +292,7 @@ def create_enrollment():
 
 @hr_bp.route('/benefits/enrollments/<enrollment_id>', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_enrollment', resource_type='enrollment', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_enrollment(enrollment_id):
     """Get enrollment details"""
     try:
@@ -307,6 +310,7 @@ def get_enrollment(enrollment_id):
 
 @hr_bp.route('/employees/<employee_id>/benefits', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_employee_benefits', resource_type='benefits', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_employee_benefits(employee_id):
     """Get benefits for specific employee"""
     try:
@@ -344,6 +348,7 @@ def get_employee_benefits(employee_id):
 # Claims Management Endpoints
 @hr_bp.route('/benefits/claims', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_claims', resource_type='claim', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_claims():
     """Get all benefits claims"""
     try:
@@ -359,6 +364,7 @@ def get_claims():
 
 @hr_bp.route('/benefits/claims', methods=['POST'])
 @hr_token_required
+@audit_log(action='submit_claim', resource_type='claim', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def submit_claim():
     """Submit new benefits claim"""
     try:
@@ -399,6 +405,7 @@ def submit_claim():
 
 @hr_bp.route('/benefits/claims/<claim_id>/approve', methods=['POST'])
 @hr_token_required
+@audit_log(action='approve_claim', resource_type='claim', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def approve_claim(claim_id):
     """Approve benefits claim"""
     try:
@@ -424,6 +431,7 @@ def approve_claim(claim_id):
 
 @hr_bp.route('/benefits/claims/<claim_id>/deny', methods=['POST'])
 @hr_token_required
+@audit_log(action='deny_claim', resource_type='claim', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def deny_claim(claim_id):
     """Deny benefits claim"""
     try:
@@ -454,6 +462,7 @@ def deny_claim(claim_id):
 # Payroll Integration Endpoints
 @hr_bp.route('/payroll/salary', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_salary_info', resource_type='payroll', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_salary_info():
     """Get employee salary information"""
     try:
@@ -486,6 +495,7 @@ def get_salary_info():
 
 @hr_bp.route('/payroll/deductions', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_payroll_deductions', resource_type='payroll', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_payroll_deductions():
     """Get payroll deductions for employee"""
     try:
@@ -529,6 +539,7 @@ def get_payroll_deductions():
 # HR Analytics Endpoints
 @hr_bp.route('/analytics/benefits', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_benefits_analytics', resource_type='analytics', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_benefits_analytics():
     """Get benefits enrollment analytics"""
     try:
@@ -563,6 +574,7 @@ def get_benefits_analytics():
 
 @hr_bp.route('/analytics/payroll', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_payroll_analytics', resource_type='analytics', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_payroll_analytics():
     """Get payroll analytics"""
     try:
