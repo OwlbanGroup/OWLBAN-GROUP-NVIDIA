@@ -14,8 +14,30 @@ from flask import Flask, request, jsonify, Blueprint
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Audit Logging Imports
+try:
+    from src.audit_logger import AuditLogger, audit_log
+    from src.database_fixed import db_manager
+    from config import config
+    AUDIT_LOGGING_AVAILABLE = True
+except ImportError:
+    AUDIT_LOGGING_AVAILABLE = False
+    AuditLogger = None
+    audit_log = None
+    db_manager = None
+    config = None
+
 # Create Blueprint for HR Benefits
 hr_bp = Blueprint('hr_benefits', __name__, url_prefix='/api/hr')
+
+# Initialize Audit Logger
+audit_logger = None
+if AUDIT_LOGGING_AVAILABLE:
+    try:
+        audit_logger = AuditLogger(db_manager)
+    except Exception as e:
+        print(f"Failed to initialize audit logger: {e}")
+        audit_logger = None
 
 # In-memory storage for demo (replace with database in production)
 employees = {}
@@ -144,6 +166,7 @@ def hr_token_required(f):
 # Employee Management Endpoints
 @hr_bp.route('/employees', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_employees', resource_type='employee', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_employees():
     """Get all employees"""
     try:
@@ -159,6 +182,7 @@ def get_employees():
 
 @hr_bp.route('/employees/<employee_id>', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_employee', resource_type='employee', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_employee(employee_id):
     """Get employee details"""
     try:
@@ -192,6 +216,7 @@ def get_benefits_plans():
 
 @hr_bp.route('/benefits/plans/<plan_id>', methods=['GET'])
 @hr_token_required
+@audit_log(action='get_benefits_plan', resource_type='benefits_plan', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
 def get_benefits_plan(plan_id):
     """Get specific benefits plan"""
     try:
@@ -209,9 +234,9 @@ def get_benefits_plan(plan_id):
 
 # Enrollment Management Endpoints
 @hr_bp.route('/benefits/enrollments', methods=['GET'])
-@hr_token_required
-def get_enrollments():
     """Get all benefits enrollments"""
+@audit_log(action='get_enrollments', resource_type='enrollment', category='hr_management') if AUDIT_LOGGING_AVAILABLE and audit_log else lambda f: f
+def get_enrollments():
     try:
         enrollment_list = list(enrollments.values())
         return jsonify({
