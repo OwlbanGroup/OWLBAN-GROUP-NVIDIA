@@ -95,6 +95,7 @@ from src.audit_alerts import AuditAlertManager  # type: ignore
 # Phase 6: Revenue Tracking Modules
 from src.revenue_service import revenue_service  # type: ignore
 from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
+from hr_benefits_api import get_hr_blueprint  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -192,6 +193,9 @@ CORS(app)
 
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Register HR Benefits API Blueprint
+app.register_blueprint(get_hr_blueprint())
 
 # Set testing mode from environment
 if os.environ.get('TESTING') == '1':
