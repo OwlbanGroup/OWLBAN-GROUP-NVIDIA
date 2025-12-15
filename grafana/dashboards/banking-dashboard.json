@@ -1,0 +1,178 @@
+{
+  "dashboard": {
+    "title": "JPMorgan Banking Transactions Dashboard",
+    "tags": ["banking", "transactions", "jpmorgan", "financial"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "Transaction Volume",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(bank_transactions_total[5m])",
+            "legendFormat": "Transactions/min"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Account Balance",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bank_account_balance",
+            "legendFormat": "Current Balance"
+          }
+        ],
+        "gridPos": {
+          "x": 8,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Transaction Types",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (type) (rate(bank_transactions_total[5m]))",
+            "legendFormat": "{{type}}"
+          }
+        ],
+        "gridPos": {
+          "x": 16,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Transaction Amount Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(bank_transaction_amount_sum[5m])",
+            "legendFormat": "Transaction Amount ($)"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Failed Transactions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(bank_transaction_failures_total[5m])",
+            "legendFormat": "Failed Transactions"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 8,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Transaction Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bank_transaction_success_rate",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 8,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Recent Transactions",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "bank_recent_transactions",
+            "legendFormat": "Transaction Details"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 24,
+          "h": 8
+        }
+      },
+      {
+        "title": "Banking API Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bank_api_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(bank_api_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Active Banking Sessions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bank_active_sessions",
+            "legendFormat": "Active Sessions"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 24,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Security Alerts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(bank_security_alerts_total[5m])",
+            "legendFormat": "Security Alerts"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 24,
+          "w": 6,
+          "h": 8
+        }
+      }
+    ],
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}
