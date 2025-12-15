@@ -1,4 +1,4 @@
-TE{
+{
   "dashboard": {
     "title": "JPMorgan Financial APIs - Telemetry & GPU Dashboard",
     "tags": ["telemetry", "jpmorgan", "financial", "gpu", "nvidia"],
