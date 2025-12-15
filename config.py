@@ -12,7 +12,7 @@ class Config:
     API_VERSION = os.getenv('API_VERSION', 'v1')
 
     # JPMorgan Environment Configuration
-    JPMORGAN_ENVIRONMENT = os.getenv('JPMORGAN_ENVIRONMENT', 'production')  # production, uat, qaf
+    JPMORGAN_ENVIRONMENT = os.getenv('JPMORGAN_ENVIRONMENT', 'dev')  # dev, staging, prod
 
     # JPMorgan Merchant API Endpoints (Treasury Services API)
     JPMORGAN_MERCHANT_PRODUCTION_URL = os.getenv(
@@ -181,21 +181,21 @@ class Config:
         environment = cls.JPMORGAN_ENVIRONMENT.lower()
 
         if service == 'merchant':
-            if environment == 'uat':
+            if environment in ['dev', 'staging']:
                 return (cls.JPMORGAN_MERCHANT_MTLS_UAT_URL if use_mtls
                         else cls.JPMORGAN_MERCHANT_UAT_URL)
-            else:  # production (default)
+            else:  # prod (default)
                 return (cls.JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL if use_mtls
                         else cls.JPMORGAN_MERCHANT_PRODUCTION_URL)
         elif service == 'openbanking':
-            if environment == 'uat':
+            if environment in ['dev', 'staging']:
                 return cls.JPMORGAN_OPENBANKING_UAT_URL
-            else:  # production (default)
+            else:  # prod (default)
                 return cls.JPMORGAN_OPENBANKING_PRODUCTION_URL
         elif service == 'apigateway':
             if environment == 'qaf':
                 return cls.JPMORGAN_APIGATEWAY_QAF_URL
-            else:  # production (default)
+            else:  # prod (default)
                 return cls.JPMORGAN_APIGATEWAY_PRODUCTION_URL
         else:
             raise ValueError(f"Unknown service: {service}. Must be 'merchant', 'openbanking', or 'apigateway'")
