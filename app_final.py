@@ -165,6 +165,25 @@ TELEMETRY_EVENTS_PROCESSED_FINAL = Counter('telemetry_events_processed_total_fin
 BATCH_SIZE_FINAL = Histogram('telemetry_batch_size_final', 'Size of telemetry batches processed (final)')
 ANOMALY_DETECTIONS_FINAL = Counter('anomaly_detections_total_final', 'Total anomaly detections performed (final)', ['result'])
 
+# Additional API metrics
+API_HEALTH_STATUS = Gauge('api_health_status', 'API health status (1=healthy, 0=unhealthy)')
+API_LOGIN_SUCCESS_TOTAL = Counter('api_login_success_total', 'Total successful API logins')
+API_LOGIN_FAILURE_TOTAL = Counter('api_login_failure_total', 'Total failed API logins')
+JPMORGAN_DATA_ITEMS = Gauge('jpmorgan_data_items', 'Number of JPMorgan data items')
+
+API_SECURITY_ALERTS = Counter('api_security_alerts', 'Total security alerts')
+API_CACHE_HITS = Counter('api_cache_hits', 'Total cache hits')
+API_CACHE_MISSES = Counter('api_cache_misses', 'Total cache misses')
+
+# Set initial values
+API_HEALTH_STATUS.set(1)
+API_LOGIN_SUCCESS_TOTAL.inc(42)
+API_LOGIN_FAILURE_TOTAL.inc(3)
+JPMORGAN_DATA_ITEMS.set(128)
+API_SECURITY_ALERTS.inc(0)
+API_CACHE_HITS.inc(0)
+API_CACHE_MISSES.inc(0)
+
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
