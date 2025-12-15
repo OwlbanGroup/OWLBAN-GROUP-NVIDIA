@@ -2,10 +2,13 @@
 
 # JPMorgan Financial APIs - Health Monitoring Script
 # This script monitors the API health and sends alerts if needed
+# Exports Prometheus metrics with environment labels
 
 API_URL="https://api.equityshieldadvocates.com"
 LOG_FILE="/opt/jpmorgan-api/logs/monitor.log"
 ALERT_EMAIL="admin@equityshieldadvocates.com"
+METRICS_FILE="/opt/jpmorgan-api/metrics/prometheus_metrics.txt"
+ENVIRONMENT="${JPMORGAN_ENVIRONMENT:-dev}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,6 +19,36 @@ NC='\033[0m'
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
     echo -e "$1"
+}
+
+export_metrics() {
+    # Create metrics directory if it doesn't exist
+    mkdir -p "$(dirname $METRICS_FILE)"
+
+    # Write Prometheus metrics
+    cat > $METRICS_FILE << EOF
+# HELP service_up Service availability status (1=up, 0=down)
+# TYPE service_up gauge
+service_up{env="$ENVIRONMENT"} $SERVICE_UP
+
+# HELP database_up Database availability status (1=up, 0=down)
+# TYPE database_up gauge
+database_up{env="$ENVIRONMENT"} $DATABASE_UP
+
+# HELP disk_space_available Disk space availability (1=ok, 0=low)
+# TYPE disk_space_available gauge
+disk_space_available{env="$ENVIRONMENT"} $DISK_OK
+
+# HELP memory_available Memory availability (1=ok, 0=high usage)
+# TYPE memory_available gauge
+memory_available{env="$ENVIRONMENT"} $MEMORY_OK
+
+# HELP health_check_failures_total Total number of health check failures
+# TYPE health_check_failures_total counter
+health_check_failures_total{env="$ENVIRONMENT"} $FAILED_CHECKS
+EOF
+
+    log "Metrics exported to $METRICS_FILE"
 }
 
 check_health() {
