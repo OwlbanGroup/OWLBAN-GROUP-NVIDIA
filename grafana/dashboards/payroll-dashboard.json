@@ -1,0 +1,338 @@
+{
+  "dashboard": {
+    "title": "JPMorgan Company Payroll Dashboard",
+    "tags": ["payroll", "hr", "jpmorgan", "financial", "employees"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "Total Employees",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_total_employees",
+            "legendFormat": "Total Employees"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Monthly Payroll Amount",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_monthly_total_amount",
+            "legendFormat": "Monthly Total ($)"
+          }
+        ],
+        "gridPos": {
+          "x": 6,
+          "y": 0,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Payroll Processing Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_processing_success_rate",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Active Payroll Cycles",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_active_cycles",
+            "legendFormat": "Active Cycles"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 0,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Payroll Processing Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(payroll_processing_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(payroll_processing_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Failed Payroll Transactions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(payroll_transaction_failures_total[5m])",
+            "legendFormat": "Failed Transactions"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 8,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Department Salary Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (department) (payroll_department_salary_total)",
+            "legendFormat": "{{department}}"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 8,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Employee Salary Ranges",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "payroll_employee_salary_bucket",
+            "legendFormat": "Salary Distribution"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Payroll Tax Withholdings",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(payroll_tax_withholdings_total[5m])",
+            "legendFormat": "Tax Withholdings ($)"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Recent Payroll Activities",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "payroll_recent_activities",
+            "legendFormat": "Payroll Activities"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 24,
+          "w": 24,
+          "h": 8
+        }
+      },
+      {
+        "title": "Payroll System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_system_up",
+            "legendFormat": "System Status"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 32,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Average Processing Time",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_avg_processing_time_seconds",
+            "legendFormat": "Avg Processing Time (s)"
+          }
+        ],
+        "gridPos": {
+          "x": 6,
+          "y": 32,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Payroll Alerts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(payroll_alerts_total[5m])",
+            "legendFormat": "Active Alerts"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 32,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Compliance Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_compliance_status",
+            "legendFormat": "Compliance OK"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 32,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "External Account Transfers",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(payroll_external_transfers_total[5m])",
+            "legendFormat": "External Transfers"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 40,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Internal Processing Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_internal_processing_status",
+            "legendFormat": "Internal Processing"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 40,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Transition Progress",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "payroll_transition_progress",
+            "legendFormat": "Migration Progress %"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 40,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "External Account Balance",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_external_account_balance",
+            "legendFormat": "External Balance ($)"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 48,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Transfer Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payroll_external_transfer_success_rate",
+            "legendFormat": "Transfer Success %"
+          }
+        ],
+        "gridPos": {
+          "x": 6,
+          "y": 48,
+          "w": 6,
+          "h": 8
+        }
+      },
+      {
+        "title": "Internal Staff Processing",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "payroll_internal_staff_processing",
+            "legendFormat": "Staff Processing Details"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 48,
+          "w": 12,
+          "h": 8
+        }
+      }
+    ],
+    "time": {
+      "from": "now-30d",
+      "to": "now"
+    },
+    "refresh": "1m"
+  }
+}

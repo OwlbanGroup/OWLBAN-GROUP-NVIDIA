@@ -1,0 +1,17 @@
+apiVersion: 1
+
+providers:
+  - name: 'JPMorgan Dashboard'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+  - name: 'Banking Dashboard'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
