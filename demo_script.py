@@ -84,7 +84,8 @@ class JPMorganAPIDemo:
 
         result = self.make_request('GET', '/health', auth_required=False)
         if result:
-            print("✅ API is healthy!"            print(f"   Version: {result.get('version', 'Unknown')}")
+            print("✅ API is healthy!")
+            print(f"   Version: {result.get('version', 'Unknown')}")
             print(f"   Timestamp: {result.get('timestamp', 'Unknown')}")
 
     def demo_user_registration(self):
@@ -100,7 +101,8 @@ class JPMorganAPIDemo:
 
         result = self.make_request('POST', '/user/register', user_data, auth_required=False)
         if result and result.get('status') == 'success':
-            print("✅ User registered successfully!"            print(f"   Username: {user_data['username']}")
+            print("✅ User registered successfully!")
+            print(f"   Username: {user_data['username']}")
             return user_data['username']
         else:
             print("❌ User registration failed")
@@ -119,7 +121,8 @@ class JPMorganAPIDemo:
         result = self.make_request('POST', '/user/login', login_data, auth_required=False)
         if result and result.get('status') == 'success':
             self.auth_token = result.get('token')
-            print("✅ Login successful!"            print(f"   Token: {self.auth_token[:20]}...")
+            print("✅ Login successful!")
+            print(f"   Token: {self.auth_token[:20]}...")
             return True
         else:
             print("❌ Login failed")
@@ -132,7 +135,8 @@ class JPMorganAPIDemo:
 
         result = self.make_request('GET', '/user/profile')
         if result and result.get('status') == 'success':
-            print("✅ Profile retrieved!"            print(f"   Username: {result.get('username')}")
+            print("✅ Profile retrieved!")
+            print(f"   Username: {result.get('username')}")
             print(f"   Created: {result.get('created_at')}")
 
     def demo_business_management(self):
@@ -155,7 +159,8 @@ class JPMorganAPIDemo:
         if result and result.get('status') == 'success':
             business = result.get('business', {})
             business_id = business.get('id')
-            print("✅ Business created!"            print(f"   ID: {business_id}")
+            print("✅ Business created!")
+            print(f"   ID: {business_id}")
             print(f"   Name: {business.get('name')}")
 
             # List all businesses
@@ -204,9 +209,10 @@ class JPMorganAPIDemo:
         if result and result.get('status') == 'success':
             asset = result.get('asset', {})
             asset_id = asset.get('id')
-            print("✅ Asset created!"            print(f"   ID: {asset_id}")
+            print("✅ Asset created!")
+            print(f"   ID: {asset_id}")
             print(f"   Name: {asset.get('name')}")
-            print(".2f"
+            print(f"   Value: ${asset.get('value', 0):.2f}")
             # List all assets
             print("\nListing all assets...")
             result = self.make_request('GET', '/assets')
@@ -244,8 +250,10 @@ class JPMorganAPIDemo:
         if result and result.get('status') == 'success':
             transaction = result.get('transaction', {})
             transaction_id = transaction.get('transaction_id')
-            print("✅ Transaction created!"            print(f"   ID: {transaction_id}")
-            print(".2f"            print(f"   Net Amount: ${transaction.get('net_amount', 0):.2f}")
+            print("✅ Transaction created!")
+            print(f"   ID: {transaction_id}")
+            print(f"   Amount: ${transaction.get('amount', 0):.2f}")
+            print(f"   Net Amount: ${transaction.get('net_amount', 0):.2f}")
 
             # Get transaction details
             print(f"\nGetting transaction {transaction_id}...")
@@ -269,7 +277,8 @@ class JPMorganAPIDemo:
             result = self.make_request('GET', '/revenue/metrics', metrics_data)
             if result and result.get('status') == 'success':
                 metrics = result.get('metrics', {})
-                print("✅ Revenue metrics retrieved!"                print(f"   Total Revenue: ${metrics.get('total_amount', 0):.2f}")
+                print("✅ Revenue metrics retrieved!")
+                print(f"   Total Revenue: ${metrics.get('total_amount', 0):.2f}")
                 print(f"   Transaction Count: {metrics.get('transaction_count', 0)}")
 
             return transaction_id
@@ -310,7 +319,8 @@ class JPMorganAPIDemo:
             result = self.make_request('GET', '/telemetry/metrics?hours=24')
             if result and result.get('status') == 'success':
                 metrics = result.get('metrics', {})
-                print("✅ Telemetry metrics retrieved!"                print(f"   Events processed: {metrics.get('total_events', 0)}")
+                print("✅ Telemetry metrics retrieved!")
+                print(f"   Events processed: {metrics.get('total_events', 0)}")
                 print(f"   Data points: {metrics.get('total_data_points', 0)}")
 
     def demo_ml_anomaly_detection(self):
@@ -346,7 +356,8 @@ class JPMorganAPIDemo:
         result = self.make_request('POST', '/ml/anomalies', batch_data)
         if result and result.get('status') == 'success':
             anomalies = result.get('anomaly_results', [])
-            print("✅ Anomaly detection completed!"            print(f"   Anomalies found: {len([a for a in anomalies if a.get('is_anomaly', False)])}")
+            print("✅ Anomaly detection completed!")
+            print(f"   Anomalies found: {len([a for a in anomalies if a.get('is_anomaly', False)])}")
 
             # Train ML model
             training_data = {
@@ -385,7 +396,8 @@ class JPMorganAPIDemo:
         result = self.make_request('GET', '/private-bank/wealth')
         if result and result.get('status') == 'success':
             portfolio = result.get('portfolio', {})
-            print("✅ Wealth portfolio retrieved!"            print(".2f"
+            print("✅ Wealth portfolio retrieved!")
+            print(f"   Total Value: ${portfolio.get('total_value', 0):,.2f}")
         # Get investment portfolio
         print("\nGetting investment portfolio...")
         result = self.make_request('GET', '/private-bank/investments')
@@ -414,7 +426,8 @@ class JPMorganAPIDemo:
         result = self.make_request('GET', '/audit/summary')
         if result and result.get('status') == 'success':
             summary = result.get('summary', {})
-            print("✅ Audit summary retrieved!"            print(f"   Total Events: {summary.get('total_events', 0)}")
+            print("✅ Audit summary retrieved!")
+            print(f"   Total Events: {summary.get('total_events', 0)}")
             print(f"   Security Events: {summary.get('security_events', 0)}")
 
         # Get security report
@@ -422,7 +435,8 @@ class JPMorganAPIDemo:
         result = self.make_request('GET', '/audit/reports/security')
         if result and result.get('status') == 'success':
             report = result.get('report', {})
-            print("✅ Security report generated!"            print(f"   Failed Logins: {report.get('failed_login_attempts', 0)}")
+            print("✅ Security report generated!")
+            print(f"   Failed Logins: {report.get('failed_login_attempts', 0)}")
             print(f"   Suspicious Activities: {report.get('suspicious_activities', 0)}")
 
     def demo_jpmorgan_data(self):
@@ -436,7 +450,10 @@ class JPMorganAPIDemo:
             stock_ticker = result.get('stock_ticker', {})
             assets = result.get('assets', [])
 
-            print("✅ JPMorgan financial data retrieved!"            print(".2f"            print(".2f"            print(f"   Stock Price: ${stock_ticker.get('current_price', 0):.2f}")
+            print("✅ JPMorgan financial data retrieved!")
+            print(f"   Market Cap: ${financial_metrics.get('market_cap', 0):,.2f}")
+            print(f"   Revenue: ${financial_metrics.get('revenue', 0):,.2f}")
+            print(f"   Stock Price: ${stock_ticker.get('current_price', 0):.2f}")
             print(f"   Assets: {len(assets)} major holdings")
 
     def demo_websocket_connection(self):
