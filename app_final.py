@@ -42,27 +42,8 @@ def get_version():
 try:
     from config import config
 except ImportError:
-    # Fallback: define a minimal config object for local development
-    class Config:
-        SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret')
-        TOKEN_CLIENT_ID = os.environ.get('TOKEN_CLIENT_ID', 'dummy_client_id')
-        TOKEN_CLIENT_SECRET = os.environ.get('TOKEN_CLIENT_SECRET', 'dummy_client_secret')
-        TOKEN_URL = os.environ.get('TOKEN_URL', 'https://dummy.token.url')
-        TOKEN_SCOPE = os.environ.get('TOKEN_SCOPE', 'dummy_scope')
-        REDIS_URL = os.environ.get('REDIS_URL', None)
-        LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-        @staticmethod
-        def get_all_settings():
-            return {
-                'SECRET_KEY': Config.SECRET_KEY,
-                'TOKEN_CLIENT_ID': Config.TOKEN_CLIENT_ID,
-                'TOKEN_CLIENT_SECRET': Config.TOKEN_CLIENT_SECRET,
-                'TOKEN_URL': Config.TOKEN_URL,
-                'TOKEN_SCOPE': Config.TOKEN_SCOPE,
-                'REDIS_URL': Config.REDIS_URL,
-                'LOG_LEVEL': Config.LOG_LEVEL
-            }
-    config = Config()  # type: ignore
+    # SECURITY FIX: No fallback secrets - require proper configuration
+    raise ImportError("Could not import config module. Please ensure config.py exists and all required environment variables are set.")
 
 # Ensure 'src' directory is in sys.path before importing modules
 src_path = os.path.join(os.path.dirname(__file__), 'src')
@@ -189,10 +170,10 @@ API_CACHE_MISSES.inc(0)
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
 app.url_map.strict_slashes = False
-CORS(app)
+CORS(app, origins=config.ALLOWED_ORIGINS)
 
 # Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins=config.ALLOWED_ORIGINS)
 
 # Register HR Benefits API Blueprint
 app.register_blueprint(get_hr_blueprint())

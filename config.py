@@ -129,6 +129,10 @@ class Config:
     # if not SECRET_KEY and os.getenv('ALLOW_MISSING_TOKENS', '').lower() != 'true':
     #     raise ValueError("SECRET_KEY environment variable is required for session security")
 
+    # CORS Settings - Restrict origins for security
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'https://localhost:3000,https://app.jpmorgan.com,https://dashboard.jpmorgan.com').split(',')
+    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
+
     # Audit Logging Settings
     AUDIT_LOG_ENABLED = os.getenv('AUDIT_LOG_ENABLED', 'true').lower() == 'true'
     # Keep logs for 90 days
