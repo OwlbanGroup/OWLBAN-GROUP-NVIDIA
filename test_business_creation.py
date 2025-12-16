@@ -5,6 +5,7 @@ Test script for business creation functionality
 
 import sys
 import os
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.database_fixed import db_manager
@@ -14,11 +15,12 @@ def test_business_creation():
     """Test creating a business"""
     print("Testing business creation...")
 
-    # Test data
+    # Test data with unique registration number
+    timestamp = str(int(time.time()))
     business_data = {
-        'name': 'Test Business Inc.',
+        'name': f'Test Business Inc. {timestamp}',
         'type': 'corporation',
-        'registration_number': '123456789',
+        'registration_number': f'123456789{timestamp}',
         'address': '123 Test St, Test City, TC 12345',
         'contact_info': {
             'email': 'contact@testbusiness.com',
@@ -76,4 +78,3 @@ if __name__ == "__main__":
     else:
         print("\n💥 Tests failed!")
         sys.exit(1)
-TE
