@@ -7,7 +7,7 @@ import logging
 from waitress import serve  # type: ignore[import-untyped]
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from app import app  # pylint: disable=import-error
+from app_final import app  # pylint: disable=import-error
 
 # Configure production logging
 logging.basicConfig(
