@@ -1,201 +1,154 @@
-
-# JPMorgan Financial APIs - Production Docker Compose Configuration
-# No version attribute needed (Docker Compose v2+)
+version: '3.8'
 
 services:
   # PostgreSQL Database
-  postgresql:
+  postgres:
     image: postgres:15-alpine
-    container_name: jpmorgan-postgres-prod
-    restart: always
     environment:
-      POSTGRES_DB: jpmorgan_financial_apis_prod
-      POSTGRES_USER: jpmorgan_prod
-      POSTGRES_PASSWORD: SecureP@ssw0rd2024
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      POSTGRES_DB: jpmorgan_api
+      POSTGRES_USER: jpmorgan
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
-    networks:
-      - jpmorgan-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U jpmorgan_prod"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U jpmorgan -d jpmorgan_api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: jpmorgan-redis-prod
-    restart: always
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
     ports:
       - "6379:6379"
-    networks:
-      - jpmorgan-network
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Application (CPU Version)
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    container_name: jpmorgan-api-prod
-    restart: always
-    env_file:
-      - .env.production
+  # JPMorgan API Application
+  jpmorgan-api:
+    build: .
     environment:
-      - DATABASE_URL=postgresql://jpmorgan_prod:SecureP%40ssw0rd2024@postgresql:5432/jpmorgan_financial_apis_prod
+      - FLASK_ENV=production
+      - TESTING=0
+      - DATABASE_URL=postgresql://jpmorgan:${DB_PASSWORD:-secure_password_123}@postgres:5432/jpmorgan_api
       - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
-      - ./logs:/var/log/jpmorgan
-      - ./backups:/backups
-      - ./models:/app/models
-    ports:
-      - "8000:8000"
+      - ./logs:/app/logs
+      - ./data:/app/data
     depends_on:
-      postgresql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - jpmorgan-network
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
 
   # NGINX Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: jpmorgan-nginx-prod
-    restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
       - ./logs/nginx:/var/log/nginx
     depends_on:
-      - app
-    networks:
-      - jpmorgan-network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - jpmorgan-api
+    restart: unless-stopped
 
   # Prometheus Monitoring
   prometheus:
     image: prom/prometheus:latest
-    container_name: jpmorgan-prometheus-prod
-    restart: always
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    networks:
-      - jpmorgan-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
 
-  # Grafana Dashboard
-  grafana:
-    image: grafana/grafana:latest
-    container_name: jpmorgan-grafana-prod
-    restart: always
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=SecureGrafanaP@ss2024
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+  # AlertManager
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana_dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json:ro
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-    networks:
-      - jpmorgan-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
 
-  # Node Exporter for System Metrics
+  # Node Exporter for system metrics
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: jpmorgan-node-exporter-prod
-    restart: always
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
-    ports:
-      - "9100:9100"
-    networks:
-      - jpmorgan-network
-
-  # AlertManager for Alerts
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: jpmorgan-alertmanager-prod
-    restart: always
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-    volumes:
-      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
     ports:
-      - "9093:9093"
-    networks:
-      - jpmorgan-network
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./data/certbot:/var/www/html
+    command: certonly --webroot --webroot-path=/var/www/html --email ${SSL_EMAIL:-admin@equityshieldadvocates.com} --agree-tos --no-eff-email -d ${DOMAIN:-api.equityshieldadvocates.com}
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
   prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
   alertmanager_data:
-    driver: local
-
-networks:
-  jpmorgan-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-
-
+  grafana_data:
