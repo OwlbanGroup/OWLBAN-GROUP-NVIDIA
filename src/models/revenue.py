@@ -17,6 +17,7 @@ class RevenueType(enum.Enum):
     INVESTMENT = "investment"
     LOAN = "loan"
     INSURANCE = "insurance"
+    PAYROLL = "payroll"
     OTHER = "other"
 
 class TransactionStatus(enum.Enum):

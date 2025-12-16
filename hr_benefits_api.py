@@ -13,6 +13,7 @@ from functools import wraps
 from flask import Flask, request, jsonify, Blueprint
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from prometheus_client import Counter, Histogram, Gauge, generate_latest
 
 # Audit Logging Imports
 try:
@@ -38,6 +39,23 @@ if AUDIT_LOGGING_AVAILABLE:
     except Exception as e:
         print(f"Failed to initialize audit logger: {e}")
         audit_logger = None
+
+# Prometheus metrics for HR and Payroll
+HR_REQUEST_COUNT = Counter('hr_requests_total', 'Total HR API requests', ['method', 'endpoint', 'status_code'])
+HR_REQUEST_LATENCY = Histogram('hr_request_duration_seconds', 'HR API request duration', ['method', 'endpoint'])
+PAYROLL_TOTAL_EMPLOYEES = Gauge('payroll_total_employees', 'Total number of employees')
+PAYROLL_MONTHLY_TOTAL_AMOUNT = Gauge('payroll_monthly_total_amount', 'Total monthly payroll amount')
+PAYROLL_PROCESSING_SUCCESS_RATE = Gauge('payroll_processing_success_rate', 'Payroll processing success rate')
+PAYROLL_AVERAGE_SALARY = Gauge('payroll_average_salary', 'Average employee salary')
+PAYROLL_BENEFITS_COST = Gauge('payroll_benefits_cost', 'Total benefits cost')
+PAYROLL_DEDUCTIONS_TOTAL = Gauge('payroll_deductions_total', 'Total payroll deductions')
+PAYROLL_CLAIMS_TOTAL = Gauge('payroll_claims_total', 'Total benefits claims')
+PAYROLL_ENROLLMENTS_ACTIVE = Gauge('payroll_enrollments_active', 'Active benefits enrollments')
+
+# Initialize metrics with current values
+PAYROLL_TOTAL_EMPLOYEES.set(len(employees))
+PAYROLL_CLAIMS_TOTAL.set(len(claims))
+PAYROLL_ENROLLMENTS_ACTIVE.set(len([e for e in enrollments.values() if e['status'] == 'active']))
 
 # In-memory storage for demo (replace with database in production)
 employees = {}
@@ -580,16 +598,30 @@ def get_payroll_analytics():
     try:
         total_employees = len(employees)
         total_salary = sum(emp['salary'] for emp in employees.values())
+        total_benefits_cost = sum(
+            sum(e['monthly_contribution'] for e in enrollments.values() if e['status'] == 'active' and e['employee_id'] == emp_id)
+            for emp_id in employees.keys()
+        ) * 12
+        total_deductions = sum(
+            sum([emp['salary'] * 0.22, min(emp['salary'] * 0.062, 160200 * 0.062), emp['salary'] * 0.0145, emp['salary'] * 0.05, 150.00 * 12, 25.00 * 12, 15.00 * 12, emp['salary'] * 0.06])
+            for emp in employees.values()
+        )
+
+        # Update Prometheus metrics
+        PAYROLL_TOTAL_EMPLOYEES.set(total_employees)
+        PAYROLL_MONTHLY_TOTAL_AMOUNT.set(total_salary / 12)
+        PAYROLL_AVERAGE_SALARY.set(total_salary / total_employees if total_employees > 0 else 0)
+        PAYROLL_BENEFITS_COST.set(total_benefits_cost)
+        PAYROLL_DEDUCTIONS_TOTAL.set(total_deductions)
+        PAYROLL_PROCESSING_SUCCESS_RATE.set(0.98)  # Mock success rate for demo
 
         analytics = {
             'total_employees': total_employees,
             'total_annual_payroll': total_salary,
             'average_salary': total_salary / total_employees if total_employees > 0 else 0,
             'total_monthly_payroll': total_salary / 12,
-            'total_benefits_cost': sum(
-                sum(e['monthly_contribution'] for e in enrollments.values() if e['status'] == 'active' and e['employee_id'] == emp_id)
-                for emp_id in employees.keys()
-            ) * 12
+            'total_benefits_cost': total_benefits_cost,
+            'total_deductions': total_deductions
         }
 
         return jsonify({
@@ -599,6 +631,12 @@ def get_payroll_analytics():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error'}), 500
+
+# Prometheus Metrics Endpoint
+@hr_bp.route('/metrics', methods=['GET'])
+def metrics():
+    """Expose Prometheus metrics"""
+    return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 # Export functions for integration
 def get_hr_blueprint():
@@ -615,5 +653,6 @@ def get_hr_endpoints():
         '/api/hr/payroll/salary - Salary information',
         '/api/hr/payroll/deductions - Payroll deductions',
         '/api/hr/analytics/benefits - Benefits analytics',
-        '/api/hr/analytics/payroll - Payroll analytics'
+        '/api/hr/analytics/payroll - Payroll analytics',
+        '/api/hr/metrics - Prometheus metrics'
     ]
