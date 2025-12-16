@@ -59,15 +59,15 @@ This comprehensive guide will walk you through using the JPMorgan Financial APIs
 
 5. **Verify the server is running:**
    ```bash
-   curl http://localhost:5000/health
+   curl http://localhost:8000/health
    ```
 
 ### Accessing the Interfaces
 
-- **API Documentation:** http://localhost:5000/api/docs/
-- **Web Dashboard:** http://localhost:5000/dashboard
-- **Health Check:** http://localhost:5000/health
-- **API Root:** http://localhost:5000/
+- **API Documentation:** http://localhost:8000/api/docs/
+- **Web Dashboard:** http://localhost:8000/dashboard
+- **Health Check:** http://localhost:8000/health
+- **API Root:** http://localhost:8000/
 
 ---
 
@@ -121,7 +121,7 @@ curl -X POST http://localhost:5000/user/register \
 ### 2. Login to Get Token
 
 ```bash
-curl -X POST http://localhost:5000/user/login \
+curl -X POST http://localhost:8000/user/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",

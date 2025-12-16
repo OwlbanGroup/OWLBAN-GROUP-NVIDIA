@@ -29,7 +29,7 @@ from typing import Dict, Any, Optional
 class JPMorganAPIDemo:
     """Interactive demo for JPMorgan Financial APIs"""
 
-    def __init__(self, base_url: str = "http://localhost:5000"):
+    def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url
         self.session = requests.Session()
         self.auth_token = None
