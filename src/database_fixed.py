@@ -17,21 +17,10 @@ except ImportError:
         TELEMETRY_BATCH_SIZE = 100
     config = Config()
 
-Base = declarative_base()
-
-# Import models after Base is defined
-try:
-    from src.models.audit_log import AuditLogModel
-except ImportError:
-    # AuditLogModel will be imported later if not available
-    AuditLogModel = None
-
-try:
-    from src.models.revenue import RevenueTransaction, RevenueMetrics
-except ImportError:
-    # Revenue models will be imported later if not available
-    RevenueTransaction = None
-    RevenueMetrics = None
+# Import shared Base and models
+from src.models.base import Base
+from src.models.audit_log import AuditLogModel
+from src.models.revenue import RevenueTransaction, RevenueMetrics
 
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
@@ -194,6 +183,35 @@ class DatabaseManager:
             self.SessionLocal.remove()
         if self.engine:
             self.engine.dispose()
+
+    def initialize_database(self):
+        """Initialize database tables in correct order"""
+        try:
+            # Create base tables first
+            Base.metadata.create_all(bind=self.engine)
+
+            # Create businesses table explicitly first
+            BusinessModel.__table__.create(bind=self.engine, checkfirst=True)
+
+            # Create audit_logs table if available
+            if AuditLogModel is not None:
+                try:
+                    AuditLogModel.__table__.create(bind=self.engine, checkfirst=True)
+                except Exception as e:
+                    print(f"Note: Audit log table creation skipped: {e}")
+
+            # Create revenue tables after businesses table
+            if RevenueTransaction is not None:
+                try:
+                    RevenueTransaction.__table__.create(bind=self.engine, checkfirst=True)
+                    RevenueMetrics.__table__.create(bind=self.engine, checkfirst=True)
+                except Exception as e:
+                    print(f"Note: Revenue table creation skipped: {e}")
+
+            print("Database initialized successfully")
+        except Exception as e:
+            print(f"Failed to initialize database: {e}")
+            raise
     
     # Audit Log Methods
     def get_audit_logs(

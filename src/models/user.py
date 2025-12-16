@@ -3,9 +3,7 @@ User Model for Database-Backed Authentication
 """
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from .base import Base
 
 class User(Base):
     """User model for authentication"""

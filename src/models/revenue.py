@@ -4,10 +4,9 @@ Revenue tracking models for JPMorgan Financial APIs
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Enum
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import enum
 
-Base = declarative_base()
+from .base import Base
 
 class RevenueType(enum.Enum):
     """Types of revenue transactions"""

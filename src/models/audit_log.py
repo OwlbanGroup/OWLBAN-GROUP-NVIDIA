@@ -8,13 +8,7 @@ import json
 from typing import Optional, Dict, Any, TYPE_CHECKING
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Index
-from sqlalchemy.ext.declarative import declarative_base
-
-if TYPE_CHECKING:
-    from sqlalchemy.orm.decl_api import DeclarativeMeta
-    Base: DeclarativeMeta
-else:
-    Base = declarative_base()
+from .base import Base
 
 
 class AuditLogModel(Base):
