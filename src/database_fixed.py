@@ -25,6 +25,7 @@ from src.models.revenue import RevenueTransaction, RevenueMetrics
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
     __tablename__ = 'telemetry_events'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(String, nullable=False)
@@ -76,6 +77,7 @@ class TelemetryEventModel(Base):
 class TelemetryMetricsModel(Base):
     """SQLAlchemy model for telemetry metrics"""
     __tablename__ = 'telemetry_metrics'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     metric_name = Column(String, nullable=False)
