@@ -147,11 +147,14 @@ class JPMorganAPIDemo:
         # Create a business
         business_data = {
             'name': 'Demo Tech Solutions Inc.',
-            'description': 'Leading technology solutions provider',
-            'industry': 'Technology',
-            'revenue': 5000000.00,
-            'employee_count': 150,
-            'location': 'New York, NY'
+            'type': 'corporation',
+            'registration_number': '123456789',
+            'address': '123 Business Ave, New York, NY 10001',
+            'contact_info': {
+                'email': 'contact@demotech.com',
+                'phone': '+1-555-0123',
+                'website': 'https://demotech.com'
+            }
         }
 
         print("Creating business...")
@@ -178,7 +181,7 @@ class JPMorganAPIDemo:
             # Update business
             update_data = {
                 'name': 'Demo Tech Solutions Inc. (Updated)',
-                'revenue': 6000000.00
+                'address': '456 Updated Ave, New York, NY 10002'
             }
             print(f"\nUpdating business {business_id}...")
             result = self.make_request('PUT', f'/businesses/{business_id}', update_data)

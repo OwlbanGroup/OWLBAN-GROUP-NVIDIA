@@ -19,12 +19,19 @@ except ImportError:
 
 Base = declarative_base()
 
-# Import AuditLogModel after Base is defined
+# Import models after Base is defined
 try:
     from src.models.audit_log import AuditLogModel
 except ImportError:
     # AuditLogModel will be imported later if not available
     AuditLogModel = None
+
+try:
+    from src.models.revenue import RevenueTransaction, RevenueMetrics
+except ImportError:
+    # Revenue models will be imported later if not available
+    RevenueTransaction = None
+    RevenueMetrics = None
 
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
@@ -141,15 +148,23 @@ class DatabaseManager:
         )
         self.SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=self.engine))
         
-        # Create tables (including audit_logs if AuditLogModel is available)
+        # Create tables (including audit_logs and revenue models if available)
         Base.metadata.create_all(bind=self.engine)
-        
+
         # Create audit_logs table if AuditLogModel is available
         if AuditLogModel is not None:
             try:
                 AuditLogModel.__table__.create(bind=self.engine, checkfirst=True)
             except Exception as e:
                 print(f"Note: Audit log table creation skipped: {e}")
+
+        # Create revenue tables if models are available
+        if RevenueTransaction is not None:
+            try:
+                RevenueTransaction.__table__.create(bind=self.engine, checkfirst=True)
+                RevenueMetrics.__table__.create(bind=self.engine, checkfirst=True)
+            except Exception as e:
+                print(f"Note: Revenue table creation skipped: {e}")
 
     @contextmanager
     def get_session(self) -> Generator[Session, None, None]:
@@ -294,6 +309,142 @@ class DatabaseManager:
         except Exception as e:
             print(f"Failed to cleanup audit logs: {e}")
             return 0
+
+    # Business Management Methods
+    def create_business(self, business_data: dict) -> BusinessModel:
+        """Create a new business"""
+        try:
+            with self.get_session() as session:
+                business = BusinessModel(**business_data)
+                session.add(business)
+                session.commit()
+                session.refresh(business)
+                return business
+        except Exception as e:
+            print(f"Failed to create business: {e}")
+            raise
+
+    def get_business_by_id(self, business_id: int) -> Optional[BusinessModel]:
+        """Get business by ID"""
+        try:
+            with self.get_session() as session:
+                return session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+        except Exception as e:
+            print(f"Failed to get business: {e}")
+            return None
+
+    def get_all_businesses(self) -> List[BusinessModel]:
+        """Get all businesses"""
+        try:
+            with self.get_session() as session:
+                return session.query(BusinessModel).all()
+        except Exception as e:
+            print(f"Failed to get businesses: {e}")
+            return []
+
+    def update_business(self, business_id: int, update_data: dict) -> Optional[BusinessModel]:
+        """Update business details"""
+        try:
+            with self.get_session() as session:
+                business = session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+                if not business:
+                    return None
+                for key, value in update_data.items():
+                    if hasattr(business, key):
+                        setattr(business, key, value)
+                session.commit()
+                session.refresh(business)
+                return business
+        except Exception as e:
+            print(f"Failed to update business: {e}")
+            return None
+
+    def delete_business(self, business_id: int) -> bool:
+        """Delete a business"""
+        try:
+            with self.get_session() as session:
+                business = session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+                if not business:
+                    return False
+                session.delete(business)
+                session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to delete business: {e}")
+            return False
+
+    # Asset Management Methods
+    def create_asset(self, asset_data: dict) -> AssetModel:
+        """Create a new asset"""
+        try:
+            with self.get_session() as session:
+                asset = AssetModel(**asset_data)
+                session.add(asset)
+                session.commit()
+                session.refresh(asset)
+                return asset
+        except Exception as e:
+            print(f"Failed to create asset: {e}")
+            raise
+
+    def get_asset_by_id(self, asset_id: int) -> Optional[AssetModel]:
+        """Get asset by ID"""
+        try:
+            with self.get_session() as session:
+                return session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+        except Exception as e:
+            print(f"Failed to get asset: {e}")
+            return None
+
+    def get_all_assets(self) -> List[AssetModel]:
+        """Get all assets"""
+        try:
+            with self.get_session() as session:
+                return session.query(AssetModel).all()
+        except Exception as e:
+            print(f"Failed to get assets: {e}")
+            return []
+
+    def get_assets_by_business_id(self, business_id: int) -> List[AssetModel]:
+        """Get assets for a specific business"""
+        try:
+            with self.get_session() as session:
+                return session.query(AssetModel).filter(AssetModel.business_id == business_id).all()
+        except Exception as e:
+            print(f"Failed to get assets for business: {e}")
+            return []
+
+    def update_asset(self, asset_id: int, update_data: dict) -> Optional[AssetModel]:
+        """Update asset details"""
+        try:
+            with self.get_session() as session:
+                asset = session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+                if not asset:
+                    return None
+                for key, value in update_data.items():
+                    if hasattr(asset, key):
+                        setattr(asset, key, value)
+                session.commit()
+                session.refresh(asset)
+                return asset
+        except Exception as e:
+            print(f"Failed to update asset: {e}")
+            return None
+
+    def delete_asset(self, asset_id: int) -> bool:
+        """Delete an asset"""
+        try:
+            with self.get_session() as session:
+                asset = session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+                if not asset:
+                    return False
+                session.delete(asset)
+                session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to delete asset: {e}")
+            return False
+
 
 class DummyQuery:
     def __init__(self, items):
