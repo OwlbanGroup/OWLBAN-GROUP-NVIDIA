@@ -200,10 +200,9 @@ class JPMorganAPIDemo:
         asset_data = {
             'business_id': business_id,
             'name': 'Office Building - Manhattan',
-            'type': 'Real Estate',
+            'type': 'real_estate',
             'value': 25000000.00,
-            'location': '123 Business Ave, Manhattan, NY',
-            'acquisition_date': '2023-01-15',
+            'acquisition_date': '2023-01-15T00:00:00Z',
             'description': 'Premium office space in Manhattan'
         }
 

@@ -315,6 +315,11 @@ class DatabaseManager:
         """Create a new business"""
         try:
             with self.get_session() as session:
+                # Convert contact_info to JSON string if it's a dict
+                if 'contact_info' in business_data and isinstance(business_data['contact_info'], dict):
+                    import json
+                    business_data['contact_info'] = json.dumps(business_data['contact_info'])
+
                 business = BusinessModel(**business_data)
                 session.add(business)
                 session.commit()
@@ -378,6 +383,14 @@ class DatabaseManager:
         """Create a new asset"""
         try:
             with self.get_session() as session:
+                # Convert acquisition_date from string to datetime if needed
+                if 'acquisition_date' in asset_data and isinstance(asset_data['acquisition_date'], str):
+                    try:
+                        asset_data['acquisition_date'] = datetime.fromisoformat(asset_data['acquisition_date'].replace('Z', '+00:00'))
+                    except ValueError:
+                        # If conversion fails, set to None
+                        asset_data['acquisition_date'] = None
+
                 asset = AssetModel(**asset_data)
                 session.add(asset)
                 session.commit()
