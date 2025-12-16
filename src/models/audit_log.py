@@ -14,14 +14,15 @@ from .base import Base
 class AuditLogModel(Base):
     """
     SQLAlchemy model for audit logs with tamper-proof hash chain
-    
+
     This model stores comprehensive audit information for all system operations
     including authentication, API calls, database operations, and security events.
-    
+
     Hash Chain: Each log entry contains a hash of the previous entry, creating
     a tamper-proof chain that can be verified for integrity.
     """
     __tablename__ = 'audit_logs'
+    __table_args__ = {'extend_existing': True}
 
     # Primary identification
     id = Column(Integer, primary_key=True, autoincrement=True)

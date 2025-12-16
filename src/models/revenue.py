@@ -30,6 +30,7 @@ class TransactionStatus(enum.Enum):
 class RevenueTransaction(Base):
     """Revenue transaction model"""
     __tablename__ = 'revenue_transactions'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     transaction_id = Column(String(100), unique=True, nullable=False, index=True)
@@ -96,6 +97,7 @@ class RevenueTransaction(Base):
 class RevenueMetrics(Base):
     """Daily revenue metrics aggregation"""
     __tablename__ = 'revenue_metrics'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(DateTime(timezone=True), nullable=False, index=True)
