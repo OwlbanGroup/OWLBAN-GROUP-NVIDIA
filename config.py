@@ -124,14 +124,21 @@ class Config:
     CUDA_VISIBLE_DEVICES = os.getenv('CUDA_VISIBLE_DEVICES', '0')
     GPU_MEMORY_FRACTION = float(os.getenv('GPU_MEMORY_FRACTION', '0.8'))
 
-    # Security Settings
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev_secret')
-    # if not SECRET_KEY and os.getenv('ALLOW_MISSING_TOKENS', '').lower() != 'true':
-    #     raise ValueError("SECRET_KEY environment variable is required for session security")
+    # Security Settings - No hardcoded defaults for production security
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY environment variable is required for session security")
 
-    # CORS Settings - Restrict origins for security
-    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'https://localhost:3000,https://app.jpmorgan.com,https://dashboard.jpmorgan.com').split(',')
-    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
+    # CORS Settings - Restrict origins for security (no localhost in production)
+    ALLOWED_ORIGINS_STR = os.getenv('ALLOWED_ORIGINS')
+    if not ALLOWED_ORIGINS_STR:
+        # Default to production domains only - no localhost for security
+        ALLOWED_ORIGINS = ['https://app.jpmorgan.com', 'https://dashboard.jpmorgan.com', 'https://api.jpmorgan.com']
+    else:
+        ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(',') if origin.strip()]
+        # Security check: ensure no localhost origins in production
+        if os.getenv('FLASK_ENV') == 'production':
+            ALLOWED_ORIGINS = [origin for origin in ALLOWED_ORIGINS if not origin.startswith('http://localhost') and not origin.startswith('http://127.0.0.1')]
 
     # Audit Logging Settings
     AUDIT_LOG_ENABLED = os.getenv('AUDIT_LOG_ENABLED', 'true').lower() == 'true'
