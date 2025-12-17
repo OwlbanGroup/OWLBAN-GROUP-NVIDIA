@@ -2,6 +2,10 @@ version: '3.8'
 
 # Use default bridge networking for better Windows compatibility
 
+networks:
+  default:
+    driver: bridge
+
 services:
   # PostgreSQL Database
   postgres:
