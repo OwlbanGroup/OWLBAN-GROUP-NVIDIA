@@ -1,5 +1,5 @@
 # Core dependencies - Updated to latest stable versions
-Flask==3.1.2
+Flask==3.0.3
 Flask-CORS==4.0.1
 Flask-Limiter==3.8.0
 Flask-Talisman==1.1.0
@@ -8,9 +8,9 @@ Flask-Talisman==1.1.0
 python-dateutil==2.9.0
 
 # Development dependencies
-pytest==8.3.2
+pytest==8.3.3
 pytest-flask==1.3.0
-safety==3.2.3
+safety==3.2.7
 
 # Optional: For advanced JSON handling
 ujson==5.10.0
@@ -19,11 +19,11 @@ ujson==5.10.0
 python-dotenv==1.0.1
 
 # Machine Learning and Data Processing
-pandas==2.2.2
+pandas==2.2.3
 numpy==1.26.4
 scikit-learn==1.5.1
 tensorflow==2.17.0  # GPU-accelerated ML with CUDA support
-matplotlib==3.9.1
+matplotlib==3.9.2
 
 
 # For E2E testing and HTTP clients
@@ -34,7 +34,7 @@ httpx==0.27.0  # Async HTTP client
 redis==5.0.8
 
 # Monitoring
-prometheus-client==0.20.0
+prometheus-client==0.21.0
 
 # Security
 python-jose[cryptography]==3.3.0
@@ -61,20 +61,20 @@ PyYAML==6.0.2
 psycopg2-binary==2.9.9  # PostgreSQL adapter
 
 # New additions for enhanced functionality
-pydantic==2.8.2  # For data validation
-sqlalchemy==2.0.31  # For database operations
-alembic==1.13.2  # For database migrations
+pydantic==2.9.0
+sqlalchemy==2.0.32
+alembic==1.13.3
 fastapi==0.115.0  # For async API endpoints
 uvicorn==0.30.6  # ASGI server
-structlog==24.1.0  # For structured logging
-sentry-sdk==2.13.0  # For error monitoring
+structlog==24.2.0
+sentry-sdk==2.14.0
 celery==5.4.0  # For background tasks
 flower==2.0.1  # For Celery monitoring
 
 # Load testing dependencies
 locust==2.29.1
-faker==25.8.0
+faker==26.0.0
 
 # Additional production dependencies
-gunicorn==22.0.0  # Production WSGI server
+gunicorn==23.0.0
 waitress==3.0.0  # Alternative production server
