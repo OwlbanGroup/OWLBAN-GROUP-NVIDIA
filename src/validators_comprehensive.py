@@ -20,7 +20,7 @@ class ComprehensiveValidators:
     EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
     # Phone regex pattern (international format)
-    PHONE_PATTERN = re.compile(r'^\+?[1-9]\d{1,14}$')
+    PHONE_PATTERN = re.compile(r'^\+?[1-9]\d{6,14}$')
 
     # URL regex pattern
     URL_PATTERN = re.compile(
@@ -399,8 +399,12 @@ class ComprehensiveValidators:
         if not isinstance(value, str):
             return value
 
-        # Remove potentially dangerous characters
-        sanitized = value.replace('<', '<').replace('>', '>')
+        # Remove script tags
+        import re
+        sanitized = re.sub(r'<script[^>]*>.*?</script>', '', value, flags=re.IGNORECASE | re.DOTALL)
+
+        # Escape potentially dangerous characters
+        sanitized = sanitized.replace('<', '<').replace('>', '>')
         sanitized = sanitized.replace('"', '"').replace("'", '&#x27;')
         sanitized = sanitized.replace('&', '&amp;')
 

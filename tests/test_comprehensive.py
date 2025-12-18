@@ -180,7 +180,8 @@ class TestComprehensiveValidators:
         """Test input sanitization"""
         result = ComprehensiveValidators.sanitize_input("<script>alert('xss')</script>")
         assert '<script>' not in result
-        assert '<script>' in result
+        assert 'alert' not in result  # Script content should be removed
+        assert len(result) == 0  # Should be empty after removing script tags
 
     def test_validate_batch_size(self):
         """Test batch size validation"""
@@ -196,18 +197,24 @@ class TestResponseHelpers:
 
     def test_error_response(self):
         """Test error response generation"""
-        response, status_code = error_response("Test error", 400, "ERR001")
-        assert status_code == 400
-        assert response.json['status'] == 'error'
-        assert response.json['error'] == 'Test error'
-        assert response.json['error_code'] == 'ERR001'
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            response, status_code = error_response("Test error", 400, "ERR001")
+            assert status_code == 400
+            assert response.json['status'] == 'error'
+            assert response.json['error'] == 'Test error'
+            assert response.json['error_code'] == 'ERR001'
 
     def test_success_response(self):
         """Test success response generation"""
-        response, status_code = success_response({'data': 'test'}, 200)
-        assert status_code == 200
-        assert response.json['status'] == 'success'
-        assert response.json['data'] == 'test'
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            response, status_code = success_response({'data': 'test'}, 200)
+            assert status_code == 200
+            assert response.json['status'] == 'success'
+            assert response.json['data'] == 'test'
 
 class TestDatabaseOptimizer:
     """Test database optimizer"""
@@ -295,12 +302,15 @@ class TestIntegration:
 
     def test_validation_and_response(self):
         """Test validation with response helpers"""
-        try:
-            validate_business({'name': 'Test'})
-        except ValidationError as e:
-            response, code = error_response(str(e), 400)
-            assert code == 400
-            assert response.json['status'] == 'error'
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            try:
+                validate_business({'name': 'Test'})
+            except ValidationError as e:
+                response, code = error_response(str(e), 400)
+                assert code == 400
+                assert response.json['status'] == 'error'
 
     def test_logging_with_validation(self):
         """Test logging validation errors"""

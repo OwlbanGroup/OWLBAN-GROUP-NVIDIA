@@ -166,6 +166,9 @@ elasticsearch:
 kibana:
   enabled: true
   elasticsearchHosts: "http://elasticsearch-master:9200"
+  elasticsearch:
+    token:
+      enabled: false
 
 prometheus:
   enabled: true

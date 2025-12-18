@@ -76,6 +76,8 @@ from src.audit_alerts import AuditAlertManager  # type: ignore
 # Phase 6: Revenue Tracking Modules
 from src.revenue_service import revenue_service  # type: ignore
 from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
+from src.auth_service import auth_service  # type: ignore
+from src.models.user import UserRole  # type: ignore
 from hr_benefits_api import get_hr_blueprint  # type: ignore
 
 # Initialize cloud storage
@@ -219,8 +221,27 @@ except Exception as e:
                 doc='/swagger/')
 
 
-# Initialize security headers
-Talisman(app, content_security_policy=None, force_https=False)  # Configure CSP and HTTPS for production
+# Initialize security headers with production hardening
+if os.environ.get('FLASK_ENV') == 'production':
+    Talisman(app,
+             content_security_policy={
+                 'default-src': "'self'",
+                 'script-src': "'self'",
+                 'style-src': "'self' 'unsafe-inline'",
+                 'img-src': "'self' data:",
+                 'font-src': "'self'",
+                 'connect-src': "'self'",
+                 'frame-ancestors': "'none'",
+                 'base-uri': "'self'",
+                 'form-action': "'self'"
+             },
+             force_https=True,
+             strict_transport_security=True,
+             strict_transport_security_max_age=31536000,
+             strict_transport_security_include_subdomains=True,
+             content_security_policy_nonce_in=['script-src'])
+else:
+    Talisman(app, content_security_policy=None, force_https=False)  # Development mode
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -361,32 +382,54 @@ def register_user():
         data = request.get_json(force=True)
         username = data.get('username')
         password = data.get('password')
+        email = data.get('email')
+        role = data.get('role', 'USER')
+
         if not username or not password:
             return jsonify({'error': 'Username and password are required', 'status': 'error'}), 400
 
-        success, message = create_user(username, password)
-        
+        # Validate role
+        try:
+            user_role = UserRole(role)
+        except ValueError:
+            return jsonify({'error': f'Invalid role. Valid roles: {[r.value for r in UserRole]}', 'status': 'error'}), 400
+
+        # Create user with AuthService
+        user = auth_service.create_user(
+            username=username,
+            password=password,
+            email=email,
+            role=user_role
+        )
+
         # Log registration attempt
         if audit_logger:
             response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
             audit_logger.log_event(
                 action='user_registration',
                 resource_type='user',
-                resource_id=username,
-                status_code=201 if success else 400,
-                request_data={'username': username},
-                response_data={'success': success, 'message': message},
-                severity='info' if success else 'warning',
+                resource_id=str(user.id),
+                status_code=201,
+                request_data={'username': username, 'email': email, 'role': role},
+                response_data={'user_id': user.id, 'username': user.username, 'role': user.role.value},
+                severity='info',
                 category='authentication',
                 compliance_tags=['GDPR', 'SOX'],
                 username=username,
                 response_time_ms=response_time_ms
             )
-        
-        if success:
-            return jsonify({'status': 'success', 'message': message}), 201
-        else:
-            return jsonify({'error': message, 'status': 'error'}), 400
+
+        return jsonify({
+            'status': 'success',
+            'message': 'User created successfully',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.value,
+                'created_at': user.created_at.isoformat()
+            }
+        }), 201
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'register_user'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
@@ -396,7 +439,7 @@ def register_user():
 @conditional_limit("10 per minute")
 def login_user():
     """
-    Login user and return a token
+    Login user and return JWT token
     """
     start_time = datetime.now(timezone.utc)
     username = None
@@ -407,13 +450,10 @@ def login_user():
         if not username or not password:
             return jsonify({'error': 'Username and password are required', 'status': 'error'}), 400
 
-        if verify_user(username, password):
-            # Generate a simple token (in production use JWT or OAuth)
-            token = secrets.token_hex(16)
-            # Store token in Redis or in-memory for validation (here in-memory for demo)
-            users[username]['token'] = token
-            users[username]['token_created_at'] = datetime.now(timezone.utc).isoformat()
-            
+        # Use AuthService for authentication
+        user, token = auth_service.authenticate_user(username, password)
+
+        if user and token:
             # Log successful login
             if audit_logger:
                 response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
@@ -422,8 +462,17 @@ def login_user():
                     success=True,
                     auth_method='password'
                 )
-            
-            return jsonify({'status': 'success', 'token': token}), 200
+
+            return jsonify({
+                'status': 'success',
+                'token': token,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role.value
+                }
+            }), 200
         else:
             # Log failed login
             if audit_logger:
@@ -434,7 +483,7 @@ def login_user():
                     reason='Invalid username or password',
                     auth_method='password'
                 )
-            
+
             # Check for brute force attempts
             if audit_alert_manager:
                 audit_alert_manager.check_failed_login_attempts(
@@ -442,7 +491,7 @@ def login_user():
                     lookback_minutes=15,
                     threshold=config.AUDIT_FAILED_LOGIN_THRESHOLD
                 )
-            
+
             return jsonify({'error': 'Invalid username or password', 'status': 'error'}), 401
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'login_user'})
@@ -472,26 +521,33 @@ def token_auth_required(f):
 
 
 @app.route('/user/profile', methods=['GET'])
-@token_auth_required
+@auth_service.require_auth()
 @conditional_limit("10 per minute")
 def user_profile():
     """
-    Get user profile information (requires user token)
+    Get user profile information (requires JWT token)
     """
     try:
-        auth_header = request.headers.get('Authorization')
-        token = auth_header.split(' ')[1]
-        # Find user by token
-        for username, user_data in users.items():
-            if user_data.get('token') == token:
-                return jsonify({
-                    'status': 'success',
-                    'username': username,
-                    'created_at': user_data['created_at'],
-                    'token_created_at': user_data.get('token_created_at'),
-                    'timestamp': datetime.now(timezone.utc).isoformat()
-                }), 200
-        return jsonify({'error': 'User not found', 'status': 'error'}), 404
+        user = auth_service.get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found', 'status': 'error'}), 404
+
+        return jsonify({
+            'status': 'success',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.value,
+                'business_id': user.business_id,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat(),
+                'updated_at': user.updated_at.isoformat(),
+                'last_login_at': user.last_login_at.isoformat() if user.last_login_at else None
+            },
+            'permissions': auth_service.get_current_user_permissions(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'user_profile'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

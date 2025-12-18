@@ -1,0 +1,21 @@
+dependencies:
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.1.6
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 17.3.17
+- name: elasticsearch
+  repository: https://helm.elastic.co
+  version: 8.5.1
+- name: kibana
+  repository: https://helm.elastic.co
+  version: 8.5.1
+- name: prometheus
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 15.10.1
+- name: alertmanager
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 0.24.0
+digest: sha256:ce9da67d3f68e5b3512f953d6882fe686a94aa7d4be4f6ce3e19be55f24fec2c
+generated: "2025-12-18T15:46:49.6318948-05:00"

@@ -52,11 +52,6 @@ PAYROLL_DEDUCTIONS_TOTAL = Gauge('payroll_deductions_total', 'Total payroll dedu
 PAYROLL_CLAIMS_TOTAL = Gauge('payroll_claims_total', 'Total benefits claims')
 PAYROLL_ENROLLMENTS_ACTIVE = Gauge('payroll_enrollments_active', 'Active benefits enrollments')
 
-# Initialize metrics with current values
-PAYROLL_TOTAL_EMPLOYEES.set(len(employees))
-PAYROLL_CLAIMS_TOTAL.set(len(claims))
-PAYROLL_ENROLLMENTS_ACTIVE.set(len([e for e in enrollments.values() if e['status'] == 'active']))
-
 # In-memory storage for demo (replace with database in production)
 employees = {}
 benefits_plans = {}

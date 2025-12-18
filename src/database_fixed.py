@@ -1,7 +1,7 @@
 """
 Database connection and session management with SQLAlchemy
 """
-from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
@@ -103,6 +103,7 @@ class BusinessModel(Base):
 class AssetModel(Base):
     """SQLAlchemy model for assets"""
     __tablename__ = 'assets'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
@@ -171,7 +172,7 @@ class DatabaseManager:
         """Check database connectivity"""
         try:
             with self.get_session() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             return True
         except Exception:
             return False
