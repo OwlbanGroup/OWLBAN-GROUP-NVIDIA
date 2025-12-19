@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DATE<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -38,7 +38,7 @@
         </div>
 
         <!-- System Status Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <!-- Health Check -->
             <div class="bg-white rounded-lg shadow p-6 fade-in">
                 <div class="flex items-center justify-between">
@@ -106,6 +106,35 @@
                     <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                         <span class="text-2xl">🗄️</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Current Batch Status -->
+            <div class="bg-white rounded-lg shadow p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Batch Status</h3>
+                        <p class="text-sm text-gray-600" id="batch-status">Checking...</p>
+                        <div class="mt-2 text-xs">
+                            <div class="text-gray-600">Last Updated: <span id="batch-last-updated">Never</span></div>
+                            <div class="text-gray-600">Progress: <span id="batch-progress">0%</span></div>
+                        </div>
+                    </div>
+                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center" id="batch-icon">
+                        <span class="text-2xl">⚙️</span>
+                    </div>
+                </div>
+                <!-- Batch Controls -->
+                <div class="mt-4 space-y-2">
+                    <button onclick="startBatchProcess()" class="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-1 rounded text-sm mr-2">
+                        Start Batch
+                    </button>
+                    <button onclick="stopBatchProcess()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm mr-2">
+                        Stop Batch
+                    </button>
+                    <button onclick="checkBatchStatus()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                        Check Status
+                    </button>
                 </div>
             </div>
         </div>
@@ -393,6 +422,17 @@
             // Database status (simulated)
             document.getElementById('db-status').textContent = 'SQLite Connected';
             console.log('Database status updated');
+
+            // Batch status (simulated)
+            try {
+                const batchResponse = await fetch('/batch/status');
+                const batchData = await batchResponse.json();
+                updateBatchStatus(batchData);
+                console.log('Batch status:', batchData);
+            } catch (error) {
+                console.error('Batch status failed:', error);
+                document.getElementById('batch-status').textContent = 'Unknown';
+            }
         }
 
         // Test functions
@@ -590,6 +630,97 @@
             }
         }
 
+        // Update metrics periodically
+        function updateMetrics() {
+            // Simulate metrics updates
+            const now = new Date().toLocaleTimeString();
+            if (metricsChart.data.labels.length > 10) {
+                metricsChart.data.labels.shift();
+                metricsChart.data.datasets[0].data.shift();
+            }
+            metricsChart.data.labels.push(now);
+            metricsChart.data.datasets[0].data.push(Math.floor(Math.random() * 20) + 5);
+            metricsChart.update();
+
+            document.getElementById('requests-min').textContent = Math.floor(Math.random() * 50) + 10;
+        }
+
+        // Batch processing functions
+        async function startBatchProcess() {
+            console.log('Starting batch process...');
+            try {
+                const response = await fetch('/batch/start', { method: 'POST' });
+                const data = await response.json();
+                document.getElementById('ws-result').textContent += `\nBatch process started: ${JSON.stringify(data)}`;
+                console.log('Batch start response:', data);
+                // Refresh status immediately
+                checkBatchStatus();
+            } catch (error) {
+                document.getElementById('ws-result').textContent += `\nError starting batch: ${error.message}`;
+                console.error('Batch start error:', error);
+            }
+        }
+
+        async function stopBatchProcess() {
+            console.log('Stopping batch process...');
+            try {
+                const response = await fetch('/batch/stop', { method: 'POST' });
+                const data = await response.json();
+                document.getElementById('ws-result').textContent += `\nBatch process stopped: ${JSON.stringify(data)}`;
+                console.log('Batch stop response:', data);
+                // Refresh status immediately
+                checkBatchStatus();
+            } catch (error) {
+                document.getElementById('ws-result').textContent += `\nError stopping batch: ${error.message}`;
+                console.error('Batch stop error:', error);
+            }
+        }
+
+        async function checkBatchStatus() {
+            console.log('Checking batch status...');
+            try {
+                const response = await fetch('/batch/status');
+                const data = await response.json();
+                updateBatchStatus(data);
+                document.getElementById('ws-result').textContent += `\nBatch status checked: ${JSON.stringify(data)}`;
+                console.log('Batch status response:', data);
+            } catch (error) {
+                document.getElementById('ws-result').textContent += `\nError checking batch status: ${error.message}`;
+                console.error('Batch status error:', error);
+            }
+        }
+
+        // Update batch status display
+        function updateBatchStatus(data) {
+            const statusElement = document.getElementById('batch-status');
+            const iconElement = document.getElementById('batch-icon');
+            const lastUpdatedElement = document.getElementById('batch-last-updated');
+            const progressElement = document.getElementById('batch-progress');
+
+            statusElement.textContent = data.status || 'Unknown';
+            lastUpdatedElement.textContent = data.last_updated ? new Date(data.last_updated).toLocaleString() : 'Never';
+            progressElement.textContent = data.progress ? `${data.progress}%` : '0%';
+
+            // Update icon based on status
+            const iconSpan = iconElement.querySelector('span');
+            switch (data.status) {
+                case 'running':
+                    iconSpan.textContent = '🔄';
+                    iconElement.className = 'w-12 h-12 bg-green-100 rounded-full flex items-center justify-center';
+                    break;
+                case 'completed':
+                    iconSpan.textContent = '✅';
+                    iconElement.className = 'w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center';
+                    break;
+                case 'failed':
+                    iconSpan.textContent = '❌';
+                    iconElement.className = 'w-12 h-12 bg-red-100 rounded-full flex items-center justify-center';
+                    break;
+                default:
+                    iconSpan.textContent = '⚙️';
+                    iconElement.className = 'w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center';
+            }
+        }
         // Update metrics periodically
         function updateMetrics() {
             // Simulate metrics updates
