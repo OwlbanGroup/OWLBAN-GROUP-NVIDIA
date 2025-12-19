@@ -1403,3 +1403,4 @@
 2025/12/19 22:10:36 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
 2025/12/19 22:11:41 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
 2025/12/19 22:12:45 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
+2025/12/19 22:13:50 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
