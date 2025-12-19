@@ -50,7 +50,7 @@ class Payment(Base):
     processing_time_ms = Column(Float)
     error_code = Column(String(50))
     error_message = Column(Text)
-    payment_metadata = Column(JSON, default=dict)
+    metadata_json = Column(JSON, default=dict)
 
     def __init__(self, id: str, amount: float, currency: str, payment_type: PaymentType,
                  status: PaymentStatus, user_id: str, description: str = "",
@@ -65,7 +65,7 @@ class Payment(Base):
         self.description = description
         self.created_at = created_at or datetime.now(timezone.utc)
         self.updated_at = updated_at or datetime.now(timezone.utc)
-        self.payment_metadata = extra_metadata or {}
+        self.metadata_json = extra_metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -88,7 +88,7 @@ class Payment(Base):
             'processing_time_ms': self.processing_time_ms,
             'error_code': self.error_code,
             'error_message': self.error_message,
-            'metadata': self.payment_metadata
+            'metadata': self.metadata_json
         }
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Payment':

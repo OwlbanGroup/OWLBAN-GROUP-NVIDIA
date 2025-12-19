@@ -90,7 +90,7 @@ class PaymentsService:
         payment.updated_at = datetime.now(timezone.utc)
 
         if transaction_id:
-            payment.payment_metadata['transaction_id'] = transaction_id
+            payment.metadata_json['transaction_id'] = transaction_id
 
         self.logger.info(f"Payment {payment_id} status updated to {status.value}")
 
@@ -135,7 +135,7 @@ class PaymentsService:
             return False
         else:
             payment.status = PaymentStatus.COMPLETED
-            payment.payment_metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
+            payment.metadata_json['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
             self.logger.info(f"Payment {payment_id} processed successfully in {payment.processing_time_ms:.2f}ms")
             return True
     def get_user_payments(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Payment]:
