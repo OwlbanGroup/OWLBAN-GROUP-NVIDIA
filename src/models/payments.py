@@ -48,6 +48,7 @@ class Payment(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     processed_at = Column(DateTime(timezone=True))
     processing_time_ms = Column(Float)
+    error_code = Column(String(50))
     payment_metadata = Column(JSON, default=dict)
 
     def __init__(self, id: str, amount: float, currency: str, payment_type: PaymentType,
@@ -84,9 +85,9 @@ class Payment(Base):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'processed_at': self.processed_at.isoformat() if self.processed_at else None,
             'processing_time_ms': self.processing_time_ms,
+            'error_code': self.error_code,
             'metadata': self.payment_metadata
         }
-
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Payment':
         """

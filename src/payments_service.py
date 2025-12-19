@@ -114,18 +114,24 @@ class PaymentsService:
         payment.status = PaymentStatus.PROCESSING
         payment.updated_at = datetime.now(timezone.utc)
 
-        # In a real implementation, this would integrate with payment processors
-        # For demo purposes, we'll simulate success
+
+        # For demo purposes, we'll simulate success/failure randomly
+        import random
         processed_at = datetime.now(timezone.utc)
-        payment.status = PaymentStatus.COMPLETED
         payment.processed_at = processed_at
         payment.processing_time_ms = (processed_at - payment.created_at).total_seconds() * 1000
-        payment.metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
 
-        self.logger.info(f"Payment {payment_id} processed successfully in {payment.processing_time_ms:.2f}ms")
-
-        return True
-
+        # Simulate occasional failures for demo
+        if random.random() < 0.1:  # 10% failure rate
+            payment.status = PaymentStatus.FAILED
+            payment.error_code = random.choice(['INSUFFICIENT_FUNDS', 'CARD_DECLINED', 'NETWORK_ERROR', 'TIMEOUT'])
+            self.logger.error(f"Payment {payment_id} failed with error: {payment.error_code}")
+            return False
+        else:
+            payment.status = PaymentStatus.COMPLETED
+            payment.metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
+            self.logger.info(f"Payment {payment_id} processed successfully in {payment.processing_time_ms:.2f}ms")
+            return True
     def get_user_payments(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Payment]:
         """
         Get payments for a specific user
@@ -235,13 +241,116 @@ class PaymentsService:
         completed_payments = len([p for p in self._payments.values() if p.status == PaymentStatus.COMPLETED])
         pending_payments = len([p for p in self._payments.values() if p.status == PaymentStatus.PENDING])
 
+        # Processing time metrics
+        processed_payments = [p for p in self._payments.values() if p.processed_at is not None and p.processing_time_ms is not None]
+        avg_processing_time = sum(p.processing_time_ms for p in processed_payments) / len(processed_payments) if processed_payments else 0
+        max_processing_time = max((p.processing_time_ms for p in processed_payments), default=0)
+
         return {
             'total_payments': total_payments,
             'total_amount': total_amount,
             'completed_payments': completed_payments,
             'pending_payments': pending_payments,
-            'completion_rate': (completed_payments / total_payments) if total_payments > 0 else 0
+            'completion_rate': (completed_payments / total_payments) if total_payments > 0 else 0,
+            'avg_processing_time_ms': avg_processing_time,
+            'max_processing_time_ms': max_processing_time,
+            'processed_payments_count': len(processed_payments)
         }
+
+    def get_payment_throughput_by_minute(self, hours: int = 2) -> List[Dict[str, Any]]:
+        """
+        Get payment processing throughput by minute
+
+        Args:
+            hours: Number of hours to look back
+
+        Returns:
+            List of dicts with timestamp and count
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        processed_payments = [p for p in self._payments.values()
+                            if p.processed_at is not None and p.processed_at > cutoff_time]
+
+        # Group by minute
+        throughput = {}
+        for payment in processed_payments:
+            minute_key = payment.processed_at.replace(second=0, microsecond=0)
+            throughput[minute_key] = throughput.get(minute_key, 0) + 1
+
+        # Convert to list and sort
+        result = [{'timestamp': ts.isoformat(), 'count': count}
+                 for ts, count in throughput.items()]
+        result.sort(key=lambda x: x['timestamp'])
+
+        return result
+
+    def get_failed_payments_count(self, minutes: int = 5) -> int:
+        """
+        Get count of failed payments within the specified time window
+
+        Args:
+            minutes: Number of minutes to look back
+
+        Returns:
+            Count of failed payments
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        failed_payments = [p for p in self._payments.values()
+                          if p.status == PaymentStatus.FAILED and
+                          p.processed_at is not None and
+                          p.processed_at > cutoff_time]
+
+        return len(failed_payments)
+
+    def get_failed_payments(self, limit: int = 50) -> List[Payment]:
+        """
+        Get failed payments
+
+        Args:
+            limit: Maximum number of payments to return
+
+        Returns:
+            List of failed Payment objects
+        """
+        failed_payments = [p for p in self._payments.values() if p.status == PaymentStatus.FAILED]
+        failed_payments.sort(key=lambda x: x.created_at, reverse=True)
+
+        return failed_payments[:limit]
+
+    def get_error_code_distribution(self, hours: int = 1) -> List[Dict[str, Any]]:
+        """
+        Get error code distribution for failed payments within the specified time window
+
+        Args:
+            hours: Number of hours to look back
+
+        Returns:
+            List of dicts with error_code and count
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        failed_payments = [p for p in self._payments.values()
+                          if p.status == PaymentStatus.FAILED and
+                          p.processed_at is not None and
+                          p.processed_at > cutoff_time and
+                          p.error_code is not None]
+
+        # Group by error code
+        error_distribution = {}
+        for payment in failed_payments:
+            error_distribution[payment.error_code] = error_distribution.get(payment.error_code, 0) + 1
+
+        # Convert to list and sort by count descending
+        result = [{'error_code': error_code, 'count': count}
+                 for error_code, count in error_distribution.items()]
+        result.sort(key=lambda x: x['count'], reverse=True)
+
+        return result
 
 
 # Global payments service instance
