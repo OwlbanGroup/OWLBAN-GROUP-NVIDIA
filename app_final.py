@@ -1391,72 +1391,237 @@ def get_investment_portfolio():
 @token_auth_required
 def get_jpmorgan_data():
     """
-    Get JPMorgan financial metrics, assets, and stock ticker information
+    Get JPMorgan financial metrics, assets, and stock ticker information with filtering support
     """
     try:
-        # Mock financial metrics
-        financial_metrics = {
-            'revenue': 150000000000.00,  # $150B
-            'net_income': 45000000000.00,  # $45B
-            'total_assets': 4000000000000.00,  # $4T
-            'market_cap': 500000000000.00,  # $500B
-            'pe_ratio': 12.5,
-            'dividend_yield': 0.025,
-            'debt_to_equity': 1.2,
-            'return_on_equity': 0.12,
-            'last_updated': datetime.now(timezone.utc).isoformat()
-        }
+        # Get query parameters for filtering
+        env_filter = request.args.get('env')
+        region_filter = request.args.get('region')
+        payment_type_filter = request.args.get('payment_type')
+        status_filter = request.args.get('status')
 
-        # Mock assets owned by JPMorgan (subsidiaries and key holdings)
-        assets = [
+        # Mock financial metrics with multiple entries for different environments
+        all_financial_metrics = [
+            {
+                'env': 'prod',
+                'region': 'US',
+                'revenue': 150000000000.00,  # $150B
+                'net_income': 45000000000.00,  # $45B
+                'total_assets': 4000000000000.00,  # $4T
+                'market_cap': 500000000000.00,  # $500B
+                'pe_ratio': 12.5,
+                'dividend_yield': 0.025,
+                'debt_to_equity': 1.2,
+                'return_on_equity': 0.12,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'env': 'stage',
+                'region': 'US',
+                'revenue': 140000000000.00,  # $140B
+                'net_income': 42000000000.00,  # $42B
+                'total_assets': 3800000000000.00,  # $3.8T
+                'market_cap': 480000000000.00,  # $480B
+                'pe_ratio': 12.2,
+                'dividend_yield': 0.024,
+                'debt_to_equity': 1.15,
+                'return_on_equity': 0.115,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'env': 'dev',
+                'region': 'US',
+                'revenue': 130000000000.00,  # $130B
+                'net_income': 39000000000.00,  # $39B
+                'total_assets': 3600000000000.00,  # $3.6T
+                'market_cap': 460000000000.00,  # $460B
+                'pe_ratio': 11.8,
+                'dividend_yield': 0.023,
+                'debt_to_equity': 1.1,
+                'return_on_equity': 0.11,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'env': 'prod',
+                'region': 'EU',
+                'revenue': 120000000000.00,  # $120B
+                'net_income': 36000000000.00,  # $36B
+                'total_assets': 3200000000000.00,  # $3.2T
+                'market_cap': 400000000000.00,  # $400B
+                'pe_ratio': 11.5,
+                'dividend_yield': 0.022,
+                'debt_to_equity': 1.05,
+                'return_on_equity': 0.105,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'env': 'prod',
+                'region': 'APAC',
+                'revenue': 100000000000.00,  # $100B
+                'net_income': 30000000000.00,  # $30B
+                'total_assets': 2800000000000.00,  # $2.8T
+                'market_cap': 350000000000.00,  # $350B
+                'pe_ratio': 10.8,
+                'dividend_yield': 0.020,
+                'debt_to_equity': 0.95,
+                'return_on_equity': 0.095,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            }
+        ]
+
+        # Mock assets with multiple entries for different environments and regions
+        all_assets = [
             {
                 'asset_id': 'JPM-001',
                 'name': 'JPMorgan Chase Bank',
                 'type': 'Banking Subsidiary',
                 'value': 2500000000000.00,
-                'description': 'Primary banking operations'
+                'description': 'Primary banking operations',
+                'env': 'prod',
+                'region': 'US',
+                'payment_type': 'ACH',
+                'status': 'success'
             },
             {
                 'asset_id': 'JPM-002',
                 'name': 'JPMorgan Asset Management',
                 'type': 'Asset Management',
                 'value': 3000000000000.00,
-                'description': 'Investment management services'
+                'description': 'Investment management services',
+                'env': 'prod',
+                'region': 'US',
+                'payment_type': 'Card',
+                'status': 'success'
             },
             {
                 'asset_id': 'JPM-003',
                 'name': 'JPMorgan Private Bank',
                 'type': 'Private Banking',
                 'value': 500000000000.00,
-                'description': 'Wealth management for high-net-worth individuals'
+                'description': 'Wealth management for high-net-worth individuals',
+                'env': 'stage',
+                'region': 'EU',
+                'payment_type': 'Wallet',
+                'status': 'pending'
             },
             {
                 'asset_id': 'JPM-004',
                 'name': 'Chase Credit Cards',
                 'type': 'Consumer Finance',
                 'value': 150000000000.00,
-                'description': 'Credit card and consumer lending operations'
+                'description': 'Credit card and consumer lending operations',
+                'env': 'dev',
+                'region': 'APAC',
+                'payment_type': 'Card',
+                'status': 'failed'
+            },
+            {
+                'asset_id': 'JPM-005',
+                'name': 'JPMorgan Investment Bank',
+                'type': 'Investment Banking',
+                'value': 1800000000000.00,
+                'description': 'Investment banking services',
+                'env': 'prod',
+                'region': 'US',
+                'payment_type': 'ACH',
+                'status': 'success'
+            },
+            {
+                'asset_id': 'JPM-006',
+                'name': 'JPMorgan Treasury Services',
+                'type': 'Treasury Services',
+                'value': 800000000000.00,
+                'description': 'Cash management and treasury services',
+                'env': 'stage',
+                'region': 'EU',
+                'payment_type': 'Wallet',
+                'status': 'success'
             }
         ]
 
-        # Stock ticker information
-        stock_ticker = {
-            'symbol': 'JPM',
-            'company_name': 'JPMorgan Chase & Co.',
-            'exchange': 'NYSE',
-            'current_price': 185.50,
-            'change': 2.75,
-            'change_percent': 1.50,
-            'volume': 8500000,
-            'market_cap': 500000000000.00,
-            'last_updated': datetime.now(timezone.utc).isoformat()
-        }
+        # Stock ticker information with multiple entries
+        all_stock_tickers = [
+            {
+                'symbol': 'JPM',
+                'company_name': 'JPMorgan Chase & Co.',
+                'exchange': 'NYSE',
+                'current_price': 185.50,
+                'change': 2.75,
+                'change_percent': 1.50,
+                'volume': 8500000,
+                'market_cap': 500000000000.00,
+                'env': 'prod',
+                'region': 'US',
+                'payment_type': 'Card',
+                'status': 'success',
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'symbol': 'JPM',
+                'company_name': 'JPMorgan Chase & Co.',
+                'exchange': 'NYSE',
+                'current_price': 183.25,
+                'change': 0.50,
+                'change_percent': 0.27,
+                'volume': 6200000,
+                'market_cap': 495000000000.00,
+                'env': 'stage',
+                'region': 'EU',
+                'payment_type': 'ACH',
+                'status': 'pending',
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'symbol': 'JPM',
+                'company_name': 'JPMorgan Chase & Co.',
+                'exchange': 'NYSE',
+                'current_price': 181.00,
+                'change': -1.25,
+                'change_percent': -0.69,
+                'volume': 7200000,
+                'market_cap': 485000000000.00,
+                'env': 'dev',
+                'region': 'APAC',
+                'payment_type': 'Wallet',
+                'status': 'failed',
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            }
+        ]
+
+        # Apply filters
+        def matches_filters(item):
+            if env_filter and item.get('env') != env_filter:
+                return False
+            if region_filter and item.get('region') != region_filter:
+                return False
+            if payment_type_filter and item.get('payment_type') != payment_type_filter:
+                return False
+            if status_filter and item.get('status') != status_filter:
+                return False
+            return True
+
+        # Filter data based on query parameters
+        financial_metrics = [item for item in all_financial_metrics if matches_filters(item)]
+        assets = [item for item in all_assets if matches_filters(item)]
+        stock_tickers = [item for item in all_stock_tickers if matches_filters(item)]
+
+        # If no filters provided, return all data (backward compatibility)
+        if not any([env_filter, region_filter, payment_type_filter, status_filter]):
+            financial_metrics = all_financial_metrics
+            assets = all_assets
+            stock_tickers = all_stock_tickers
 
         return jsonify({
             'status': 'success',
             'financial_metrics': financial_metrics,
             'assets': assets,
-            'stock_ticker': stock_ticker,
+            'stock_tickers': stock_tickers,
+            'filters_applied': {
+                'env': env_filter,
+                'region': region_filter,
+                'payment_type': payment_type_filter,
+                'status': status_filter
+            },
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:
