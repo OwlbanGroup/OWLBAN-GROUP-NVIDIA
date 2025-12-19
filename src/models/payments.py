@@ -46,6 +46,8 @@ class Payment(Base):
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    processed_at = Column(DateTime(timezone=True))
+    processing_time_ms = Column(Float)
     payment_metadata = Column(JSON, default=dict)
 
     def __init__(self, id: str, amount: float, currency: str, payment_type: PaymentType,
@@ -80,6 +82,8 @@ class Payment(Base):
             'description': self.description,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'processed_at': self.processed_at.isoformat() if self.processed_at else None,
+            'processing_time_ms': self.processing_time_ms,
             'metadata': self.payment_metadata
         }
 
@@ -154,7 +158,7 @@ class PaymentMethod(Base):
             'is_active': bool(self.is_active),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'metadata': self.metadata
+            'metadata': self.extra_metadata
         }
 
 
@@ -171,17 +175,17 @@ class TransactionFee(Base):
     currency = Column(String(3), nullable=False, default="USD")
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    metadata = Column(JSON, default=dict)
+    extra_metadata = Column(JSON, default=dict)
 
     def __init__(self, id: str, payment_id: str, fee_type: str, amount: float,
-                 currency: str = "USD", description: str = "", metadata: Optional[Dict[str, Any]] = None):
+                 currency: str = "USD", description: str = "", extra_metadata: Optional[Dict[str, Any]] = None):
         self.id = id
         self.payment_id = payment_id
         self.fee_type = fee_type
         self.amount = amount
         self.currency = currency
         self.description = description
-        self.metadata = metadata or {}
+        self.extra_metadata = extra_metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -198,5 +202,5 @@ class TransactionFee(Base):
             'currency': self.currency,
             'description': self.description,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'metadata': self.metadata
+            'metadata': self.extra_metadata
         }

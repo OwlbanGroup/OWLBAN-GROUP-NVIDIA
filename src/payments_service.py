@@ -116,11 +116,13 @@ class PaymentsService:
 
         # In a real implementation, this would integrate with payment processors
         # For demo purposes, we'll simulate success
+        processed_at = datetime.now(timezone.utc)
         payment.status = PaymentStatus.COMPLETED
-        payment.metadata['processed_at'] = datetime.now(timezone.utc).isoformat()
+        payment.processed_at = processed_at
+        payment.processing_time_ms = (processed_at - payment.created_at).total_seconds() * 1000
         payment.metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
 
-        self.logger.info(f"Payment {payment_id} processed successfully")
+        self.logger.info(f"Payment {payment_id} processed successfully in {payment.processing_time_ms:.2f}ms")
 
         return True
 
