@@ -46,7 +46,7 @@ class Payment(Base):
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    metadata = Column(JSON, default=dict)
+    payment_metadata = Column(JSON, default=dict)
 
     def __init__(self, id: str, amount: float, currency: str, payment_type: PaymentType,
                  status: PaymentStatus, user_id: str, description: str = "",
