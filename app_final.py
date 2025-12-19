@@ -2179,6 +2179,128 @@ def update_daily_revenue_metrics():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
+# Batch Processing Endpoints
+@app.route('/batch/start', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def start_batch_process():
+    """
+    Start a batch processing operation
+    """
+    try:
+        data = request.get_json(force=True)
+        batch_type = data.get('batch_type', 'telemetry')
+        batch_size = data.get('batch_size', 100)
+        priority = data.get('priority', 'normal')
+
+        # Generate batch ID
+        batch_id = secrets.token_hex(8)
+
+        # Emit WebSocket event for batch started
+        socketio.emit('batch_started', {
+            'batch_id': batch_id,
+            'batch_type': batch_type,
+            'batch_size': batch_size,
+            'priority': priority,
+            'status': 'started',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+        # Log batch start
+        telemetry_logger.get_logger().info(f"Batch process started: {batch_id} ({batch_type}, size: {batch_size})")
+
+        return jsonify({
+            'status': 'success',
+            'batch_id': batch_id,
+            'batch_type': batch_type,
+            'batch_size': batch_size,
+            'priority': priority,
+            'message': f'Batch processing started with ID: {batch_id}',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'start_batch_process'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/batch/stop', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def stop_batch_process():
+    """
+    Stop a batch processing operation
+    """
+    try:
+        data = request.get_json(force=True)
+        batch_id = data.get('batch_id')
+
+        if not batch_id:
+            return jsonify({'error': 'batch_id is required', 'status': 'error'}), 400
+
+        # Emit WebSocket event for batch stopped
+        socketio.emit('batch_stopped', {
+            'batch_id': batch_id,
+            'status': 'stopped',
+            'reason': 'user_request',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+        # Log batch stop
+        telemetry_logger.get_logger().info(f"Batch process stopped: {batch_id}")
+
+        return jsonify({
+            'status': 'success',
+            'batch_id': batch_id,
+            'message': f'Batch processing stopped: {batch_id}',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'stop_batch_process'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/batch/status', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def check_batch_status():
+    """
+    Check the status of a batch processing operation
+    """
+    try:
+        batch_id = request.args.get('batch_id')
+
+        if not batch_id:
+            return jsonify({'error': 'batch_id parameter is required', 'status': 'error'}), 400
+
+        # Mock batch status - in a real implementation, this would check actual batch status
+        # For now, return a mock status
+        batch_status = {
+            'batch_id': batch_id,
+            'status': 'running',  # running, completed, failed, stopped
+            'progress': 65,  # percentage
+            'processed': 650,
+            'total': 1000,
+            'start_time': datetime.now(timezone.utc).isoformat(),
+            'estimated_completion': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+            'last_updated': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Emit WebSocket event for batch status update
+        socketio.emit('batch_status_update', batch_status)
+
+        return jsonify({
+            'status': 'success',
+            'batch_status': batch_status,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'check_batch_status'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
