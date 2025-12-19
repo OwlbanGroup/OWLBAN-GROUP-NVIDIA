@@ -2305,6 +2305,34 @@ def check_batch_status():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
+@app.route('/payments/alerts', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_payment_alerts():
+    """
+    Get payment processing alerts status
+    """
+    try:
+        # Get all alerts
+        all_alerts = payments_service.get_all_alerts()
+
+        # Get only active alerts
+        active_alerts = payments_service.get_active_alerts()
+
+        return jsonify({
+            'status': 'success',
+            'alerts': {
+                'all': all_alerts,
+                'active': active_alerts,
+                'active_count': len(active_alerts)
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_payment_alerts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""

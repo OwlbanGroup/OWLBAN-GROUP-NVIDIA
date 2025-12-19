@@ -16,7 +16,7 @@ class PaymentsService:
     """
 
     def __init__(self):
-        self.logger = app_logger.get_logger()
+        self.logger = app_logger
         self._payments = {}  # In-memory storage for demo purposes
 
     def create_payment(self, amount: float, payment_type: PaymentType,
@@ -48,7 +48,7 @@ class PaymentsService:
             description=description,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
-            metadata=metadata or {}
+            extra_metadata=metadata or {}
         )
 
         self._payments[payment_id] = payment
@@ -90,7 +90,7 @@ class PaymentsService:
         payment.updated_at = datetime.now(timezone.utc)
 
         if transaction_id:
-            payment.metadata['transaction_id'] = transaction_id
+            payment.payment_metadata['transaction_id'] = transaction_id
 
         self.logger.info(f"Payment {payment_id} status updated to {status.value}")
 
@@ -125,11 +125,17 @@ class PaymentsService:
         if random.random() < 0.1:  # 10% failure rate
             payment.status = PaymentStatus.FAILED
             payment.error_code = random.choice(['INSUFFICIENT_FUNDS', 'CARD_DECLINED', 'NETWORK_ERROR', 'TIMEOUT'])
-            self.logger.error(f"Payment {payment_id} failed with error: {payment.error_code}")
+            payment.error_message = {
+                'INSUFFICIENT_FUNDS': 'Account balance insufficient for transaction',
+                'CARD_DECLINED': 'Card issuer declined the transaction',
+                'NETWORK_ERROR': 'Network connectivity issue during processing',
+                'TIMEOUT': 'Transaction timed out during processing'
+            }.get(payment.error_code, 'Unknown error occurred')
+            self.logger.error(f"Payment {payment_id} failed with error: {payment.error_code} - {payment.error_message}")
             return False
         else:
             payment.status = PaymentStatus.COMPLETED
-            payment.metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
+            payment.payment_metadata['transaction_id'] = f"txn_{uuid.uuid4().hex[:8]}"
             self.logger.info(f"Payment {payment_id} processed successfully in {payment.processing_time_ms:.2f}ms")
             return True
     def get_user_payments(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Payment]:
@@ -217,7 +223,7 @@ class PaymentsService:
             description=f"Refund for payment {payment_id}",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
-            metadata={
+            extra_metadata={
                 'original_payment_id': payment_id,
                 'refund_type': 'full' if refund_amount == payment.amount else 'partial'
             }
@@ -351,6 +357,252 @@ class PaymentsService:
         result.sort(key=lambda x: x['count'], reverse=True)
 
         return result
+
+    def get_queue_depth(self) -> int:
+        """
+        Get the current queue depth (number of pending payments)
+
+        Returns:
+            Number of payments in pending/processing status (ApproximateNumberOfMessagesVisible equivalent)
+        """
+        pending_payments = len([p for p in self._payments.values()
+                               if p.status in [PaymentStatus.PENDING, PaymentStatus.PROCESSING]])
+
+        return pending_payments
+
+    def get_api_latency_percentile(self, percentile: float = 0.95, minutes: int = 5) -> float:
+        """
+        Get the specified percentile of API latency over the given time window
+
+        Args:
+            percentile: Percentile to calculate (0.95 for 95th percentile)
+            minutes: Number of minutes to look back
+
+        Returns:
+            Latency value at the specified percentile in seconds
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        processed_payments = [p for p in self._payments.values()
+                            if p.processed_at is not None and
+                            p.processing_time_ms is not None and
+                            p.processed_at > cutoff_time]
+
+        if not processed_payments:
+            return 0.0
+
+        # Convert processing time from milliseconds to seconds
+        latencies = [p.processing_time_ms / 1000 for p in processed_payments]
+        latencies.sort()
+
+        # Calculate percentile index
+        index = int(percentile * (len(latencies) - 1))
+        return latencies[index]
+
+    def get_database_connection_rate(self, minutes: int = 1) -> float:
+        """
+        Get the rate of database connections over the specified time window
+        (Simulated for demo - in real implementation would query pg_stat_activity)
+
+        Args:
+            minutes: Number of minutes to look back
+
+        Returns:
+            Connection rate per minute
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+
+        # Simulate database connection activity based on payment processing
+        # In a real implementation, this would query PostgreSQL's pg_stat_activity
+        recent_payments = len([p for p in self._payments.values()
+                             if p.created_at > cutoff_time])
+
+        # Simulate connection rate based on payment activity
+        # Assuming each payment operation requires database connections
+        connection_rate = recent_payments / minutes
+
+        return connection_rate
+
+    def get_recent_payments_with_errors(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Get recent payments with error information (equivalent to Loki + SQL query)
+        Filters for payments with errors and returns specified fields
+
+        Args:
+            limit: Maximum number of payments to return
+
+        Returns:
+            List of dicts with payment_id, amount, status, processing_time_ms, processed_at
+        """
+        # Get payments that have errors (failed status or error_code present)
+        error_payments = [p for p in self._payments.values()
+                         if p.status == PaymentStatus.FAILED or p.error_code is not None]
+
+        # Sort by processed_at descending (most recent first)
+        error_payments.sort(key=lambda x: x.processed_at or x.created_at, reverse=True)
+
+        # Convert to dict format with specified fields
+        result = []
+        for payment in error_payments[:limit]:
+            result.append({
+                'payment_id': payment.id,
+                'amount': payment.amount,
+                'status': payment.status.value,
+                'processing_time_ms': payment.processing_time_ms,
+                'processed_at': payment.processed_at.isoformat() if payment.processed_at else None,
+                'error_code': payment.error_code
+            })
+
+        return result
+
+    def get_failed_payments_sql_style(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Get failed payments with error details (equivalent to SQL query)
+        SELECT payment_id, amount, error_code, error_message, processed_at
+        FROM payments WHERE status = 'failed' ORDER BY processed_at DESC LIMIT 100
+
+        Args:
+            limit: Maximum number of payments to return
+
+        Returns:
+            List of dicts with payment_id, amount, error_code, error_message, processed_at
+        """
+        # Get only failed payments
+        failed_payments = [p for p in self._payments.values() if p.status == PaymentStatus.FAILED]
+
+        # Sort by processed_at descending (most recent first)
+        failed_payments.sort(key=lambda x: x.processed_at or x.created_at, reverse=True)
+
+        # Convert to dict format with specified fields
+        result = []
+        for payment in failed_payments[:limit]:
+            result.append({
+                'payment_id': payment.id,
+                'amount': payment.amount,
+                'error_code': payment.error_code,
+                'error_message': payment.error_message,
+                'processed_at': payment.processed_at.isoformat() if payment.processed_at else None
+            })
+
+        return result
+
+    def check_processing_time_alert(self, threshold_seconds: float = 2.0, window_minutes: int = 10) -> Dict[str, Any]:
+        """
+        Check if average processing time exceeds threshold for the specified time window
+
+        Args:
+            threshold_seconds: Processing time threshold in seconds
+            window_minutes: Time window to check in minutes
+
+        Returns:
+            Dict with alert status and details
+        """
+        # Get 95th percentile latency (most representative of worst-case performance)
+        percentile_latency = self.get_api_latency_percentile(percentile=0.95, minutes=window_minutes)
+
+        is_alert = percentile_latency > threshold_seconds
+
+        return {
+            'alert_type': 'processing_time',
+            'alert_triggered': is_alert,
+            'current_value': percentile_latency,
+            'threshold': threshold_seconds,
+            'window_minutes': window_minutes,
+            'message': f'95th percentile processing time is {percentile_latency:.2f}s (threshold: {threshold_seconds}s)' if is_alert else f'Processing time OK: {percentile_latency:.2f}s'
+        }
+
+    def check_error_rate_alert(self, threshold_percent: float = 5.0, window_minutes: int = 5) -> Dict[str, Any]:
+        """
+        Check if error rate exceeds threshold for the specified time window
+
+        Args:
+            threshold_percent: Error rate threshold as percentage
+            window_minutes: Time window to check in minutes
+
+        Returns:
+            Dict with alert status and details
+        """
+        from datetime import timedelta
+
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
+
+        # Count total processed payments in window
+        total_processed = len([p for p in self._payments.values()
+                              if p.processed_at is not None and p.processed_at > cutoff_time])
+
+        # Count failed payments in window
+        failed_count = self.get_failed_payments_count(minutes=window_minutes)
+
+        # Calculate error rate
+        error_rate = (failed_count / total_processed * 100) if total_processed > 0 else 0.0
+
+        is_alert = error_rate > threshold_percent
+
+        return {
+            'alert_type': 'error_rate',
+            'alert_triggered': is_alert,
+            'current_value': error_rate,
+            'threshold': threshold_percent,
+            'window_minutes': window_minutes,
+            'failed_count': failed_count,
+            'total_processed': total_processed,
+            'message': f'Error rate is {error_rate:.1f}% (threshold: {threshold_percent}%)' if is_alert else f'Error rate OK: {error_rate:.1f}%'
+        }
+
+    def check_queue_depth_alert(self, threshold: int = 1000) -> Dict[str, Any]:
+        """
+        Check if queue depth exceeds threshold
+
+        Args:
+            threshold: Queue depth threshold
+
+        Returns:
+            Dict with alert status and details
+        """
+        current_depth = self.get_queue_depth()
+
+        is_alert = current_depth > threshold
+
+        return {
+            'alert_type': 'queue_depth',
+            'alert_triggered': is_alert,
+            'current_value': current_depth,
+            'threshold': threshold,
+            'message': f'Queue depth is {current_depth} (threshold: {threshold})' if is_alert else f'Queue depth OK: {current_depth}'
+        }
+
+    def get_all_alerts(self) -> List[Dict[str, Any]]:
+        """
+        Get status of all configured alerts
+
+        Returns:
+            List of alert status dictionaries
+        """
+        alerts = []
+
+        # Processing Time Alert: Avg processing time > 2 seconds for 10 minutes
+        alerts.append(self.check_processing_time_alert(threshold_seconds=2.0, window_minutes=10))
+
+        # Error Rate Alert: Error rate > 5%
+        alerts.append(self.check_error_rate_alert(threshold_percent=5.0, window_minutes=5))
+
+        # Queue Depth Alert: Queue depth > 1000 messages
+        alerts.append(self.check_queue_depth_alert(threshold=1000))
+
+        return alerts
+
+    def get_active_alerts(self) -> List[Dict[str, Any]]:
+        """
+        Get only alerts that are currently triggered
+
+        Returns:
+            List of active alert dictionaries
+        """
+        all_alerts = self.get_all_alerts()
+        return [alert for alert in all_alerts if alert['alert_triggered']]
 
 
 # Global payments service instance
