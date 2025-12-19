@@ -51,7 +51,7 @@ class Payment(Base):
     def __init__(self, id: str, amount: float, currency: str, payment_type: PaymentType,
                  status: PaymentStatus, user_id: str, description: str = "",
                  created_at: Optional[datetime] = None, updated_at: Optional[datetime] = None,
-                 metadata: Optional[Dict[str, Any]] = None):
+                 extra_metadata: Optional[Dict[str, Any]] = None):
         self.id = id
         self.amount = amount
         self.currency = currency
@@ -61,7 +61,7 @@ class Payment(Base):
         self.description = description
         self.created_at = created_at or datetime.now(timezone.utc)
         self.updated_at = updated_at or datetime.now(timezone.utc)
-        self.metadata = metadata or {}
+        self.payment_metadata = extra_metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -104,7 +104,7 @@ class Payment(Base):
             description=data.get('description', ''),
             created_at=datetime.fromisoformat(data['created_at']) if data.get('created_at') else None,
             updated_at=datetime.fromisoformat(data['updated_at']) if data.get('updated_at') else None,
-            metadata=data.get('metadata', {})
+            extra_metadata=data.get('metadata', {})
         )
 
 
@@ -123,11 +123,11 @@ class PaymentMethod(Base):
     is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    metadata = Column(JSON, default=dict)  # Encrypted sensitive data
+    extra_metadata = Column(JSON, default=dict)  # Encrypted sensitive data
 
     def __init__(self, id: str, user_id: str, type: str, provider: str = "",
                  last_four: str = "", is_default: bool = False, is_active: bool = True,
-                 metadata: Optional[Dict[str, Any]] = None):
+                 extra_metadata: Optional[Dict[str, Any]] = None):
         self.id = id
         self.user_id = user_id
         self.type = type
@@ -135,7 +135,7 @@ class PaymentMethod(Base):
         self.last_four = last_four
         self.is_default = 1 if is_default else 0
         self.is_active = 1 if is_active else 0
-        self.metadata = metadata or {}
+        self.extra_metadata = extra_metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:
         """
