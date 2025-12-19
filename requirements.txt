@@ -42,7 +42,9 @@ passlib[bcrypt]==1.7.4
 
 # Type stubs for mypy
 types-python-jose==3.3.4.20240106
-types-requests==2.32.0.20240712
+
+# Pin urllib3 to resolve dependency conflicts
+urllib3==1.26.18
 
 # Documentation
 flask-restx==1.3.0
