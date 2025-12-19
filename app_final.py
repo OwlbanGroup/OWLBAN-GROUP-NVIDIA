@@ -78,6 +78,8 @@ from src.revenue_service import revenue_service  # type: ignore
 from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
 from src.auth_service import auth_service  # type: ignore
 from src.models.user import UserRole  # type: ignore
+from src.payments_service import payments_service  # type: ignore
+from src.models.payments import Payment, PaymentStatus, PaymentType  # type: ignore
 from hr_benefits_api import get_hr_blueprint  # type: ignore
 
 # Initialize cloud storage
