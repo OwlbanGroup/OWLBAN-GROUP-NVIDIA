@@ -1,4 +1,4 @@
-DATE<!DOCTYPE html>
+UPDATEDATE<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -547,6 +547,26 @@ DATE<!DOCTYPE html>
                 socket.on('connect_error', (error) => {
                     document.getElementById('ws-result').textContent = `Socket.IO connection error: ${error.message}`;
                 });
+                socket.on('batch_status_update', (data) => {
+                    document.getElementById('ws-result').textContent += `\nBatch status update: ${JSON.stringify(data)}`;
+                    updateBatchStatus(data);
+                });
+                socket.on('batch_started', (data) => {
+                    document.getElementById('ws-result').textContent += `\nBatch process started: ${JSON.stringify(data)}`;
+                    updateBatchStatus(data);
+                });
+                socket.on('batch_stopped', (data) => {
+                    document.getElementById('ws-result').textContent += `\nBatch process stopped: ${JSON.stringify(data)}`;
+                    updateBatchStatus(data);
+                });
+                socket.on('batch_completed', (data) => {
+                    document.getElementById('ws-result').textContent += `\nBatch process completed: ${JSON.stringify(data)}`;
+                    updateBatchStatus(data);
+                });
+                socket.on('batch_error', (data) => {
+                    document.getElementById('ws-result').textContent += `\nBatch error: ${JSON.stringify(data)}`;
+                    updateBatchStatus(data);
+                });
             } catch (error) {
                 document.getElementById('ws-result').textContent = `Connection failed: ${error.message}`;
             }
@@ -720,20 +740,6 @@ DATE<!DOCTYPE html>
                     iconSpan.textContent = '⚙️';
                     iconElement.className = 'w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center';
             }
-        }
-        // Update metrics periodically
-        function updateMetrics() {
-            // Simulate metrics updates
-            const now = new Date().toLocaleTimeString();
-            if (metricsChart.data.labels.length > 10) {
-                metricsChart.data.labels.shift();
-                metricsChart.data.datasets[0].data.shift();
-            }
-            metricsChart.data.labels.push(now);
-            metricsChart.data.datasets[0].data.push(Math.floor(Math.random() * 20) + 5);
-            metricsChart.update();
-
-            document.getElementById('requests-min').textContent = Math.floor(Math.random() * 50) + 10;
         }
 
         // Initialize React DeployButton
