@@ -1,4 +1,4 @@
-TEDA# JPMorgan Financial APIs - Production Dockerfile
+# JPMorgan Financial APIs - Production Dockerfile
 FROM python:3.9-slim
 
 # Set environment variables
@@ -32,7 +32,8 @@ USER app
 EXPOSE 5000
 
 # Health check
-
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
+
 # Run the application
 CMD ["python", "app_final.py"]
