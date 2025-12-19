@@ -32,7 +32,8 @@ def test_filtering():
 
     # Test 1: No filters (should return all data)
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             print("✅ Test 1 PASSED: No filters - returned all data")
@@ -46,7 +47,8 @@ def test_filtering():
 
     # Test 2: Filter by env=prod
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?env=prod', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?env=prod', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             all_prod = all(item.get('env') == 'prod' for item in data.get('financial_metrics', []) +
@@ -62,7 +64,8 @@ def test_filtering():
 
     # Test 3: Filter by region=US
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?region=US', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?region=US', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             all_us = all(item.get('region') == 'US' for item in data.get('financial_metrics', []) +
@@ -78,7 +81,8 @@ def test_filtering():
 
     # Test 4: Filter by payment_type=Card
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?payment_type=Card', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?payment_type=Card', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             all_card = all(item.get('payment_type') == 'Card' for item in data.get('assets', []) +
@@ -94,7 +98,8 @@ def test_filtering():
 
     # Test 5: Filter by status=success
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?status=success', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?status=success', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             all_success = all(item.get('status') == 'success' for item in data.get('assets', []) +
@@ -110,7 +115,8 @@ def test_filtering():
 
     # Test 6: Multiple filters (env=prod&region=US)
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?env=prod&region=US', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?env=prod&region=US', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             all_prod_us = all(item.get('env') == 'prod' and item.get('region') == 'US'
@@ -127,7 +133,8 @@ def test_filtering():
 
     # Test 7: Invalid filter (should return empty or error)
     try:
-        response = requests.get(f'{base_url}/api/jpmorgan-data?env=invalid', timeout=5)
+        headers = {'Authorization': 'Bearer test_token'}
+        response = requests.get(f'{base_url}/api/jpmorgan-data?env=invalid', headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             total_items = len(data.get('financial_metrics', [])) + len(data.get('assets', [])) + len(data.get('stock_tickers', []))
