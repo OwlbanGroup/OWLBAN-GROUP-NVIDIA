@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Fixed Flask application for JPMorgan Financial APIs
-"""
 # pylint: disable=import-error,invalid-name,broad-exception-caught,line-too-long,unused-argument,reimported,ungrouped-imports,wrong-import-order,wrong-import-position,unspecified-encoding,missing-class-docstring,missing-function-docstring,superfluous-parens
 import csv
 import io
@@ -228,14 +224,17 @@ except Exception as e:
 
 
 # Initialize security headers with production hardening
-if os.environ.get('FLASK_ENV') == 'production':
+# Skip Talisman in testing mode to avoid HTTPS redirects
+if os.environ.get('TESTING') == '1':
+    pass  # No security headers in testing mode
+elif os.environ.get('FLASK_ENV') == 'production':
     Talisman(app,
              content_security_policy={
                  'default-src': "'self'",
                  'script-src': "'self'",
                  'style-src': "'self' 'unsafe-inline'",
                  'img-src': "'self' data:",
-                 'font-src': "'self'",
+                 'font-src': "'self' data:",
                  'connect-src': "'self'",
                  'frame-ancestors': "'none'",
                  'base-uri': "'self'",
@@ -457,9 +456,10 @@ def login_user():
             return jsonify({'error': 'Username and password are required', 'status': 'error'}), 400
 
         # Use AuthService for authentication
-        user, token = auth_service.authenticate_user(username, password)
+        user = auth_service.authenticate_user(username, password)
 
-        if user and token:
+        if user:
+            token = auth_service.generate_token(user)
             # Log successful login
             if audit_logger:
                 response_time_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
