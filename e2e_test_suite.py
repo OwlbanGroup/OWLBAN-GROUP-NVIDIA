@@ -555,7 +555,7 @@ def run_e2e_tests():
             print(f"  - {test}: {traceback}")
 
     success_rate = ((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun) * 100
-    print(".2f"
+    print(f"Success Rate: {success_rate:.2f}%")
     if success_rate == 100.0:
         print("🎉 ALL TESTS PASSED!")
         return True
