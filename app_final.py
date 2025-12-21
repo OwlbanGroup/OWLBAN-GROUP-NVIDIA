@@ -25,6 +25,8 @@ from flask_socketio import SocketIO, emit  # type: ignore
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+from cryptography.fernet import Fernet
 
 # Load environment variables from .env file
 load_dotenv()
