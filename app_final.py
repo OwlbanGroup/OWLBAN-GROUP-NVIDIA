@@ -2333,6 +2333,39 @@ def get_payment_alerts():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
+@app.route('/payments/dashboard', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_payments_dashboard():
+    """
+    Get payments dashboard data including total payments, recent transactions, and payment status summary
+    """
+    try:
+        # Get total payments count and amount
+        total_payments = payments_service.get_total_payments()
+        total_amount = payments_service.get_total_amount()
+
+        # Get recent transactions (last 10)
+        recent_transactions = payments_service.get_recent_transactions(limit=10)
+
+        # Get payment status summary
+        status_summary = payments_service.get_payment_status_summary()
+
+        return jsonify({
+            'status': 'success',
+            'dashboard': {
+                'total_payments': total_payments,
+                'total_amount': total_amount,
+                'recent_transactions': [t.to_dict() for t in recent_transactions],
+                'status_summary': status_summary
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_payments_dashboard'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
