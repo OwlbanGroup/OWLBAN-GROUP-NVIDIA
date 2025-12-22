@@ -1777,3 +1777,5 @@
 2025/12/22 20:45:09 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
 2025/12/22 20:46:16 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
 2025/12/22 20:47:26 [emerg] 1#1: host not found in upstream "jpmorgan-api:8000" in /etc/nginx/nginx.conf:52
+2025/12/22 20:48:34 [warn] 1#1: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:153
+2025/12/22 20:48:34 [emerg] 1#1: host not found in upstream "api.equityshieldadvocates.com" in /etc/nginx/nginx.conf:243
