@@ -1,65 +1,130 @@
 version: '3.8'
 
-networks:
-  default:
-    driver: bridge
-
 services:
-  jpmorgan-api:
-    build: .
+  # Main API Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=production
-      - TESTING=0
-      - DATABASE_URL=sqlite:///jpmorgan_api.db
+      - FLASK_ENV=development
+      - SECRET_KEY=dev_secret_key_change_in_production
+      - DATABASE_URL=postgresql://jpmorgan:jpmorgan_pass@db:5432/jpmorgan_api
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+      - TELEMETRY_ENABLED=true
+      - AUDIT_LOG_ENABLED=true
+    depends_on:
+      - db
+      - redis
     volumes:
       - ./logs:/app/logs
-      - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
-  nginx:
-    image: nginx:alpine
+  # PostgreSQL Database
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=jpmorgan_api
+      - POSTGRES_USER=jpmorgan
+      - POSTGRES_PASSWORD=jpmorgan_pass
     ports:
-      - "80:80"
-      - "443:443"
+      - "5432:5432"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - jpmorgan-api
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jpmorgan -d jpmorgan_api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  certbot:
-    image: certbot/certbot
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     volumes:
-      - ./ssl:/etc/letsencrypt
-    command: certonly --webroot --webroot-path=/var/www/html --email admin@equityshieldadvocates.com --agree-tos --no-eff-email -d api.equityshieldadvocates.com
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Prometheus Monitoring
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
     restart: unless-stopped
 
+  # Grafana Dashboard
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest
     ports:
       - "3000:3000"
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=SecureGrafanaP@ss2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    restart: unless-stopped
     depends_on:
       - prometheus
+
+  # AlertManager
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     restart: unless-stopped
+
+  # Node Exporter for System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

@@ -1,201 +1,260 @@
 #!/bin/bash
 
-# JPMorgan Financial APIs - Automated Deployment Script
-# This script automates the complete deployment process
+# JPMorgan Financial APIs - Production Deployment Script
+# This script deploys the complete stack with monitoring and security
 
-set -e  # Exit on any error
+set -e
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
 # Configuration
-DOMAIN="api.equityshieldadvocates.com"
-MAIN_DOMAIN="equityshieldadvocates.com"
-EMAIL="admin@equityshieldadvocates.com"
-DEPLOY_DIR="/opt/jpmorgan-api"
+PROJECT_NAME="jpmorgan-financial-apis"
+DOCKER_COMPOSE_FILE="docker-compose.yml"
+ENV_FILE=".env.production"
 
-log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}"
+# Functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-success() {
-    echo -e "${GREEN}✓ $1${NC}"
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-error() {
-    echo -e "${RED}✗ $1${NC}"
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if running as root
-if [[ $EUID -eq 0 ]]; then
-    error "This script should not be run as root"
-    exit 1
-fi
+check_dependencies() {
+    log_info "Checking dependencies..."
 
-log "Starting JPMorgan Financial APIs deployment..."
+    # Check Docker
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed. Please install Docker first."
+        exit 1
+    fi
 
-# Step 1: Update system
-log "Step 1: Updating system packages..."
-sudo apt update && sudo apt upgrade -y
-success "System updated"
+    # Check Docker Compose
+    if ! command -v docker-compose &> /dev/null; then
+        log_error "Docker Compose is not installed. Please install Docker Compose first."
+        exit 1
+    fi
 
-# Step 2: Install dependencies
-log "Step 2: Installing required packages..."
-sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx git curl wget
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo systemctl start nginx
-sudo systemctl enable nginx
-sudo usermod -aG docker $USER
-success "Dependencies installed"
+    # Check if Docker is running
+    if ! docker info &> /dev/null; then
+        log_error "Docker is not running. Please start Docker service."
+        exit 1
+    fi
 
-# Step 3: Create deployment directory
-log "Step 3: Setting up deployment directory..."
-sudo mkdir -p $DEPLOY_DIR
-sudo chown $USER:$USER $DEPLOY_DIR
-cd $DEPLOY_DIR
-success "Deployment directory created"
+    log_success "All dependencies are available"
+}
 
-# Step 4: Setup project files
-log "Step 4: Setting up project files..."
-# Copy project files (assuming they're in the current directory)
-# In production, this would be a git clone
-mkdir -p logs data ssl backups
+create_env_file() {
+    if [ ! -f "$ENV_FILE" ]; then
+        log_info "Creating production environment file..."
 
-# Create environment file
-cat > .env << EOF
+        cat > "$ENV_FILE" << EOF
+# JPMorgan Financial APIs - Production Environment Variables
+# IMPORTANT: Change all default values before deploying to production!
+
+# Flask Configuration
 FLASK_ENV=production
-TESTING=0
-DATABASE_URL=sqlite:///data/jpmorgan_api.db
 SECRET_KEY=$(openssl rand -hex 32)
-JWT_SECRET_KEY=$(openssl rand -hex 32)
-DOMAIN=$DOMAIN
-MAIN_DOMAIN=$MAIN_DOMAIN
-SSL_EMAIL=$EMAIL
+JWT_SECRET_KEY=\${SECRET_KEY}
+
+# Database Configuration
+DATABASE_URL=postgresql://jpmorgan:\${DB_PASSWORD}@db:5432/jpmorgan_api
+DB_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
+
+# Redis Configuration
+REDIS_URL=redis://redis:6379/0
+REDIS_PASSWORD=
+
+# API Configuration
+API_BASE_URL=https://api.jpmorgan.com
+API_VERSION=v1
+
+# JPMorgan Integration (Use actual credentials)
+JPMORGAN_OPENBANKING_CLIENT_ID=your_client_id
+JPMORGAN_OPENBANKING_CLIENT_SECRET=your_client_secret
+JPMORGAN_OPENBANKING_API_KEY=your_api_key
+
+# Token Management
+TOKEN_CLIENT_ID=your_token_client_id
+TOKEN_CLIENT_SECRET=your_token_client_secret
+TOKEN_URL=https://id.payments.jpmorgan.com/am/oauth2/alpha/access_token
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=/app/logs/app.log
+
+# Telemetry
+TELEMETRY_ENABLED=true
+TELEMETRY_BATCH_SIZE=100
+
+# Security
+ALLOWED_ORIGINS=https://app.jpmorgan.com,https://dashboard.jpmorgan.com
+
+# Audit Logging
+AUDIT_LOG_ENABLED=true
+AUDIT_LOG_RETENTION_DAYS=90
+AUDIT_ALERT_ENABLED=true
+
+# Monitoring
+PROMETHEUS_ENABLED=true
+GRAFANA_ADMIN_PASSWORD=CHANGE_THIS_ADMIN_PASSWORD
+
+# Email Alerts (for AlertManager)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=alerts@jpmorgan.com
+SMTP_PASSWORD=your_app_password
+ALERT_EMAIL_RECIPIENT=ops@jpmorgan.com
 EOF
 
-chmod 600 .env
-success "Environment configured"
+        log_warning "Created $ENV_FILE with default values. Please update with production values!"
+        log_warning "Especially change SECRET_KEY, passwords, and API credentials!"
+        read -p "Press Enter after updating the environment file..."
+    else
+        log_info "Environment file $ENV_FILE already exists"
+    fi
+}
 
-# Step 5: SSL Certificate
-log "Step 5: Setting up SSL certificates..."
-sudo systemctl stop nginx
+build_and_deploy() {
+    log_info "Building and deploying $PROJECT_NAME..."
 
-sudo certbot certonly --standalone \
-  --email $EMAIL \
-  --agree-tos \
-  --no-eff-email \
-  -d $DOMAIN
+    # Build the application image
+    log_info "Building Docker images..."
+    docker-compose -f "$DOCKER_COMPOSE_FILE" build --no-cache
 
-sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem ssl/
-sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem ssl/
-sudo chown $USER:$USER ssl/*.pem
-chmod 600 ssl/*.pem
+    # Start the services
+    log_info "Starting services..."
+    docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
 
-sudo systemctl start nginx
-success "SSL certificates configured"
+    # Wait for services to be healthy
+    log_info "Waiting for services to be healthy..."
+    sleep 30
 
-# Step 6: Deploy application
-log "Step 6: Deploying application..."
-docker-compose up -d --build
-sleep 30
+    # Check service health
+    check_services_health
+}
 
-if docker-compose ps | grep -q "Up"; then
-    success "Application deployed successfully"
-else
-    error "Application deployment failed"
-    docker-compose logs
-    exit 1
-fi
+check_services_health() {
+    log_info "Checking service health..."
 
-# Step 7: Configure nginx
-log "Step 7: Configuring nginx..."
-sudo cp nginx.conf /etc/nginx/nginx.conf
-sudo nginx -t
+    services=("app" "db" "redis" "prometheus" "grafana" "alertmanager" "node-exporter")
 
-if [ $? -eq 0 ]; then
-    sudo systemctl reload nginx
-    success "Nginx configured"
-else
-    error "Nginx configuration failed"
-    exit 1
-fi
+    for service in "${services[@]}"; do
+        if docker-compose -f "$DOCKER_COMPOSE_FILE" ps "$service" | grep -q "Up"; then
+            log_success "$service is running"
+        else
+            log_error "$service failed to start"
+            show_logs "$service"
+            exit 1
+        fi
+    done
+}
 
-# Step 8: Setup monitoring
-log "Step 8: Setting up monitoring..."
-chmod +x monitor.sh
+show_logs() {
+    service=$1
+    log_info "Showing logs for $service:"
+    docker-compose -f "$DOCKER_COMPOSE_FILE" logs "$service"
+}
 
-sudo tee /etc/systemd/system/jpmorgan-monitor.service > /dev/null <<EOF
-[Unit]
-Description=JPMorgan API Monitor
-After=network.target
+run_tests() {
+    log_info "Running tests..."
 
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$DEPLOY_DIR
-ExecStart=$DEPLOY_DIR/monitor.sh
-Restart=always
-RestartSec=10
+    # Run the test suite
+    if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T app python -m pytest --tb=short --cov=jpmorgan_financial_apis --cov-report=term-missing; then
+        log_success "All tests passed"
+    else
+        log_error "Some tests failed"
+        exit 1
+    fi
+}
 
-[Install]
-WantedBy=multi-user.target
-EOF
+show_access_info() {
+    log_info "Deployment completed successfully!"
+    echo ""
+    echo "========================================"
+    echo "ACCESS INFORMATION"
+    echo "========================================"
+    echo ""
+    echo "Application:"
+    echo "  API:          http://localhost:5000"
+    echo "  Health Check: http://localhost:5000/health"
+    echo "  API Docs:     http://localhost:5000/api/docs/"
+    echo ""
+    echo "Monitoring:"
+    echo "  Grafana:      http://localhost:3000 (admin/\${GRAFANA_ADMIN_PASSWORD})"
+    echo "  Prometheus:   http://localhost:9090"
+    echo "  AlertManager: http://localhost:9093"
+    echo ""
+    echo "Databases:"
+    echo "  PostgreSQL:   localhost:5432 (jpmorgan/\${DB_PASSWORD})"
+    echo "  Redis:        localhost:6379"
+    echo ""
+    echo "Node Exporter:  http://localhost:9100"
+    echo ""
+    echo "========================================"
+}
 
-sudo systemctl daemon-reload
-sudo systemctl enable jpmorgan-monitor
-sudo systemctl start jpmorgan-monitor
-success "Monitoring configured"
+cleanup() {
+    log_info "Cleaning up..."
+    docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans
+    log_success "Cleanup completed"
+}
 
-# Step 9: Setup SSL renewal
-log "Step 9: Setting up SSL renewal..."
-sudo crontab -l | { cat; echo "0 12 * * * /usr/bin/certbot renew --quiet && docker-compose restart nginx"; } | sudo crontab -
-success "SSL renewal configured"
-
-# Step 10: Final verification
-log "Step 10: Running final verification..."
-
-# Test health endpoint
-if curl -f -s --max-time 10 https://$DOMAIN/health > /dev/null 2>&1; then
-    success "Health check passed"
-else
-    warning "Health check failed - this may be normal if DNS hasn't propagated yet"
-fi
-
-# Test HTTPS
-if curl -I -s https://$DOMAIN/ | head -1 | grep -q "200"; then
-    success "HTTPS connection working"
-else
-    warning "HTTPS connection failed - check DNS propagation"
-fi
-
-# Display service status
-echo
-echo "=========================================="
-echo "DEPLOYMENT SUMMARY"
-echo "=========================================="
-echo "Domain: https://$DOMAIN"
-echo "Health Check: https://$DOMAIN/health"
-echo "API Docs: https://$DOMAIN/api/docs"
-echo "Dashboard: https://$DOMAIN/dashboard"
-echo
-echo "Service Status:"
-docker-compose ps
-echo
-echo "Next Steps:"
-echo "1. Configure DNS A record: api -> YOUR_SERVER_IP"
-echo "2. Wait for DNS propagation (24-48 hours)"
-echo "3. Test all endpoints with the demo script"
-echo "4. Integrate with your main website"
-echo "=========================================="
-
-success "Deployment completed successfully!"
-warning "Remember to configure DNS records as described in DNS_SETUP.md"
+# Main script
+case "${1:-deploy}" in
+    "deploy")
+        log_info "Starting production deployment of $PROJECT_NAME"
+        check_dependencies
+        create_env_file
+        build_and_deploy
+        run_tests
+        show_access_info
+        ;;
+    "test")
+        log_info "Running tests only"
+        check_dependencies
+        run_tests
+        ;;
+    "logs")
+        service="${2:-app}"
+        show_logs "$service"
+        ;;
+    "stop")
+        log_info "Stopping all services"
+        docker-compose -f "$DOCKER_COMPOSE_FILE" down
+        ;;
+    "cleanup")
+        cleanup
+        ;;
+    "restart")
+        log_info "Restarting services"
+        docker-compose -f "$DOCKER_COMPOSE_FILE" restart
+        check_services_health
+        ;;
+    *)
+        echo "Usage: $0 {deploy|test|logs|stop|cleanup|restart}"
+        echo ""
+        echo "Commands:"
+        echo "  deploy   - Full deployment with tests"
+        echo "  test     - Run tests only"
+        echo "  logs     - Show logs for a service (default: app)"
+        echo "  stop     - Stop all services"
+        echo "  cleanup  - Stop services and remove volumes"
+        echo "  restart  - Restart all services"
+        exit 1
+        ;;
+esac
