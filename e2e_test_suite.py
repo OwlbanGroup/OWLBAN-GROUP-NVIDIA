@@ -1,4 +1,4 @@
-E#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 JPMorgan E2E Integration Test Suite
 Comprehensive end-to-end testing for all financial systems integration
@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 import requests
 
 # Test configuration
-TEST_BASE_URL = os.environ.get('TEST_BASE_URL', 'http://localhost:5000')
+TEST_BASE_URL = os.environ.get('TEST_BASE_URL', 'https://localhost:5000')
 TEST_TIMEOUT = 30
 HR_TOKEN = 'hr_test_token_123'
 PAYROLL_TOKEN = 'payroll_test_token_456'
@@ -29,6 +29,8 @@ class JPMorganE2ETestSuite(unittest.TestCase):
         self.base_url = TEST_BASE_URL
         self.session = requests.Session()
         self.session.timeout = TEST_TIMEOUT
+        # Disable SSL verification for localhost testing
+        self.session.verify = False
 
         # Test data
         self.test_employee = {

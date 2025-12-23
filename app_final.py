@@ -2392,10 +2392,14 @@ if __name__ == '__main__':
     # Print configuration
     telemetry_logger.get_logger().info(f"Configuration: {config.get_all_settings()}")
 
-    # Run the application with SocketIO
+    # Configure SSL context for HTTPS
+    ssl_context = ('cert.pem', 'key.pem')
+
+    # Run the application with SocketIO and SSL
     socketio.run(
         app,
         host='0.0.0.0',
         port=int(os.environ.get('FLASK_RUN_PORT', 5000)),
-        debug=config.LOG_LEVEL == 'DEBUG'
+        debug=config.LOG_LEVEL == 'DEBUG',
+        ssl_context=ssl_context
     )
