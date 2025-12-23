@@ -59,8 +59,8 @@ class Payment(Base):
         self.id = id
         self.amount = amount
         self.currency = currency
-        self.payment_type = payment_type.value
-        self.status = status.value
+        self.payment_type = payment_type.value if hasattr(payment_type, 'value') else payment_type
+        self.status = status.value if hasattr(status, 'value') else status
         self.user_id = user_id
         self.description = description
         self.created_at = created_at or datetime.now(timezone.utc)
