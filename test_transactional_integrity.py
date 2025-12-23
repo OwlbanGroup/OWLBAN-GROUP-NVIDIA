@@ -145,17 +145,18 @@ def test_asset_transfer_transaction():
     print("🧪 Testing asset transfer transaction...")
 
     try:
+        import uuid
         # Create two businesses
         business1_data = {
             'name': 'Transfer Source Inc',
             'type': 'corporation',
-            'registration_number': 'SRC001',
+            'registration_number': f'SRC{uuid.uuid4().hex[:6].upper()}',
         }
 
         business2_data = {
             'name': 'Transfer Target LLC',
             'type': 'llc',
-            'registration_number': 'TGT001',
+            'registration_number': f'TGT{uuid.uuid4().hex[:6].upper()}',
         }
 
         business1, _ = business_transaction_manager.create_business_with_assets(
@@ -202,10 +203,11 @@ def test_payment_processing_transaction():
 
     try:
         from src.payments_service import payments_service
+        from src.models.payments import PaymentType
 
         payment_data = {
             'amount': 100.0,
-            'payment_type': 'card',
+            'payment_type': PaymentType.CARD,
             'user_id': 'test_user_txn',
             'description': 'Test transaction payment',
             'currency': 'USD'

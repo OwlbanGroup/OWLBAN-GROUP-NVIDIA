@@ -450,7 +450,7 @@ class PaymentsService:
             result.append({
                 'payment_id': payment.id,
                 'amount': payment.amount,
-                'status': payment.status.value,
+                'status': payment.status,
                 'processing_time_ms': payment.processing_time_ms,
                 'processed_at': payment.processed_at.isoformat() if payment.processed_at else None,
                 'error_code': payment.error_code
