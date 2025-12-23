@@ -92,7 +92,7 @@ class PaymentsService:
         if transaction_id:
             payment.metadata_json['transaction_id'] = transaction_id
 
-        self.logger.info(f"Payment {payment_id} status updated to {status.value}")
+        self.logger.info(f"Payment {payment_id} status updated to {status}")
 
         return True
 
