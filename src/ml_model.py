@@ -50,30 +50,39 @@ class AnomalyDetector:
                 self.device = torch.device('cpu')
                 telemetry_logger.get_logger().info("PyTorch CUDA not available, using CPU")
 
-        except ImportError:
-            telemetry_logger.get_logger().info("PyTorch not available, checking TensorFlow...")
+        except (ImportError, AttributeError) as e:
+            telemetry_logger.get_logger().info(f"PyTorch not available or error: {e}, checking TensorFlow...")
 
             # Fallback to TensorFlow
             try:
                 import tensorflow as tf
-                gpus = tf.config.list_physical_devices('GPU')
+                # Handle different TensorFlow versions
+                if hasattr(tf, 'config') and hasattr(tf.config, 'list_physical_devices'):
+                    gpus = tf.config.list_physical_devices('GPU')
+                elif hasattr(tf, 'test') and hasattr(tf.test, 'is_gpu_available'):
+                    gpus = [True] if tf.test.is_gpu_available() else []
+                else:
+                    gpus = []
+
                 if gpus:
                     self.gpu_available = True
-                    self.gpu_count = len(gpus)
+                    self.gpu_count = len(gpus) if isinstance(gpus, list) else 1
                     self.device = 'gpu'
 
                     try:
-                        for gpu in gpus:
-                            tf.config.experimental.set_memory_growth(gpu, True)
-                        telemetry_logger.get_logger().info(f"TensorFlow GPU configured with {len(gpus)} GPU(s)")
-                    except RuntimeError as e:
+                        if hasattr(tf, 'config') and hasattr(tf.config, 'experimental'):
+                            for gpu in gpus:
+                                if hasattr(gpu, 'device_type') and gpu.device_type == 'GPU':
+                                    tf.config.experimental.set_memory_growth(gpu, True)
+                        telemetry_logger.get_logger().info(f"TensorFlow GPU configured with {self.gpu_count} GPU(s)")
+                    except (RuntimeError, AttributeError) as e:
                         telemetry_logger.get_logger().error(f"TensorFlow GPU configuration error: {e}")
                 else:
                     self.device = 'cpu'
                     telemetry_logger.get_logger().info("No GPU found, using CPU")
-            except ImportError:
+            except (ImportError, AttributeError) as e:
                 self.device = 'cpu'
-                telemetry_logger.get_logger().info("Neither PyTorch nor TensorFlow available, using CPU")
+                telemetry_logger.get_logger().info(f"TensorFlow not available or error: {e}, using CPU")
 
     def get_gpu_stats(self) -> Dict[str, Any]:
         """Get current GPU statistics"""
