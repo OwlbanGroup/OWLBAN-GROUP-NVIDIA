@@ -1,15 +1,36 @@
-# pylint: disable=import-error,invalid-name,broad-exception-caught,line-too-long,unused-argument,reimported,ungrouped-imports,wrong-import-order,wrong-import-position,unspecified-encoding,missing-class-docstring,missing-function-docstring,superfluous-parens
+"""
+JPMorgan Financial APIs - Enterprise-grade API for processing Microsoft Windows Store telemetry data.
+
+This module provides a comprehensive Flask-based API server with the following features:
+- Telemetry data processing with ML anomaly detection
+- Business and asset management
+- JPMorgan Private Bank services integration
+- Revenue tracking and payment processing
+- Audit logging with tamper-proof hash chains
+- Prometheus metrics collection
+- WebSocket real-time communication
+- Cloud storage integration
+- Comprehensive security headers and rate limiting
+
+Author: AI Assistant
+Version: 1.0.0
+"""
+
+# Standard library imports
 import csv
 import io
 import json
 import os
 import secrets
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 
+# Third-party imports
+import jwt
 import numpy as np
 import redis
+from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # type: ignore
@@ -21,8 +42,13 @@ from flask_socketio import SocketIO, emit  # type: ignore
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
-from cryptography.fernet import Fernet
+
+# Local imports
+try:
+    from config import config
+except ImportError:
+    # SECURITY FIX: No fallback secrets - require proper configuration
+    raise ImportError("Could not import config module. Please ensure config.py exists and all required environment variables are set.")
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,7 +57,60 @@ load_dotenv()
 def get_version():
     """Get the current version from VERSION file"""
     try:
-        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return '1.0.0'
+
+# Ensure 'src' directory is in sys.path before importing modules
+src_path = os.path.join(os.path.dirname(__file__), 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+try:
+    from src.telemetry_handler_new import telemetry_handler  # type: ignore
+except ImportError as e:
+    raise ImportError("Could not import 'src.telemetry_handler_new'. Make sure 'src/telemetry_handler_new.py' exists and is not empty.") from e
+
+from src.logger import telemetry_logger  # type: ignore
+from src.token_manager import TokenManager  # type: ignore
+from src.validation import InputValidator, ValidationError  # type: ignore
+from src.cloud_storage import setup_cloud_storage  # type: ignore
+from src.data_format_converter import DataFormatConverter  # type: ignore
+from src.ml_model import AnomalyDetector  # type: ignore
+from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
+from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+# Phase 3: Quality & Testing Modules
+from src.validators_comprehensive import ComprehensiveValidators  # type: ignore
+from src.structured_logger import app_logger  # type: ignore
+from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore
+# Phase 4: Polish & Deploy Modules
+from src.swagger_config import configure_swagger  # type: ignore
+# Phase 5: Audit Logging Modules
+from src.audit_logger import AuditLogger  # type: ignore
+from src.audit_reports import AuditReportGenerator  # type: ignore
+from src.audit_alerts import AuditAlertManager  # type: ignore
+# Phase 6: Revenue Tracking Modules
+from src.revenue_service import revenue_service  # type: ignore
+from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
+from src.auth_service import auth_service  # type: ignore
+from src.models.user import UserRole  # type: ignore
+from src.payments_service import payments_service  # type: ignore
+from src.models.payments import Payment, PaymentStatus, PaymentType  # type: ignore
+from hr_benefits_api import get_hr_blueprint  # type: ignore
+from jpmorgan_processor import start_jpmorgan_processor  # type: ignore
+
+# Initialize cloud storage
+setup_cloud_storage(config.get_all_settings())
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Load version information
+def get_version():
+    """Get the current version from VERSION file"""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r', encoding='utf-8') as f:
             return f.read().strip()
     except FileNotFoundError:
         return '1.0.0'
@@ -2396,14 +2475,13 @@ if __name__ == '__main__':
     # Print configuration
     telemetry_logger.get_logger().info(f"Configuration: {config.get_all_settings()}")
 
-    # Configure SSL context for HTTPS
-    ssl_context = ('cert.pem', 'key.pem')
+    # Configure SSL context for HTTPS (disabled for testing)
+    ssl_context = None
 
-    # Run the application with SocketIO and SSL
+    # Run the application with SocketIO
     socketio.run(
         app,
         host='0.0.0.0',
         port=int(os.environ.get('FLASK_RUN_PORT', 5000)),
-        debug=config.LOG_LEVEL == 'DEBUG',
-        ssl_context=ssl_context
+        debug=config.LOG_LEVEL == 'DEBUG'
     )
