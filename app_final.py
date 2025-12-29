@@ -2386,8 +2386,11 @@ def internal_error(error):  # pylint: disable=unused-argument
     }), 500
 
 if __name__ == '__main__':
+    # Start JP Morgan processor
+    start_jpmorgan_processor()
+
     # Log application startup
-    telemetry_logger.get_logger().info("Starting Telemetry API Server with SocketIO")
+    telemetry_logger.get_logger().info("Starting Telemetry API Server with SocketIO and JP Morgan Processor")
 
     # Print configuration
     telemetry_logger.get_logger().info(f"Configuration: {config.get_all_settings()}")
