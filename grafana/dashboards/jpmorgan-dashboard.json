@@ -1,260 +1,194 @@
 {
-  "title": "JPMorgan Financial APIs - Telemetry & GPU Dashboard",
-  "tags": ["telemetry", "jpmorgan", "financial", "gpu", "nvidia"],
-  "timezone": "UTC",
-  "uid": "01e4bf8e-c1b8-46c8-9e44-e68fbc7523c9",
-  "panels": [
-    {
-      "title": "HTTP Request Rate",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "rate(http_requests_total[5m])",
-          "legendFormat": "{{method}} {{endpoint}}"
-        }
-      ],
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Request Latency",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-          "legendFormat": "95th percentile"
+  "dashboard": {
+    "id": null,
+    "title": "JPMorgan Financial APIs - Live Transactional Dashboard",
+    "tags": ["jpmorgan", "financial", "live", "transactional", "monitoring"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Live Transaction Volume",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "Requests/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "red", "value": 80 }
+              ]
+            }
+          }
         },
-        {
-          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
-          "legendFormat": "50th percentile"
-        }
-      ],
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 12,
-        "h": 8
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+      },
+      {
+        "id": 2,
+        "title": "Active Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "active_connections",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+      },
+      {
+        "id": 3,
+        "title": "HTTP Request Rate by Endpoint",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+      },
+      {
+        "id": 4,
+        "title": "Request Latency (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 }
+      },
+      {
+        "id": 5,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(errors_total[5m])",
+            "legendFormat": "{{type}} errors"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+      },
+      {
+        "id": 6,
+        "title": "Telemetry Events Processed",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(telemetry_events_processed_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+      },
+      {
+        "id": 7,
+        "title": "System Resources",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 }
+      },
+      {
+        "id": 8,
+        "title": "CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 }
+      },
+      {
+        "id": 9,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "100 - ((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 }
+      },
+      {
+        "id": 10,
+        "title": "Disk I/O",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(node_disk_io_time_seconds_total[5m])",
+            "legendFormat": "{{device}} I/O time"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 }
+      },
+      {
+        "id": 11,
+        "title": "Network Traffic",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "{{device}} RX"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total[5m])",
+            "legendFormat": "{{device}} TX"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 }
+      },
+      {
+        "id": 12,
+        "title": "Container Resources",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 }
+      },
+      {
+        "id": 13,
+        "title": "Container CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total[5m]) * 100",
+            "legendFormat": "{{name}} CPU %"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 }
+      },
+      {
+        "id": 14,
+        "title": "Container Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes",
+            "legendFormat": "{{name}} Memory"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 }
       }
+    ],
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "templating": {
+      "list": []
     },
-    {
-      "title": "GPU Utilization",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "gpu_utilization_percent",
-          "legendFormat": "GPU {{gpu_id}} Utilization %"
-        }
-      ],
-      "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 8,
-        "h": 8
-      }
+    "annotations": {
+      "list": []
     },
-    {
-      "title": "GPU Memory Usage",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "gpu_memory_used_bytes / gpu_memory_total_bytes * 100",
-          "legendFormat": "GPU {{gpu_id}} Memory %"
-        }
-      ],
-      "gridPos": {
-        "x": 8,
-        "y": 8,
-        "w": 8,
-        "h": 8
-      }
-    },
-    {
-      "title": "GPU Temperature",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "gpu_temperature_celsius",
-          "legendFormat": "GPU {{gpu_id}} Temp °C"
-        }
-      ],
-      "gridPos": {
-        "x": 16,
-        "y": 8,
-        "w": 8,
-        "h": 8
-      }
-    },
-    {
-      "title": "Error Rate",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "rate(errors_total[5m])",
-          "legendFormat": "{{type}} - {{endpoint}}"
-        }
-      ],
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Telemetry Events Processed",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "rate(telemetry_events_processed_total[5m])",
-          "legendFormat": "{{status}}"
-        }
-      ],
-      "gridPos": {
-        "x": 12,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Batch Size Distribution",
-      "type": "heatmap",
-      "targets": [
-        {
-          "expr": "rate(telemetry_batch_size_bucket[5m])",
-          "legendFormat": "Batch size distribution"
-        }
-      ],
-      "gridPos": {
-        "x": 0,
-        "y": 24,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "Anomaly Detection Rate",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "rate(anomaly_detections_total[5m])",
-          "legendFormat": "{{result}}"
-        }
-      ],
-      "gridPos": {
-        "x": 12,
-        "y": 24,
-        "w": 12,
-        "h": 8
-      }
-    },
-    {
-      "title": "GPU Power Consumption",
-      "type": "graph",
-      "targets": [
-        {
-          "expr": "gpu_power_usage_watts",
-          "legendFormat": "GPU {{gpu_id}} Power (W)"
-        }
-      ],
-      "gridPos": {
-        "x": 0,
-        "y": 32,
-        "w": 8,
-        "h": 8
-      }
-    },
-    {
-      "title": "ML Model Performance",
-      "type": "table",
-      "targets": [
-        {
-          "expr": "ml_model_inference_time_seconds",
-          "legendFormat": "Inference Time"
-        },
-        {
-          "expr": "ml_model_accuracy",
-          "legendFormat": "Model Accuracy"
-        }
-      ],
-      "gridPos": {
-        "x": 8,
-        "y": 32,
-        "w": 8,
-        "h": 8
-      }
-    },
-    {
-      "title": "Active Connections",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "active_connections"
-        }
-      ],
-      "gridPos": {
-        "x": 16,
-        "y": 32,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "title": "Service Status",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "service_up{env=\"$env\"}",
-          "legendFormat": "Service Up ({{env}})"
-        }
-      ],
-      "gridPos": {
-        "x": 20,
-        "y": 32,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "title": "GPU Status",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "gpu_status",
-          "legendFormat": "GPU Available"
-        }
-      ],
-      "gridPos": {
-        "x": 16,
-        "y": 36,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "title": "Database Connections",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "db_connections_active",
-          "legendFormat": "Active DB Connections"
-        }
-      ],
-      "gridPos": {
-        "x": 20,
-        "y": 36,
-        "w": 4,
-        "h": 4
-      }
-    }
-  ],
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "refresh": "30s"
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "links": []
+  }
 }
