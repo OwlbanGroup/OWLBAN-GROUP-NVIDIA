@@ -521,6 +521,12 @@
                                 <div id="systemMetrics" class="loading">Loading metrics...</div>
                             </div>
 
+                            <!-- Prometheus Metrics -->
+                            <div class="card">
+                                <h3>📊 Prometheus Metrics</h3>
+                                <div id="prometheusMetrics" class="loading">Loading Prometheus data...</div>
+                            </div>
+
                             <!-- ML Insights -->
                             <div class="card">
                                 <h3>🤖 ML Insights</h3>
@@ -1219,6 +1225,9 @@
                 </div>
             `;
 
+            // Prometheus Metrics
+            loadPrometheusMetrics();
+
             // ML Insights
             document.getElementById('mlInsights').innerHTML = `
                 <div class="metric">
@@ -1340,6 +1349,57 @@
             warningDiv.textContent = message;
             warningDiv.classList.remove('hidden');
             setTimeout(() => warningDiv.classList.add('hidden'), 4000);
+        }
+
+        // Load Prometheus metrics
+        async function loadPrometheusMetrics() {
+            try {
+                const response = await fetch('http://localhost:9090/api/v1/query?query=histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))');
+                const data = await response.json();
+
+                if (data.status === 'success' && data.data.result.length > 0) {
+                    const latencyValue = parseFloat(data.data.result[0].value[1]);
+                    const latencyMs = (latencyValue * 1000).toFixed(2); // Convert to milliseconds
+
+                    document.getElementById('prometheusMetrics').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">95th Percentile Latency</span>
+                            <span class="metric-value">${latencyMs} ms</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Query Status</span>
+                            <span class="metric-value positive">Success</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Last Updated</span>
+                            <span class="metric-value">${new Date().toLocaleTimeString()}</span>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('prometheusMetrics').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">95th Percentile Latency</span>
+                            <span class="metric-value warning">No Data</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Query Status</span>
+                            <span class="metric-value warning">No Results</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.log('Failed to load Prometheus metrics:', error);
+                document.getElementById('prometheusMetrics').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">95th Percentile Latency</span>
+                        <span class="metric-value negative">Error</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Query Status</span>
+                        <span class="metric-value negative">Failed</span>
+                    </div>
+                `;
+            }
         }
 
         // Auto-login if token exists

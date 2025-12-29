@@ -79,6 +79,7 @@ from src.models.user import UserRole  # type: ignore
 from src.payments_service import payments_service  # type: ignore
 from src.models.payments import Payment, PaymentStatus, PaymentType  # type: ignore
 from hr_benefits_api import get_hr_blueprint  # type: ignore
+from jpmorgan_processor import start_jpmorgan_processor  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
