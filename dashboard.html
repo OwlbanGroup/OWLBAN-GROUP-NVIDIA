@@ -233,6 +233,146 @@
             margin: 20px 0;
         }
 
+        .real-time-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .websocket-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .websocket-connected {
+            background: #27ae60;
+            color: white;
+        }
+
+        .websocket-disconnected {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .alert-panel {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .alert-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+
+        .alert-close {
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .export-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .export-btn:hover {
+            background: #2980b9;
+        }
+
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -556,6 +696,17 @@
         </div>
     </div>
 
+    <!-- WebSocket Status Indicator -->
+    <div id="websocketStatus" class="websocket-status websocket-disconnected">
+        WebSocket: Disconnected
+    </div>
+
+    <!-- Alert Panel -->
+    <div id="alertPanel" class="alert-panel">
+        <h4>🔔 Alerts <span id="notificationBadge" class="notification-badge">0</span></h4>
+        <div id="alertList"></div>
+    </div>
+
     <script>
         // Global state
         let authToken = null;
@@ -565,10 +716,15 @@
         let currentTab = 'overview';
         let transactionChart = null;
         let revenueChart = null;
+        let websocket = null;
+        let alerts = [];
+        let notificationCount = 0;
+        let isWebSocketConnected = false;
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             checkServerHealth();
+            initializeWebSocket();
         });
 
         // Get API base URL (use relative URLs for production, or localhost for development)
@@ -1400,6 +1556,144 @@
                     </div>
                 `;
             }
+        }
+
+        // Initialize WebSocket connection
+        function initializeWebSocket() {
+            const apiUrl = getApiBaseUrl();
+            const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws';
+
+            try {
+                websocket = new WebSocket(wsUrl);
+
+                websocket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    isWebSocketConnected = true;
+                    updateWebSocketStatus(true);
+                };
+
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (error) {
+                        console.log('Failed to parse WebSocket message:', error);
+                    }
+                };
+
+                websocket.onclose = function(event) {
+                    console.log('WebSocket disconnected');
+                    isWebSocketConnected = false;
+                    updateWebSocketStatus(false);
+
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(() => {
+                        if (!isWebSocketConnected) {
+                            initializeWebSocket();
+                        }
+                    }, 5000);
+                };
+
+                websocket.onerror = function(error) {
+                    console.log('WebSocket error:', error);
+                    updateWebSocketStatus(false);
+                };
+            } catch (error) {
+                console.log('Failed to initialize WebSocket:', error);
+                updateWebSocketStatus(false);
+            }
+        }
+
+        // Update WebSocket status indicator
+        function updateWebSocketStatus(connected) {
+            const statusElement = document.getElementById('websocketStatus');
+            if (connected) {
+                statusElement.className = 'websocket-status websocket-connected';
+                statusElement.textContent = 'WebSocket: Connected';
+            } else {
+                statusElement.className = 'websocket-status websocket-disconnected';
+                statusElement.textContent = 'WebSocket: Disconnected';
+            }
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            console.log('Received WebSocket message:', data);
+
+            switch(data.type) {
+                case 'alert':
+                    addAlert(data.alert);
+                    break;
+                case 'update':
+                    if (isLiveMode && data.data) {
+                        updateDashboard(data.data);
+                        updateLastUpdate();
+                    }
+                    break;
+                case 'notification':
+                    showNotification(data.message);
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+
+        // Add alert to the alert panel
+        function addAlert(alert) {
+            alerts.push(alert);
+            notificationCount++;
+
+            // Update notification badge
+            document.getElementById('notificationBadge').textContent = notificationCount;
+            document.getElementById('notificationBadge').style.display = notificationCount > 0 ? 'flex' : 'none';
+
+            // Add alert to panel
+            const alertList = document.getElementById('alertList');
+            const alertItem = document.createElement('div');
+            alertItem.className = 'alert-item';
+            alertItem.innerHTML = `
+                <div>${alert.message}</div>
+                <span class="alert-close" onclick="removeAlert(${alerts.length - 1})">×</span>
+            `;
+            alertList.appendChild(alertItem);
+
+            // Show alert panel if hidden
+            document.getElementById('alertPanel').style.display = 'block';
+
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (alertItem.parentNode) {
+                    alertItem.remove();
+                    notificationCount = Math.max(0, notificationCount - 1);
+                    updateNotificationBadge();
+                }
+            }, 10000);
+        }
+
+        // Remove alert
+        function removeAlert(index) {
+            if (alerts[index]) {
+                alerts.splice(index, 1);
+                notificationCount = Math.max(0, notificationCount - 1);
+                updateNotificationBadge();
+
+                // Hide panel if no alerts
+                if (notificationCount === 0) {
+                    document.getElementById('alertPanel').style.display = 'none';
+                }
+            }
+        }
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notificationBadge');
+            badge.textContent = notificationCount;
+            badge.style.display = notificationCount > 0 ? 'flex' : 'none';
+        }
+
+        // Show notification (temporary message)
+        function showNotification(message) {
+            showSuccess(message);
         }
 
         // Auto-login if token exists

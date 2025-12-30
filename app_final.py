@@ -2448,6 +2448,161 @@ def get_payments_dashboard():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
+# WebSocket Event Handlers
+@socketio.on('connect')
+def handle_connect():
+    """Handle WebSocket connection"""
+    telemetry_logger.get_logger().info(f"Client connected: {request.sid}")
+    socketio.emit('connected', {
+        'status': 'success',
+        'message': 'Connected to JPMorgan Financial APIs WebSocket',
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle WebSocket disconnection"""
+    telemetry_logger.get_logger().info(f"Client disconnected: {request.sid}")
+
+@socketio.on('subscribe_metrics')
+def handle_subscribe_metrics(data):
+    """Handle subscription to real-time metrics updates"""
+    try:
+        update_interval = data.get('interval', 30)  # seconds
+        metrics_type = data.get('type', 'all')  # 'all', 'telemetry', 'revenue', 'payments'
+
+        telemetry_logger.get_logger().info(f"Client {request.sid} subscribed to {metrics_type} metrics updates (interval: {update_interval}s)")
+
+        # Send initial metrics
+        send_realtime_metrics(metrics_type)
+
+        # Schedule periodic updates (in a real implementation, use a background task)
+        socketio.emit('subscription_confirmed', {
+            'status': 'success',
+            'metrics_type': metrics_type,
+            'update_interval': update_interval,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'subscribe_metrics'})
+        socketio.emit('error', {
+            'error': 'Failed to subscribe to metrics',
+            'details': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+@socketio.on('unsubscribe_metrics')
+def handle_unsubscribe_metrics():
+    """Handle unsubscription from metrics updates"""
+    telemetry_logger.get_logger().info(f"Client {request.sid} unsubscribed from metrics updates")
+    socketio.emit('unsubscription_confirmed', {
+        'status': 'success',
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
+
+@socketio.on('request_telemetry_update')
+def handle_telemetry_update_request(data):
+    """Handle request for telemetry data update"""
+    try:
+        hours = data.get('hours', 24)
+        if hours <= 0 or hours > 720:
+            socketio.emit('error', {
+                'error': 'Hours must be between 1 and 720',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            return
+
+        metrics = telemetry_handler.get_metrics(hours)
+        socketio.emit('telemetry_update', {
+            'status': 'success',
+            'metrics': metrics,
+            'hours': hours,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'request_telemetry_update'})
+        socketio.emit('error', {
+            'error': 'Failed to get telemetry update',
+            'details': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+@socketio.on('request_revenue_update')
+def handle_revenue_update_request(data):
+    """Handle request for revenue data update"""
+    try:
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+
+        if not start_date_str or not end_date_str:
+            socketio.emit('error', {
+                'error': 'start_date and end_date are required',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            return
+
+        start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+
+        metrics = revenue_service.get_revenue_metrics(start_date, end_date)
+        socketio.emit('revenue_update', {
+            'status': 'success',
+            'metrics': metrics,
+            'date_range': {
+                'start': start_date_str,
+                'end': end_date_str
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'request_revenue_update'})
+        socketio.emit('error', {
+            'error': 'Failed to get revenue update',
+            'details': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+def send_realtime_metrics(metrics_type='all'):
+    """Send real-time metrics to connected clients"""
+    try:
+        metrics_data = {
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+
+        if metrics_type in ['all', 'telemetry']:
+            # Send telemetry metrics
+            telemetry_metrics = telemetry_handler.get_metrics(24)  # Last 24 hours
+            metrics_data['telemetry'] = telemetry_metrics
+
+        if metrics_type in ['all', 'revenue']:
+            # Send revenue metrics for current month
+            now = datetime.now(timezone.utc)
+            start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            revenue_metrics = revenue_service.get_revenue_metrics(start_of_month, now)
+            metrics_data['revenue'] = revenue_metrics
+
+        if metrics_type in ['all', 'payments']:
+            # Send payment metrics
+            payment_summary = payments_service.get_payment_status_summary()
+            metrics_data['payments'] = payment_summary
+
+        if metrics_type in ['all', 'system']:
+            # Send system health metrics
+            active_connections = len(socketio.server.manager.rooms.get('/', {}).keys()) - 1
+            metrics_data['system'] = {
+                'active_connections': max(0, active_connections),
+                'api_health_status': API_HEALTH_STATUS._value,
+                'uptime': 'N/A'  # Would need to track actual uptime
+            }
+
+        socketio.emit('metrics_update', metrics_data)
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'send_realtime_metrics'})
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
