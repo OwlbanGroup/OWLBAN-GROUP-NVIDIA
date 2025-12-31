@@ -176,6 +176,94 @@
           }
         ],
         "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 }
+      },
+      {
+        "id": 15,
+        "title": "Current Account Balance",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "balance_current",
+            "legendFormat": "Balance"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "red", "value": 0 }
+              ]
+            }
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 }
+      },
+      {
+        "id": 16,
+        "title": "Balance Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "balance_over_time",
+            "legendFormat": "Balance"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 }
+      },
+      {
+        "id": 17,
+        "title": "Incoming / Outgoing Payments",
+        "type": "barchart",
+        "targets": [
+          {
+            "expr": "payments_incoming",
+            "legendFormat": "Incoming"
+          },
+          {
+            "expr": "payments_outgoing",
+            "legendFormat": "Outgoing"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 66 }
+      },
+      {
+        "id": 18,
+        "title": "API Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "api_health",
+            "legendFormat": "Health"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "red", "value": 0 }
+              ]
+            }
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 74 }
+      },
+      {
+        "id": 19,
+        "title": "Last Token Refresh",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "token_refresh_last",
+            "legendFormat": "Last Refresh"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 74 }
       }
     ],
     "time": { "from": "now-1h", "to": "now" },
