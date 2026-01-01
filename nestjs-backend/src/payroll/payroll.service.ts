@@ -104,4 +104,11 @@ export class PayrollService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async getRunWithPayments(runId: string) {
+    return this.runRepo.findOne({
+      where: { id: runId },
+      relations: ['payments', 'payments.employee'],
+    });
+  }
 }

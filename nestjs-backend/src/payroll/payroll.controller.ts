@@ -32,4 +32,9 @@ export class PayrollController {
   listRuns(@Param('orgId') orgId: string) {
     return this.payroll.listPayrollRuns(orgId);
   }
+
+  @Get('run/:runId')
+  getRun(@Param('runId') runId: string) {
+    return this.payroll.getRunWithPayments(runId);
+  }
 }
