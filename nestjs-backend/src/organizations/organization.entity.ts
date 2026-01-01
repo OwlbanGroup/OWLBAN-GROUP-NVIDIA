@@ -2,35 +2,31 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   OneToMany,
+  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { BankConnection } from '../bank-connections/bank-connection.entity';
+
+export type OrganizationType = 'PERSONAL' | 'BUSINESS' | 'CORPORATE';
 
 @Entity('organizations')
 export class Organization {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
 
-  @Column({ nullable: true })
-  taxId?: string;
-
-  @Column({ nullable: true })
-  address?: string;
-
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ type: 'varchar' })
+  type: OrganizationType;
 
   @OneToMany(() => User, (user) => user.organization)
   users: User[];
 
+  @OneToMany(() => BankConnection, (bc) => bc.organization)
+  bankConnections: BankConnection[];
+
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
