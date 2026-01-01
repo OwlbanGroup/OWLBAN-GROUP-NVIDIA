@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { JpmorganService } from './jpmorgan.service';
+import { JpmorganTokenService } from './jpmorgan-token.service';
+import { JpmorganController } from './jpmorgan.controller';
 
 @Module({
   imports: [
@@ -8,7 +10,8 @@ import { JpmorganService } from './jpmorgan.service';
       timeout: 5000,
     }),
   ],
-  providers: [JpmorganService],
-  exports: [JpmorganService],
+  controllers: [JpmorganController],
+  providers: [JpmorganTokenService, JpmorganService],
+  exports: [JpmorganService, JpmorganTokenService],
 })
 export class JpmorganModule {}

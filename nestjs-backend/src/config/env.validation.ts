@@ -92,6 +92,25 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   LOG_LEVEL: string = 'info';
+
+  // JPMorgan OAuth2 Configuration
+  @IsString()
+  JPM_CLIENT_ID: string;
+
+  @IsString()
+  JPM_CLIENT_SECRET: string;
+
+  @IsString()
+  @IsOptional()
+  JPM_TOKEN_URL: string = 'https://id.payments.jpmorgan.com/am/oauth2/alpha/access_token';
+
+  @IsString()
+  @IsOptional()
+  JPM_SCOPE: string = 'jpm:payments:sandbox';
+
+  @IsString()
+  @IsOptional()
+  JPM_API_BASE_URL: string = 'https://api-sandbox.payments.jpmorgan.com';
 }
 
 export function validate(config: Record<string, unknown>) {
