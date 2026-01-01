@@ -1,146 +1,90 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
+
+interface JpmAccount {
+  id: string;
+  name: string;
+  type: string;
+  currency: string;
+}
+
+interface JpmBalance {
+  accountId: string;
+  available: string;
+  current: string;
+  asOf: string;
+}
+
+interface JpmTransaction {
+  id: string;
+  accountId: string;
+  amount: string;
+  currency: string;
+  direction: 'CREDIT' | 'DEBIT';
+  description: string;
+  merchantName?: string;
+  category?: string;
+  postedAt: string;
+}
 
 @Injectable()
 export class JpmorganService {
   private readonly logger = new Logger(JpmorganService.name);
-  private readonly baseUrl: string;
-  private readonly apiKey: string;
+  private readonly baseUrl = process.env.JPM_API_BASE_URL;
+  private readonly clientId = process.env.JPM_CLIENT_ID;
+  private readonly clientSecret = process.env.JPM_CLIENT_SECRET;
 
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-  ) {
-    this.baseUrl = this.configService.get<string>('JPMORGAN_API_URL') || 'https://api.jpmorgan.com';
-    this.apiKey = this.configService.get<string>('JPMORGAN_API_KEY') || '';
+  constructor(private readonly http: HttpService) {}
+
+  // TODO: real token flow; this is just a placeholder
+  private async getAccessToken(): Promise<string> {
+    // Use client credentials or OAuth depending on JPM setup
+    return 'ACCESS_TOKEN';
   }
 
-  /**
-   * Fetch accounts from JPMorgan API
-   */
-  async fetchAccounts(connectionId: string): Promise<any> {
-    try {
-      this.logger.log(`Fetching accounts for connection: ${connectionId}`);
-      
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/accounts`, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          params: {
-            connectionId,
-          },
-        }),
-      );
+  async fetchAccounts(connectionRef: string): Promise<JpmAccount[]> {
+    const token = await this.getAccessToken();
+    const url = `${this.baseUrl}/connections/${connectionRef}/accounts`;
 
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch accounts: ${error.message}`, error.stack);
-      throw error;
-    }
+    const res = await this.http
+      .get<JpmAccount[]>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Client-Id': this.clientId,
+        },
+      })
+      .toPromise();
+
+    return res.data;
   }
 
-  /**
-   * Fetch balances for a specific account
-   */
-  async fetchBalances(accountId: string): Promise<any> {
-    try {
-      this.logger.log(`Fetching balances for account: ${accountId}`);
-      
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/accounts/${accountId}/balances`, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-      );
+  async fetchBalances(connectionRef: string): Promise<JpmBalance[]> {
+    const token = await this.getAccessToken();
+    const url = `${this.baseUrl}/connections/${connectionRef}/balances`;
 
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch balances: ${error.message}`, error.stack);
-      throw error;
-    }
+    const res = await this.http
+      .get<JpmBalance[]>(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .toPromise();
+
+    return res.data;
   }
 
-  /**
-   * Fetch transactions for a specific account
-   */
   async fetchTransactions(
-    accountId: string,
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<any> {
-    try {
-      this.logger.log(`Fetching transactions for account: ${accountId}`);
-      
-      const params: any = {};
-      if (startDate) params.startDate = startDate.toISOString();
-      if (endDate) params.endDate = endDate.toISOString();
+    connectionRef: string,
+    params: { fromDate?: string; toDate?: string },
+  ): Promise<JpmTransaction[]> {
+    const token = await this.getAccessToken();
+    const url = `${this.baseUrl}/connections/${connectionRef}/transactions`;
 
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/accounts/${accountId}/transactions`, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          params,
-        }),
-      );
+    const res = await this.http
+      .get<JpmTransaction[]>(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      })
+      .toPromise();
 
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch transactions: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  /**
-   * Initiate a payment through JPMorgan
-   */
-  async initiatePayment(paymentData: any): Promise<any> {
-    try {
-      this.logger.log('Initiating payment through JPMorgan');
-      
-      const response = await firstValueFrom(
-        this.httpService.post(`${this.baseUrl}/payments`, paymentData, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-      );
-
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to initiate payment: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  /**
-   * Get payment status
-   */
-  async getPaymentStatus(paymentId: string): Promise<any> {
-    try {
-      this.logger.log(`Fetching payment status for: ${paymentId}`);
-      
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/payments/${paymentId}`, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-      );
-
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch payment status: ${error.message}`, error.stack);
-      throw error;
-    }
+    return res.data;
   }
 }
