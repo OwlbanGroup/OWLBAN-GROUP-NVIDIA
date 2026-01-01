@@ -3,47 +3,46 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  Index,
   CreateDateColumn,
 } from 'typeorm';
 import { BankAccount } from '../accounts/bank-account.entity';
 
-export type TransactionType = 'DEBIT' | 'CREDIT';
-export type TransactionStatus = 'PENDING' | 'POSTED' | 'FAILED';
+export type TxDirection = 'CREDIT' | 'DEBIT';
 
 @Entity('transactions')
 export class Transaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => BankAccount, (account) => account.transactions)
+  @ManyToOne(() => BankAccount, (acc) => acc.transactions)
   bankAccount: BankAccount;
 
+  @Index()
   @Column()
-  providerTransactionId: string;
+  providerTxId: string;
+
+  @Column('numeric', { precision: 18, scale: 2 })
+  amount: string;
+
+  @Column({ default: 'USD' })
+  currency: string;
 
   @Column({ type: 'varchar' })
-  type: TransactionType;
+  direction: TxDirection;
 
-  @Column('decimal', { precision: 15, scale: 2 })
-  amount: number;
-
-  @Column({ type: 'varchar' })
-  status: TransactionStatus;
-
-  @Column({ nullable: true })
-  description?: string;
-
-  @Column({ type: 'date' })
-  transactionDate: Date;
-
-  @Column({ type: 'date', nullable: true })
-  postedDate?: Date;
+  @Column()
+  description: string;
 
   @Column({ nullable: true })
   merchantName?: string;
 
   @Column({ nullable: true })
   category?: string;
+
+  @Index()
+  @Column({ type: 'timestamptz' })
+  postedAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;
