@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPMorgan Financial Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>JPMorgan Financial Dashboard</h1>
+            <div class="status-bar">
+                <span id="statusIndicator" class="badge">Loading...</span>
+                <span id="lastUpdate" class="text-muted">--</span>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <section class="summary-section">
+            <div class="card">
+                <h3>Total Balance</h3>
+                <p id="totalBalance" class="metric-value">$0</p>
+                <span class="metric-label">USD</span>
+            </div>
+            <div class="card">
+                <h3>Total Assets</h3>
+                <p id="totalAssets" class="metric-value">$0</p>
+                <span class="metric-label">USD</span>
+            </div>
+            <div class="card">
+                <h3>Accounts</h3>
+                <p id="accountsCount" class="metric-value">0</p>
+                <span class="metric-label">Active</span>
+            </div>
+            <div class="card">
+                <h3>Transactions</h3>
+                <p id="transactionsCount" class="metric-value">0</p>
+                <span class="metric-label">Last 30 days</span>
+            </div>
+        </section>
+
+        <!-- Performance Chart -->
+        <section class="chart-section">
+            <div class="card">
+                <h3>Performance Trends</h3>
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Assets Table -->
+        <section class="table-section">
+            <div class="card">
+                <h3>Assets Breakdown</h3>
+                <table id="assetsTable">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Type</th>
+                            <th>Balance</th>
+                            <th>Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Stocks Table -->
+        <section class="table-section">
+            <div class="card">
+                <h3>Stock Holdings</h3>
+                <table id="stocksTable">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Name</th>
+                            <th>Value</th>
+                            <th>Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Recent Transactions -->
+        <section class="table-section">
+            <div class="card">
+                <h3>Recent Transactions</h3>
+                <table id="transactionsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
