@@ -407,3 +407,635 @@ az webapp create \
   --name jpmorgan-payments-app \
   --resource-group $RESOURCE_GROUP \
   --plan jpmorgan-prod-plan \
+  --deployment-container-image-name yourregistry.azurecr.io/jpmorgan-payments:v1.0.0
+
+# Enable managed identity
+az webapp identity assign \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP
+
+# Get managed identity
+APP_IDENTITY=$(az webapp identity show \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP \
+  --query principalId -o tsv)
+
+# Grant Key Vault access
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee $APP_IDENTITY \
+  --scope $(az keyvault show --name jpmorgan-prod-kv --query id -o tsv)
+
+# Verify
+az webapp show --name jpmorgan-payments-app --resource-group $RESOURCE_GROUP
+```
+
+**✅ Verification:**
+- [ ] App Service Plan created
+- [ ] Web App created
+- [ ] Managed identity enabled
+- [ ] Key Vault access granted
+
+---
+
+### **3.4 Configure Application Settings**
+```bash
+# Configure app settings from Key Vault
+az webapp config appsettings set \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP \
+  --settings \
+    NODE_ENV=production \
+    PORT=3000 \
+    JPM_ENV=production \
+    JPM_PROD_CLIENT_ID="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/JPM-CLIENT-ID/)" \
+    JPM_PROD_CLIENT_SECRET="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/JPM-CLIENT-SECRET/)" \
+    DATABASE_PASSWORD="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/DB-PASSWORD/)" \
+    HMAC_SECRET="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/HMAC-SECRET/)" \
+    API_KEY_ADMIN="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/API-KEY-ADMIN/)" \
+    DATABASE_HOST=jpmorgan-prod-db.postgres.database.azure.com \
+    DATABASE_PORT=5432 \
+    DATABASE_NAME=jpmorgan_payments_prod \
+    DATABASE_USERNAME=jpmorgan_admin \
+    DATABASE_SSL=true \
+    REDIS_HOST=$REDIS_HOST \
+    REDIS_PORT=6380 \
+    REDIS_PASSWORD="@Microsoft.KeyVault(SecretUri=https://jpmorgan-prod-kv.vault.azure.net/secrets/REDIS-PASSWORD/)" \
+    MTLS_ENABLED=true \
+    HMAC_ENABLED=true \
+    IP_ALLOWLIST_ENABLED=true
+
+# Verify
+az webapp config appsettings list \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP
+```
+
+**✅ Verification:**
+- [ ] All settings configured
+- [ ] Key Vault references correct
+- [ ] No secrets in plain text
+
+---
+
+## **STEP 4: CONFIGURE CERTIFICATES** (20 minutes)
+
+### **4.1 Upload mTLS Certificates**
+```bash
+# Create certificates directory in App Service
+az webapp config storage-account add \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP \
+  --custom-id certs \
+  --storage-type AzureFiles \
+  --share-name certificates \
+  --account-name yourstorageaccount \
+  --access-key "your-storage-key" \
+  --mount-path /app/certs
+
+# Upload certificates to Azure Files
+az storage file upload \
+  --account-name yourstorageaccount \
+  --share-name certificates \
+  --source /local/path/client-cert.pem \
+  --path production/client-cert.pem
+
+az storage file upload \
+  --account-name yourstorageaccount \
+  --share-name certificates \
+  --source /local/path/client-key.pem \
+  --path production/client-key.pem
+
+az storage file upload \
+  --account-name yourstorageaccount \
+  --share-name certificates \
+  --source /local/path/ca-cert.pem \
+  --path production/ca-cert.pem
+
+# Verify
+az storage file list \
+  --account-name yourstorageaccount \
+  --share-name certificates \
+  --path production
+```
+
+**✅ Verification:**
+- [ ] All certificates uploaded
+- [ ] Correct paths
+- [ ] Permissions set correctly
+
+---
+
+## **STEP 5: RUN DATABASE MIGRATIONS** (15 minutes)
+
+### **5.1 Execute Migrations**
+```bash
+# Connect to app
+az webapp ssh --name jpmorgan-payments-app --resource-group $RESOURCE_GROUP
+
+# Inside app container
+cd /app
+export NODE_ENV=production
+
+# Run migrations
+npm run migration:run
+
+# Verify migrations
+npm run migration:show
+
+# Check database
+psql "host=jpmorgan-prod-db.postgres.database.azure.com port=5432 dbname=jpmorgan_payments_prod user=jpmorgan_admin sslmode=require" -c "\dt"
+```
+
+**✅ Verification:**
+- [ ] All migrations executed
+- [ ] No errors
+- [ ] All tables created
+- [ ] Indexes created
+
+---
+
+## **STEP 6: START APPLICATION** (10 minutes)
+
+### **6.1 Restart Application**
+```bash
+# Restart app
+az webapp restart \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP
+
+# Wait for startup (30 seconds)
+sleep 30
+
+# Check logs
+az webapp log tail \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP
+```
+
+**✅ Verification:**
+- [ ] Application started
+- [ ] No errors in logs
+- [ ] All modules loaded
+
+---
+
+## **STEP 7: VERIFY DEPLOYMENT** (30 minutes)
+
+### **7.1 Health Check**
+```bash
+# Check application health
+curl https://jpmorgan-payments-app.azurewebsites.net/health
+
+# Expected response:
+# {
+#   "status": "ok",
+#   "info": {
+#     "database": { "status": "up" },
+#     "jpmorgan": { "status": "up" },
+#     "redis": { "status": "up" }
+#   }
+# }
+```
+
+**✅ Verification:**
+- [ ] Status: ok
+- [ ] Database: up
+- [ ] JP Morgan: up
+- [ ] Redis: up
+
+**❌ If Failed:** Check logs and troubleshoot before proceeding
+
+---
+
+### **7.2 Database Connectivity**
+```bash
+# Test database
+curl https://jpmorgan-payments-app.azurewebsites.net/api/health/database \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# Expected: {"status": "connected", "latency": "<20ms"}
+```
+
+**✅ Verification:**
+- [ ] Database connected
+- [ ] Latency < 50ms
+
+---
+
+### **7.3 JP Morgan OAuth2 Token**
+```bash
+# Test token acquisition
+curl -X POST https://jpmorgan-payments-app.azurewebsites.net/api/jpmorgan/test-connection \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# Expected: {"success": true, "tokenAcquired": true}
+```
+
+**✅ Verification:**
+- [ ] Token acquired successfully
+- [ ] No authentication errors
+
+**❌ If Failed:** STOP - Check JP Morgan credentials
+
+---
+
+### **7.4 mTLS Verification**
+```bash
+# Test mTLS handshake
+curl https://jpmorgan-payments-app.azurewebsites.net/api/jpmorgan/test-mtls \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# Expected: {"mtlsEnabled": true, "certificateValid": true}
+```
+
+**✅ Verification:**
+- [ ] mTLS enabled
+- [ ] Certificate valid
+- [ ] Expiration date > 30 days
+
+**❌ If Failed:** STOP - Check certificates
+
+---
+
+## **STEP 8: PROCESS TEST TRANSACTION** (20 minutes)
+
+### **8.1 Create Test ACH Payment**
+```bash
+# Create test payment (small amount)
+curl -X POST https://jpmorgan-payments-app.azurewebsites.net/api/ach/payments \
+  -H "X-API-Key: $MAKER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "secCode": "PPD",
+    "transactionType": "CREDIT",
+    "amountCents": 100,
+    "originatorName": "Test Company",
+    "originatorId": "1234567890",
+    "receiverName": "Test Receiver",
+    "receiverAccountNumber": "123456789",
+    "receiverRoutingNumber": "021000021",
+    "idempotencyKey": "test-golive-001"
+  }'
+
+# Save payment ID from response
+PAYMENT_ID="<payment-id-from-response>"
+```
+
+**✅ Verification:**
+- [ ] Payment created
+- [ ] Payment ID received
+- [ ] Status: PENDING_APPROVAL
+
+---
+
+### **8.2 Approve Test Payment**
+```bash
+# Approve payment
+curl -X POST https://jpmorgan-payments-app.azurewebsites.net/api/approvals/$PAYMENT_ID/approve \
+  -H "X-API-Key: $CHECKER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "approvedBy": "test-checker",
+    "comments": "Go-live test transaction"
+  }'
+```
+
+**✅ Verification:**
+- [ ] Payment approved
+- [ ] Status: APPROVED
+
+---
+
+### **8.3 Submit to JP Morgan**
+```bash
+# Submit payment
+curl -X POST https://jpmorgan-payments-app.azurewebsites.net/api/ach/payments/$PAYMENT_ID/submit \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# Check status
+curl https://jpmorgan-payments-app.azurewebsites.net/api/ach/payments/$PAYMENT_ID \
+  -H "X-API-Key: $ADMIN_KEY"
+```
+
+**✅ Verification:**
+- [ ] Payment submitted
+- [ ] JP Morgan payment ID received
+- [ ] Status: SUBMITTED
+- [ ] No errors
+
+**❌ If Failed:** STOP - Investigate JP Morgan API error
+
+---
+
+## **STEP 9: CONFIGURE MONITORING** (20 minutes)
+
+### **9.1 Deploy Prometheus**
+```bash
+# Deploy Prometheus to Kubernetes (if using)
+kubectl apply -f kubernetes/prometheus-deployment.yaml
+
+# Or configure Azure Monitor
+az monitor metrics alert create \
+  --name payment-failures \
+  --resource-group $RESOURCE_GROUP \
+  --scopes $(az webapp show --name jpmorgan-payments-app --resource-group $RESOURCE_GROUP --query id -o tsv) \
+  --condition "count customMetrics/payment_failures > 10" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --action email ops@company.com
+```
+
+**✅ Verification:**
+- [ ] Prometheus deployed
+- [ ] Metrics collecting
+- [ ] Alerts configured
+
+---
+
+### **9.2 Import Grafana Dashboards**
+```bash
+# Import live transaction dashboard
+curl -X POST http://grafana-url/api/dashboards/import \
+  -H "Authorization: Bearer $GRAFANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @grafana-live-transaction-dashboard.json
+
+# Verify
+curl http://grafana-url/api/dashboards/uid/jpmorgan-live \
+  -H "Authorization: Bearer $GRAFANA_API_KEY"
+```
+
+**✅ Verification:**
+- [ ] Dashboard imported
+- [ ] Data flowing
+- [ ] All panels working
+
+---
+
+## **STEP 10: ENABLE PRODUCTION FEATURES** (10 minutes)
+
+### **10.1 Enable Live Transactions**
+```bash
+# Update feature flags
+az webapp config appsettings set \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP \
+  --settings \
+    FEATURE_ACH_ENABLED=true \
+    FEATURE_WIRE_ENABLED=true \
+    FEATURE_RTP_ENABLED=true \
+    FEATURE_APPROVAL_WORKFLOW_ENABLED=true \
+    FEATURE_FRAUD_DETECTION_ENABLED=true
+
+# Restart to apply
+az webapp restart \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP
+```
+
+**✅ Verification:**
+- [ ] All features enabled
+- [ ] Application restarted
+- [ ] No errors
+
+---
+
+## **STEP 11: FINAL VERIFICATION** (15 minutes)
+
+### **11.1 Run Full Test Suite**
+```bash
+# Health checks
+curl https://jpmorgan-payments-app.azurewebsites.net/health
+
+# JP Morgan connectivity
+curl https://jpmorgan-payments-app.azurewebsites.net/api/jpmorgan/test-connection \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# Database
+curl https://jpmorgan-payments-app.azurewebsites.net/api/health/database \
+  -H "X-API-Key: $ADMIN_KEY"
+
+# mTLS
+curl https://jpmorgan-payments-app.azurewebsites.net/api/jpmorgan/test-mtls \
+  -H "X-API-Key: $ADMIN_KEY"
+```
+
+**✅ Verification:**
+- [ ] All health checks passing
+- [ ] All connectivity tests passing
+- [ ] No errors in logs
+
+---
+
+### **11.2 Verify Monitoring**
+```bash
+# Check Prometheus metrics
+curl http://jpmorgan-payments-app.azurewebsites.net:9090/metrics
+
+# Check Grafana dashboards
+# Open: https://grafana-url/d/jpmorgan-live
+
+# Verify alerts
+az monitor metrics alert list --resource-group $RESOURCE_GROUP
+```
+
+**✅ Verification:**
+- [ ] Metrics exporting
+- [ ] Dashboards showing data
+- [ ] Alerts configured
+
+---
+
+## **STEP 12: GO-LIVE ANNOUNCEMENT** (5 minutes)
+
+### **12.1 Notify Stakeholders**
+```bash
+# Send go-live notification
+# Email template:
+
+Subject: ✅ JP Morgan Payment System - LIVE IN PRODUCTION
+
+Team,
+
+The JP Morgan payment system has been successfully deployed to production.
+
+Status: LIVE
+Deployment Time: [TIMESTAMP]
+Version: v1.0.0
+Environment: Production
+
+Key Metrics:
+- Health Status: OK
+- JP Morgan Connectivity: OK
+- Database: OK
+- Test Transaction: SUCCESS
+
+Next Steps:
+- 24-hour monitoring period
+- Process real transactions starting [TIME]
+- Daily status reports
+
+Dashboard: https://grafana-url/d/jpmorgan-live
+Support: #jpmorgan-support
+
+Deployment Team
+```
+
+**✅ Verification:**
+- [ ] All stakeholders notified
+- [ ] Documentation updated
+- [ ] Support team briefed
+
+---
+
+## 📊 POST-DEPLOYMENT MONITORING (24 HOURS)
+
+### **Hour 1-4: Intensive Monitoring**
+- Monitor every 15 minutes
+- Check all metrics
+- Review all logs
+- Verify no errors
+
+### **Hour 4-12: Active Monitoring**
+- Monitor every 30 minutes
+- Process test transactions
+- Verify approval workflows
+- Check performance metrics
+
+### **Hour 12-24: Standard Monitoring**
+- Monitor every hour
+- Review daily metrics
+- Check for anomalies
+- Prepare status report
+
+---
+
+## 🔄 ROLLBACK PROCEDURE
+
+### **If Deployment Fails:**
+
+**1. Stop Application**
+```bash
+az webapp stop --name jpmorgan-payments-app --resource-group $RESOURCE_GROUP
+```
+
+**2. Restore Database**
+```bash
+pg_restore -h jpmorgan-prod-db.postgres.database.azure.com \
+  -U jpmorgan_admin \
+  -d jpmorgan_payments_prod \
+  -F c \
+  $BACKUP_FILE
+```
+
+**3. Restore Previous Version**
+```bash
+# Deploy previous image
+az webapp config container set \
+  --name jpmorgan-payments-app \
+  --resource-group $RESOURCE_GROUP \
+  --docker-custom-image-name yourregistry.azurecr.io/jpmorgan-payments:v0.9.0
+```
+
+**4. Restart Application**
+```bash
+az webapp start --name jpmorgan-payments-app --resource-group $RESOURCE_GROUP
+```
+
+**5. Verify Rollback**
+```bash
+curl https://jpmorgan-payments-app.azurewebsites.net/health
+```
+
+**6. Notify Stakeholders**
+- Send rollback notification
+- Document issues
+- Schedule post-mortem
+
+---
+
+## ✅ GO-LIVE COMPLETION CHECKLIST
+
+### **Technical:**
+- [ ] All Azure resources provisioned
+- [ ] Application deployed successfully
+- [ ] Database migrations complete
+- [ ] Certificates configured
+- [ ] All health checks passing
+- [ ] Test transaction successful
+- [ ] Monitoring active
+- [ ] Alerts configured
+
+### **Security:**
+- [ ] All secrets in Key Vault
+- [ ] mTLS working
+- [ ] HMAC signing enabled
+- [ ] IP allowlisting active
+- [ ] API keys distributed
+- [ ] Audit logging enabled
+
+### **Operational:**
+- [ ] Backups completed
+- [ ] Rollback tested
+- [ ] Documentation updated
+- [ ] Team trained
+- [ ] Support ready
+- [ ] Stakeholders notified
+
+### **Compliance:**
+- [ ] Audit trail active
+- [ ] Compliance logging enabled
+- [ ] Data retention configured
+- [ ] Regulatory requirements met
+
+---
+
+## 📞 SUPPORT CONTACTS
+
+### **Internal:**
+- **Deployment Lead:** [Name] - [Phone]
+- **DevOps:** [Name] - [Phone]
+- **Database Admin:** [Name] - [Phone]
+- **Security:** [Name] - [Phone]
+
+### **External:**
+- **JP Morgan Support:** [Phone]
+- **Azure Support:** [Phone]
+- **Vendor Support:** [Phone]
+
+### **Escalation:**
+- **Level 1:** Team Lead
+- **Level 2:** Engineering Manager
+- **Level 3:** CTO
+
+---
+
+## 📝 NOTES & OBSERVATIONS
+
+**Deployment Date:** __________  
+**Deployment Time:** __________  
+**Deployment Lead:** __________  
+**Team Members:** __________
+
+**Issues Encountered:**
+- 
+- 
+- 
+
+**Resolutions:**
+- 
+- 
+- 
+
+**Lessons Learned:**
+- 
+- 
+- 
+
+---
+
+**Document Status:** ✅ READY FOR EXECUTION  
+**Last Updated:** January 2, 2026  
+**Version:** 1.0  
+**Next Review

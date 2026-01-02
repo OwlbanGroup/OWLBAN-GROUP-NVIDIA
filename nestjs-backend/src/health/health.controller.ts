@@ -6,6 +6,7 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('health')
 export class HealthController {
@@ -14,6 +15,7 @@ export class HealthController {
     private db: TypeOrmHealthIndicator,
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
+    private config: ConfigService,
   ) {}
 
   @Get()
@@ -54,5 +56,42 @@ export class HealthController {
       // Check if database is ready
       () => this.db.pingCheck('database'),
     ]);
+  }
+
+  @Get('/api/system/status')
+  async getSystemStatus() {
+    const healthChecks = await this.health.check([
+      () => this.db.pingCheck('database'),
+      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
+      () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
+    ]);
+
+    return {
+      status: 'operational',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      environment: this.config.get('NODE_ENV') || 'development',
+      services: {
+        api: {
+          status: 'up',
+          uptime: process.uptime(),
+        },
+        database: {
+          status: healthChecks.details?.database?.status || 'unknown',
+        },
+        jpmorgan: {
+          status: 'up',
+          baseUrl: this.config.get('JPM_API_BASE_URL') || 'https://api-sandbox.payments.jpmorgan.com',
+        },
+      },
+      system: {
+        memory: {
+          heap: healthChecks.details?.memory_heap || {},
+          rss: healthChecks.details?.memory_rss || {},
+        },
+        nodeVersion: process.version,
+        platform: process.platform,
+      },
+    };
   }
 }

@@ -13,6 +13,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { JpmorganModule } from './connectors/jpmorgan/jpmorgan.module';
+import { FinancialModule } from './financial/financial.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { JpmorganModule } from './connectors/jpmorgan/jpmorgan.module';
     PaymentsModule,
     PayrollModule,
     JpmorganModule,
+    FinancialModule,
   ],
   providers: [
     // Global Exception Filter
