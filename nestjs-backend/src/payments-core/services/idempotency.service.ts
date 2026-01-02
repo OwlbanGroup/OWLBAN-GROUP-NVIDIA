@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment } from '../entities/payment.entity';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 interface IdempotencyRecord {
   key: string;
@@ -29,7 +29,7 @@ export class IdempotencyService {
    * Generate a new idempotency key
    */
   generateKey(): string {
-    return uuidv4();
+    return randomUUID();
   }
 
   /**
