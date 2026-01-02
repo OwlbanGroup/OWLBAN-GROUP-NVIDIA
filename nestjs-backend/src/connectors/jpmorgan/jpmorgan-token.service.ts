@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import * as qs from 'qs';
+import { JpmorganMetricsService } from './jpmorgan-metrics.service';
 
 interface TokenResponse {
   access_token: string;
@@ -19,6 +21,7 @@ export class JpmorganTokenService {
   constructor(
     private readonly config: ConfigService,
     private readonly http: HttpService,
+    private readonly metrics: JpmorganMetricsService,
   ) {}
 
   async getAccessToken(): Promise<string> {
@@ -32,6 +35,8 @@ export class JpmorganTokenService {
 
     this.logger.log('Fetching new access token from JPMorgan');
 
+    const startTime = Date.now();
+
     try {
       const clientId = this.config.get<string>('JPM_CLIENT_ID');
       const clientSecret = this.config.get<string>('JPM_CLIENT_SECRET');
@@ -42,7 +47,7 @@ export class JpmorganTokenService {
         throw new Error('JPMorgan OAuth2 credentials not configured');
       }
 
-      const params = new URLSearchParams({
+      const data = qs.stringify({
         client_id: clientId,
         client_secret: clientSecret,
         grant_type: 'client_credentials',
@@ -50,7 +55,7 @@ export class JpmorganTokenService {
       });
 
       const response = await firstValueFrom(
-        this.http.post<TokenResponse>(tokenUrl, params.toString(), {
+        this.http.post<TokenResponse>(tokenUrl, data, {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
@@ -61,11 +66,22 @@ export class JpmorganTokenService {
       // Set expiry 30 seconds before actual expiry to avoid edge cases
       this.tokenExpiry = now + (response.data.expires_in - 30) * 1000;
 
+      // Record metrics
+      const duration = (Date.now() - startTime) / 1000;
+      this.metrics.recordTokenRefresh(true);
+      this.metrics.recordTokenAcquisitionDuration(duration);
+      this.metrics.updateTokenExpiry(Math.floor(this.tokenExpiry / 1000));
+
       this.logger.log('Successfully obtained new access token');
       this.logger.debug(`Token expires in ${response.data.expires_in} seconds`);
 
       return this.cachedToken;
     } catch (error) {
+      // Record failure metrics
+      const duration = (Date.now() - startTime) / 1000;
+      this.metrics.recordTokenRefresh(false);
+      this.metrics.recordTokenAcquisitionDuration(duration);
+
       this.logger.error('Failed to obtain access token', error);
       throw new Error('Failed to authenticate with JPMorgan API');
     }

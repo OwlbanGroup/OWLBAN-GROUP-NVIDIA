@@ -43,7 +43,7 @@ export class HealthController {
   liveness() {
     return this.health.check([
       // Simple check to verify the application is running
-      () => Promise.resolve({ status: 'up' }),
+      () => ({ liveness: { status: 'up' } }),
     ]);
   }
 

@@ -8,18 +8,10 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
-// Feature Modules
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { OrganizationsModule } from './organizations/organizations.module';
-import { BankConnectionsModule } from './bank-connections/bank-connections.module';
+// Feature Modules (only existing ones)
 import { AccountsModule } from './accounts/accounts.module';
-import { BalancesModule } from './balances/balances.module';
-import { TransactionsModule } from './transactions/transactions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PayrollModule } from './payroll/payroll.module';
-import { PettyCashModule } from './petty-cash/petty-cash.module';
-import { CorporateModule } from './corporate/corporate.module';
 import { JpmorganModule } from './connectors/jpmorgan/jpmorgan.module';
 
 @Module({
@@ -32,23 +24,15 @@ import { JpmorganModule } from './connectors/jpmorgan/jpmorgan.module';
     // Rate Limiting
     ThrottlerModule.forRoot([
       {
-        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10) * 1000, // Convert to milliseconds
+        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10) * 1000,
         limit: parseInt(process.env.THROTTLE_LIMIT || '10', 10),
       },
     ]),
 
     // Feature Modules
-    AuthModule,
-    UsersModule,
-    OrganizationsModule,
-    BankConnectionsModule,
     AccountsModule,
-    BalancesModule,
-    TransactionsModule,
     PaymentsModule,
     PayrollModule,
-    PettyCashModule,
-    CorporateModule,
     JpmorganModule,
   ],
   providers: [

@@ -75,6 +75,10 @@ export class PayrollService {
       relations: ['payments', 'payments.employee'],
     });
 
+    if (!run) {
+      throw new Error('Payroll run not found');
+    }
+
     run.status = 'PROCESSING';
     await this.runRepo.save(run);
 

@@ -47,8 +47,8 @@ export class AccountsService {
         });
       }
 
-      acc.name = jpmAcc.name;
-      acc.type = (jpmAcc.type?.toUpperCase() as any) || 'CHECKING';
+      acc.name = jpmAcc.accountName;
+      acc.type = (jpmAcc.accountType?.toUpperCase() as any) || 'CHECKING';
       acc.currency = jpmAcc.currency || 'USD';
 
       await this.accountsRepo.save(acc);
