@@ -95,10 +95,12 @@ export class EnvironmentVariables {
 
   // JPMorgan OAuth2 Configuration
   @IsString()
-  JPM_CLIENT_ID: string;
+  @IsOptional()
+  JPM_CLIENT_ID: string = '';
 
   @IsString()
-  JPM_CLIENT_SECRET: string;
+  @IsOptional()
+  JPM_CLIENT_SECRET: string = '';
 
   @IsString()
   @IsOptional()
@@ -111,6 +113,27 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   JPM_API_BASE_URL: string = 'https://api-sandbox.payments.jpmorgan.com';
+
+  @IsString()
+  @IsOptional()
+  JPM_BALANCES_URL: string = 'https://api-sandbox.payments.jpmorgan.com/tsapi/v1/accounts/balances';
+
+  @IsString()
+  @IsOptional()
+  JPM_ACCOUNTS_URL: string = 'https://api-sandbox.payments.jpmorgan.com/tsapi/v1/accounts';
+
+  @IsString()
+  @IsOptional()
+  JPM_TRANSACTIONS_URL: string = 'https://api-sandbox.payments.jpmorgan.com/tsapi/v1/transactions';
+
+  // Dashboard API Keys
+  @IsString()
+  @IsOptional()
+  DASHBOARD_ADMIN_API_KEY: string = 'admin-key-placeholder';
+
+  @IsString()
+  @IsOptional()
+  DASHBOARD_VIEWER_API_KEY: string = 'viewer-key-placeholder';
 }
 
 export function validate(config: Record<string, unknown>) {
