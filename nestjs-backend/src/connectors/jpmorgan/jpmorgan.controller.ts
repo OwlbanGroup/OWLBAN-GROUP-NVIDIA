@@ -1,23 +1,26 @@
-import { Controller, Get, Query, Param, Logger } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { JpmorganService } from './jpmorgan.service';
+import { ApiKeyGuard } from '../../auth/api-key.guard';
+import { Roles } from '../../auth/auth.decorator';
+import { Role } from '../../auth/roles.enum';
 
-@Controller('jpmorgan')
+@Controller('api/jpmorgan')
+@UseGuards(ApiKeyGuard)
 export class JpmorganController {
-  private readonly logger = new Logger(JpmorganController.name);
-
   constructor(private readonly jpmorganService: JpmorganService) {}
 
-  /**
-   * Get account balances - Grafana compatible endpoint
-   * Returns JSON format suitable for Grafana JSON API datasource
-   */
   @Get('balances')
-  async getBalances(@Query('connectionRef') connectionRef?: string) {
-    this.logger.log('Fetching balances for Grafana');
-    
+  @Roles(Role.ADMIN, Role.VIEWER)
+  async getBalances(
+    @Query('connectionRef') connectionRef?: string,
+    @Query('accountId') accountId?: string,
+  ) {
     try {
-      const balances = await this.jpmorganService.fetchBalances(connectionRef);
-      
+      const balances = await this.jpmorganService.fetchBalances(
+        connectionRef,
+        accountId,
+      );
+
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -28,26 +31,21 @@ export class JpmorganController {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch balances', error);
       return {
         status: 'error',
         timestamp: new Date().toISOString(),
-        message: error.message || 'Failed to fetch balances',
+        message: 'Failed to fetch balances',
         data: [],
       };
     }
   }
 
-  /**
-   * Get accounts - Grafana compatible endpoint
-   */
   @Get('accounts')
+  @Roles(Role.ADMIN, Role.VIEWER)
   async getAccounts(@Query('connectionRef') connectionRef?: string) {
-    this.logger.log('Fetching accounts for Grafana');
-    
     try {
       const accounts = await this.jpmorganService.fetchAccounts(connectionRef);
-      
+
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -58,28 +56,48 @@ export class JpmorganController {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch accounts', error);
       return {
         status: 'error',
         timestamp: new Date().toISOString(),
-        message: error.message || 'Failed to fetch accounts',
+        message: 'Failed to fetch accounts',
         data: [],
       };
     }
   }
 
-  /**
-   * Get transactions - Grafana compatible endpoint
-   */
+  @Get('accounts-with-balances')
+  @Roles(Role.ADMIN, Role.VIEWER)
+  async getAccountsWithBalances(@Query('connectionRef') connectionRef?: string) {
+    try {
+      const accountsWithBalances = await this.jpmorganService.fetchAccountsWithBalances(connectionRef);
+
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        data: accountsWithBalances,
+        meta: {
+          count: accountsWithBalances.length,
+          connectionRef: connectionRef || 'default',
+        },
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        message: 'Failed to fetch accounts with balances',
+        data: [],
+      };
+    }
+  }
+
   @Get('transactions')
+  @Roles(Role.ADMIN, Role.VIEWER)
   async getTransactions(
     @Query('connectionRef') connectionRef?: string,
     @Query('accountId') accountId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    this.logger.log('Fetching transactions for Grafana');
-    
     try {
       const transactions = await this.jpmorganService.fetchTransactions(
         connectionRef,
@@ -87,7 +105,7 @@ export class JpmorganController {
         startDate,
         endDate,
       );
-      
+
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -95,45 +113,39 @@ export class JpmorganController {
         meta: {
           count: transactions.length,
           connectionRef: connectionRef || 'default',
-          accountId: accountId || 'all',
-          dateRange: {
-            start: startDate,
-            end: endDate,
+          filters: {
+            accountId,
+            startDate,
+            endDate,
           },
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch transactions', error);
       return {
         status: 'error',
         timestamp: new Date().toISOString(),
-        message: error.message || 'Failed to fetch transactions',
+        message: 'Failed to fetch transactions',
         data: [],
       };
     }
   }
 
-  /**
-   * Get payment status
-   */
   @Get('payments/:paymentId')
+  @Roles(Role.ADMIN, Role.VIEWER)
   async getPaymentStatus(@Param('paymentId') paymentId: string) {
-    this.logger.log(`Fetching payment status for ${paymentId}`);
-    
     try {
       const payment = await this.jpmorganService.getPaymentStatus(paymentId);
-      
+
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
         data: payment,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch payment status', error);
       return {
         status: 'error',
         timestamp: new Date().toISOString(),
-        message: error.message || 'Failed to fetch payment status',
+        message: 'Failed to fetch payment status',
         data: null,
       };
     }
