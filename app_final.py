@@ -50,6 +50,15 @@ except ImportError:
     # SECURITY FIX: No fallback secrets - require proper configuration
     raise ImportError("Could not import config module. Please ensure config.py exists and all required environment variables are set.")
 
+# JP Morgan Financial Dashboard Extensions
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import schedule
+import time
+from threading import Thread
+import requests
+from decimal import Decimal
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -102,122 +111,6 @@ from jpmorgan_processor import start_jpmorgan_processor  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Load version information
-def get_version():
-    """Get the current version from VERSION file"""
-    try:
-        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r', encoding='utf-8') as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return '1.0.0'
-
-# from config import config
-try:
-    from config import config
-except ImportError:
-    # SECURITY FIX: No fallback secrets - require proper configuration
-    raise ImportError("Could not import config module. Please ensure config.py exists and all required environment variables are set.")
-
-# Ensure 'src' directory is in sys.path before importing modules
-src_path = os.path.join(os.path.dirname(__file__), 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
-
-try:
-    from src.telemetry_handler_new import telemetry_handler  # type: ignore
-except ImportError as e:
-    raise ImportError("Could not import 'src.telemetry_handler_new'. Make sure 'src/telemetry_handler_new.py' exists and is not empty.") from e
-
-from src.logger import telemetry_logger  # type: ignore
-from src.token_manager import TokenManager  # type: ignore
-from src.validation import InputValidator, ValidationError  # type: ignore
-from src.cloud_storage import setup_cloud_storage  # type: ignore
-from src.data_format_converter import DataFormatConverter  # type: ignore
-from src.ml_model import AnomalyDetector  # type: ignore
-from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
-from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
-# Phase 3: Quality & Testing Modules
-from src.validators_comprehensive import ComprehensiveValidators  # type: ignore
-from src.structured_logger import app_logger  # type: ignore
-from src.database_optimizer import DatabaseOptimizer, RECOMMENDED_INDEXES  # type: ignore
-# Phase 4: Polish & Deploy Modules
-from src.swagger_config import configure_swagger  # type: ignore
-# Phase 5: Audit Logging Modules
-from src.audit_logger import AuditLogger  # type: ignore
-from src.audit_reports import AuditReportGenerator  # type: ignore
-from src.audit_alerts import AuditAlertManager  # type: ignore
-# Phase 6: Revenue Tracking Modules
-from src.revenue_service import revenue_service  # type: ignore
-from src.models.revenue import RevenueType, TransactionStatus, RevenueTransaction, RevenueMetrics  # type: ignore
-from src.auth_service import auth_service  # type: ignore
-from src.models.user import UserRole  # type: ignore
-from src.payments_service import payments_service  # type: ignore
-from src.models.payments import Payment, PaymentStatus, PaymentType  # type: ignore
-from hr_benefits_api import get_hr_blueprint  # type: ignore
-from jpmorgan_processor import start_jpmorgan_processor  # type: ignore
-
-# Initialize cloud storage
-setup_cloud_storage(config.get_all_settings())
-
-# Initialize ML model
-try:
-    anomaly_detector = AnomalyDetector()
-    telemetry_logger.get_logger().info("✅ ML anomaly detector initialized successfully")
-except Exception as e:
-    anomaly_detector = None
-    telemetry_logger.get_logger().warning(f"⚠️ ML anomaly detector initialization failed: {e}. ML features will be disabled.")
-
-# Initialize Database Indexes (Phase 3)
-try:
-    from src.models.user import User
-    from sqlalchemy import Index
-
-    # Create recommended indexes for better query performance
-    for column in RECOMMENDED_INDEXES.get('User', []):
-        try:
-            index_name = f"idx_user_{column}"
-            Index(index_name, getattr(User, column)).create(db_manager.engine, checkfirst=True)
-            telemetry_logger.get_logger().info(f"Created index: {index_name}")
-        except Exception as e:
-            telemetry_logger.get_logger().warning(f"Index creation skipped for {column}: {e}")
-
-    # Create indexes for Business and Asset models
-    for column in RECOMMENDED_INDEXES.get('Business', []):
-        try:
-            index_name = f"idx_business_{column}"
-            Index(index_name, getattr(BusinessModel, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-
-    for column in RECOMMENDED_INDEXES.get('Asset', []):
-        try:
-            index_name = f"idx_asset_{column}"
-            Index(index_name, getattr(AssetModel, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-
-    # Create indexes for Revenue models
-    for column in RECOMMENDED_INDEXES.get('RevenueTransaction', []):
-        try:
-            index_name = f"idx_revenue_transaction_{column}"
-            Index(index_name, getattr(RevenueTransaction, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-
-    for column in RECOMMENDED_INDEXES.get('RevenueMetrics', []):
-        try:
-            index_name = f"idx_revenue_metrics_{column}"
-            Index(index_name, getattr(RevenueMetrics, column)).create(db_manager.engine, checkfirst=True)
-        except Exception as e:
-            pass
-
-    telemetry_logger.get_logger().info("✅ Database indexes created successfully")
-except Exception as e:
-    telemetry_logger.get_logger().warning(f"Database index creation failed: {e}")
 
 
 # Prometheus metrics (app_final version to avoid conflicts)

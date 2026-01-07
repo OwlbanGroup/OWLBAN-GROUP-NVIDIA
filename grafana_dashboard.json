@@ -1,191 +1,58 @@
 {
   "dashboard": {
-    "title": "JPMorgan Financial APIs - Telemetry & GPU Dashboard",
-    "tags": ["telemetry", "jpmorgan", "financial", "gpu", "nvidia"],
+    "title": "JPMorgan Financial APIs - Production Monitoring",
+    "tags": ["jpmorgan", "financial", "api", "monitoring", "production"],
     "timezone": "UTC",
+    "templating": {
+      "list": [
+        {
+          "name": "env",
+          "type": "custom",
+          "options": [
+            {"text": "All", "value": ".*", "selected": true},
+            {"text": "prod", "value": "prod"},
+            {"text": "stage", "value": "stage"},
+            {"text": "dev", "value": "dev"}
+          ],
+          "current": {"text": "All", "value": ".*"},
+          "query": "prod,stage,dev"
+        }
+      ]
+    },
     "panels": [
       {
-        "title": "HTTP Request Rate",
-        "type": "graph",
+        "title": "API Health Status",
+        "type": "stat",
         "targets": [
           {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "{{method}} {{endpoint}}"
+            "expr": "api_health_status",
+            "legendFormat": "API Health"
           }
         ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "1": {
+                    "text": "HEALTHY",
+                    "color": "green"
+                  },
+                  "0": {
+                    "text": "UNHEALTHY",
+                    "color": "red"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
         "gridPos": {
           "x": 0,
           "y": 0,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "Request Latency",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "95th percentile"
-          },
-          {
-            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "50th percentile"
-          }
-        ],
-        "gridPos": {
-          "x": 12,
-          "y": 0,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "GPU Utilization",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "gpu_utilization_percent",
-            "legendFormat": "GPU {{gpu_id}} Utilization %"
-          }
-        ],
-        "gridPos": {
-          "x": 0,
-          "y": 8,
-          "w": 8,
-          "h": 8
-        }
-      },
-      {
-        "title": "GPU Memory Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "gpu_memory_used_bytes / gpu_memory_total_bytes * 100",
-            "legendFormat": "GPU {{gpu_id}} Memory %"
-          }
-        ],
-        "gridPos": {
-          "x": 8,
-          "y": 8,
-          "w": 8,
-          "h": 8
-        }
-      },
-      {
-        "title": "GPU Temperature",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "gpu_temperature_celsius",
-            "legendFormat": "GPU {{gpu_id}} Temp °C"
-          }
-        ],
-        "gridPos": {
-          "x": 16,
-          "y": 8,
-          "w": 8,
-          "h": 8
-        }
-      },
-      {
-        "title": "Error Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(errors_total[5m])",
-            "legendFormat": "{{type}} - {{endpoint}}"
-          }
-        ],
-        "gridPos": {
-          "x": 0,
-          "y": 16,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "Telemetry Events Processed",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(telemetry_events_processed_total[5m])",
-            "legendFormat": "{{status}}"
-          }
-        ],
-        "gridPos": {
-          "x": 12,
-          "y": 16,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "Batch Size Distribution",
-        "type": "heatmap",
-        "targets": [
-          {
-            "expr": "rate(telemetry_batch_size_bucket[5m])",
-            "legendFormat": "Batch size distribution"
-          }
-        ],
-        "gridPos": {
-          "x": 0,
-          "y": 24,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "Anomaly Detection Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(anomaly_detections_total[5m])",
-            "legendFormat": "{{result}}"
-          }
-        ],
-        "gridPos": {
-          "x": 12,
-          "y": 24,
-          "w": 12,
-          "h": 8
-        }
-      },
-      {
-        "title": "GPU Power Consumption",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "gpu_power_usage_watts",
-            "legendFormat": "GPU {{gpu_id}} Power (W)"
-          }
-        ],
-        "gridPos": {
-          "x": 0,
-          "y": 32,
-          "w": 8,
-          "h": 8
-        }
-      },
-      {
-        "title": "ML Model Performance",
-        "type": "table",
-        "targets": [
-          {
-            "expr": "ml_model_inference_time_seconds",
-            "legendFormat": "Inference Time"
-          },
-          {
-            "expr": "ml_model_accuracy",
-            "legendFormat": "Model Accuracy"
-          }
-        ],
-        "gridPos": {
-          "x": 8,
-          "y": 32,
-          "w": 8,
-          "h": 8
+          "w": 6,
+          "h": 4
         }
       },
       {
@@ -193,69 +60,360 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "active_connections"
+            "expr": "active_connections_final",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": {
+          "x": 6,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        }
+      },
+      {
+        "title": "JPMorgan Data Items",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "jpmorgan_data_items",
+            "legendFormat": "Data Items"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        }
+      },
+      {
+        "title": "Payments Processed",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "payments_processed_total",
+            "legendFormat": "Total Payments"
+          }
+        ],
+        "gridPos": {
+          "x": 18,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        }
+      },
+      {
+        "title": "HTTP Request Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total_final[5m])) by (method, endpoint)",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 4,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "API Response Time (95th percentile)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_final_bucket[5m])) * 1000",
+            "legendFormat": "95th percentile (ms)"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_final_bucket[5m])) * 1000",
+            "legendFormat": "50th percentile (ms)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms"
+          }
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 4,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Error Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(errors_total_final[5m])) by (type, endpoint)",
+            "legendFormat": "{{type}} - {{endpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "errors/sec",
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "red"
+            }
+          }
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 12,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Telemetry Events Processed",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(telemetry_events_processed_total_final[5m])",
+            "legendFormat": "Events/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "events/sec"
+          }
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 12,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Authentication Activity",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "api_login_success_total",
+            "legendFormat": "Successful Logins"
+          },
+          {
+            "expr": "api_login_failure_total",
+            "legendFormat": "Failed Logins"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 20,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Security Alerts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "api_security_alerts",
+            "legendFormat": "Security Alerts"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "x": 8,
+          "y": 20,
+          "w": 8,
+          "h": 4
+        }
+      },
+      {
+        "title": "Cache Performance",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "api_cache_hits",
+            "legendFormat": "Cache Hits"
+          },
+          {
+            "expr": "api_cache_misses",
+            "legendFormat": "Cache Misses"
           }
         ],
         "gridPos": {
           "x": 16,
-          "y": 32,
-          "w": 4,
-          "h": 4
+          "y": 20,
+          "w": 8,
+          "h": 8
         }
       },
       {
-        "title": "Service Status",
-        "type": "stat",
+        "title": "Anomaly Detection Rate",
+        "type": "timeseries",
         "targets": [
           {
-            "expr": "service_up{env=\"$env\"}",
-            "legendFormat": "Service Up ({{env}})"
+            "expr": "rate(anomaly_detections_total_final[5m])",
+            "legendFormat": "{{result}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "detections/sec"
+          }
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 28,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "title": "Batch Processing Size",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "rate(telemetry_batch_size_final_bucket[5m])",
+            "legendFormat": "Batch size distribution"
           }
         ],
         "gridPos": {
-          "x": 20,
-          "y": 32,
-          "w": 4,
-          "h": 4
+          "x": 12,
+          "y": 28,
+          "w": 12,
+          "h": 8
         }
       },
       {
-        "title": "GPU Status",
-        "type": "stat",
+        "title": "Request Status Breakdown",
+        "type": "piechart",
         "targets": [
           {
-            "expr": "gpu_status",
-            "legendFormat": "GPU Available"
+            "expr": "sum(increase(http_requests_total_final[1h])) by (status_code)",
+            "legendFormat": "{{status_code}}"
           }
         ],
+        "gridPos": {
+          "x": 0,
+          "y": 36,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Top Endpoints by Request Rate",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(http_requests_total_final[5m])) by (endpoint))",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {
+          "x": 8,
+          "y": 36,
+          "w": 8,
+          "h": 8
+        }
+      },
+      {
+        "title": "Error Rate by Endpoint",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(errors_total_final[5m])) by (endpoint))",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "errors/sec",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 0.01
+                }
+              ]
+            }
+          }
+        },
         "gridPos": {
           "x": 16,
           "y": 36,
-          "w": 4,
-          "h": 4
-        }
-      },
-      {
-        "title": "Database Connections",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "db_connections_active",
-            "legendFormat": "Active DB Connections"
-          }
-        ],
-        "gridPos": {
-          "x": 20,
-          "y": 36,
-          "w": 4,
-          "h": 4
+          "w": 8,
+          "h": 8
         }
       }
     ],
     "time": {
-      "from": "now-6h",
+      "from": "now-1h",
       "to": "now"
     },
-    "refresh": "30s"
+    "refresh": "30s",
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    }
   }
 }
