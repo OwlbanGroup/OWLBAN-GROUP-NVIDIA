@@ -1,61 +1,53 @@
-# JPMorgan Grafana Integration - TODO List
+# JPMorgan Dashboard Architecture - 7 Components Implementation Plan
 
-## ✅ Completed Tasks
-- [x] Updated grafana_dashboard.json with correct metrics from app_final.py
-- [x] Added comprehensive monitoring panels for JPMorgan Financial APIs
-- [x] Included authentication, security, and performance metrics
-- [x] Added environment variable templating for multi-environment support
-- [x] Opened Grafana in browser (http://localhost:3001)
+## ✅ Component 1: Full Backend Architecture Diagram (Text-Based Blueprint)
+- [ ] Create comprehensive Flask-based architecture diagram
+- [ ] Document all core components and data flow
+- [ ] Include JPMorgan API integration points
+- [ ] Map out cron job scheduling and database interactions
 
-## 🔄 Testing Dashboard Import & Configuration
+## ✅ Component 2: Flask JPMorgan Connector (Production-Ready Structure)
+- [ ] Create dedicated JPMorgan API client module
+- [ ] Implement OAuth token management
+- [ ] Add retry logic and error handling
+- [ ] Create DTOs for normalized API responses
+- [ ] Implement sync logging and monitoring
 
-### Step 1: Access Grafana
-- **URL:** http://localhost:3001
-- **Username:** admin
-- **Password:** SecureGrafanaP@ss2024
+## ✅ Component 3: Database Schema (PostgreSQL)
+- [ ] Review and enhance existing database_schema.sql
+- [ ] Add JPMorgan-specific tables (accounts, balances, transactions)
+- [ ] Implement sync_logs table for tracking API operations
+- [ ] Add proper indexes and constraints
 
-### Step 2: Configure Prometheus Data Source
-1. Click gear icon (⚙️) → "Data sources"
-2. Click "Add data source"
-3. Select "Prometheus"
-4. Configure:
-   - **Name:** Prometheus
-   - **URL:** http://prometheus:9090
-5. Click "Save & test"
+## ✅ Component 4: Cron Job Scripts (Python Schedule Module)
+- [ ] Implement transactions sync job (every 1 minute)
+- [ ] Implement balances sync job (every 5 minutes)
+- [ ] Implement accounts sync job (every hour)
+- [ ] Add job status monitoring and error handling
 
-### Step 3: Import Dashboard
-1. Click "+" → "Import"
-2. Click "Upload JSON file"
-3. Select `grafana_dashboard.json` from project root
-4. Select "Prometheus" as data source
-5. Click "Import"
+## ✅ Component 5: Grafana API Endpoints (Backend → Grafana)
+- [ ] Create /dashboard/accounts-summary endpoint
+- [ ] Create /dashboard/latest-balances endpoint
+- [ ] Create /dashboard/transactions endpoint with filtering
+- [ ] Create /dashboard/cashflow/daily endpoint
+- [ ] Create /dashboard/alerts endpoint
+- [ ] Ensure JSON API datasource compatibility
 
-### Step 4: Verify Dashboard Panels
-Check these panels for data:
-- [ ] API Health Status (should show HEALTHY)
-- [ ] Active Connections (current WebSocket connections)
-- [ ] JPMorgan Data Items (gauge showing data count)
-- [ ] Payments Processed (total payment transactions)
-- [ ] HTTP Request Rate (requests per second)
-- [ ] API Response Time (50th/95th percentiles)
-- [ ] Error Rate (errors per second)
-- [ ] Authentication Activity (login success/failure)
-- [ ] Security Alerts (alert count)
-- [ ] Cache Performance (hits vs misses)
+## ✅ Component 6: Grafana Panels (Enhanced Dashboard)
+- [ ] Executive Summary panel (total balance, inflows/outflows)
+- [ ] Live Transactions Table panel
+- [ ] Cash Flow Chart panel
+- [ ] Success vs Failure Rate panel
+- [ ] Latency Panel (P95/P99)
+- [ ] Alerts Panel (low balance, failed payments, API errors)
 
-## 📋 Dashboard Features Implemented
-- API Health Status monitoring
-- Real-time request rate tracking
-- Response time percentiles (50th/95th)
-- Error rate monitoring
-- Authentication activity tracking
-- Security alerts visualization
-- Cache performance metrics
-- Anomaly detection monitoring
-- Batch processing analytics
-- Endpoint performance tables
+## ✅ Component 7: Deployment Guide (Secure Production Setup)
+- [ ] Document Azure App Service deployment
+- [ ] Configure Azure Key Vault for secrets
+- [ ] Set up Azure Database for PostgreSQL
+- [ ] Implement CI/CD pipeline
+- [ ] Add monitoring and alerting setup
 
-## 🚀 Next Steps After Testing
-- [ ] Set up alerts for critical metrics
-- [ ] Deploy Grafana dashboard to production
-- [ ] Configure notification channels (email/Slack)
+## Implementation Status
+- Current: Planning phase
+- Next: Start with Component 1 (Architecture Diagram)
