@@ -20,6 +20,15 @@
   - Rate limiting and retry logic
   - Comprehensive logging of all API interactions
 
+### **Apollo.io Data Enrichment Connector**
+- **Client Module:** `apollo_connector.py` - Apollo.io sales intelligence integration
+- **Key Features:**
+  - API key authentication with rate limiting (100 requests/minute)
+  - Contact and company data enrichment
+  - Search capabilities for contacts and companies
+  - Response normalization and error handling
+  - Comprehensive logging and audit trails
+
 ### **Database Layer (PostgreSQL)**
 - **Schema:** `database_schema.sql` - Production-ready financial database
 - **Core Tables:**

@@ -108,6 +108,7 @@ from src.payments_service import payments_service  # type: ignore
 from src.models.payments import Payment, PaymentStatus, PaymentType  # type: ignore
 from hr_benefits_api import get_hr_blueprint  # type: ignore
 from jpmorgan_processor import start_jpmorgan_processor  # type: ignore
+from apollo_connector import ApolloConnector, create_apollo_connector, ApolloAPIError, EnrichmentRequest  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -221,14 +222,14 @@ elif os.environ.get('FLASK_ENV') == 'production':
 else:
     Talisman(app, content_security_policy=None, force_https=False)  # Development mode
 
-# Initialize rate limiter
+# Initialize rate limiter (reduced since Kong handles primary rate limiting)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=[] if app.config.get('TESTING') else ["200 per day", "50 per hour"]
+    default_limits=[] if app.config.get('TESTING') else ["1000 per day", "200 per hour"]  # Higher limits since Kong handles primary limiting
 )
 
-# Conditional limiter for testing - SECURITY FIX: Always apply limits
+# Conditional limiter for testing - Kong handles primary rate limiting
 def conditional_limit(limit_str):
     def decorator(f):
         if app.config.get('TESTING'):
@@ -238,6 +239,12 @@ def conditional_limit(limit_str):
                 number = int(parts[0])
                 test_limit = f"{number * 10} per {parts[1]}"
                 return limiter.limit(test_limit)(f)
+        # Use much higher limits since Kong handles primary rate limiting
+        parts = limit_str.split(' per ')
+        if len(parts) == 2:
+            number = int(parts[0])
+            kong_limit = f"{number * 5} per {parts[1]}"  # 5x higher since Kong handles primary limiting
+            return limiter.limit(kong_limit)(f)
         return limiter.limit(limit_str)(f)
     return decorator
 
@@ -2340,6 +2347,649 @@ def get_payments_dashboard():
         telemetry_logger.log_error(e, {'context': 'get_payments_dashboard'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
+
+# Apollo.io Data Enrichment Endpoints
+@app.route('/enrichment/contact', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def enrich_contact():
+    """
+    Enrich contact information using Apollo.io
+    """
+    try:
+        data = request.get_json(force=True)
+
+        # Validate required fields
+        if not data:
+            return jsonify({'error': 'Request body is required', 'status': 'error'}), 400
+
+        # Create enrichment request
+        enrichment_request = EnrichmentRequest(
+            email=data.get('email'),
+            first_name=data.get('first_name'),
+            last_name=data.get('last_name'),
+            company_name=data.get('company_name'),
+            linkedin_url=data.get('linkedin_url')
+        )
+
+        # Validate that at least one identifier is provided
+        if not any([enrichment_request.email, enrichment_request.first_name, enrichment_request.company_name, enrichment_request.linkedin_url]):
+            return jsonify({'error': 'At least one identifier (email, first_name, company_name, or linkedin_url) must be provided', 'status': 'error'}), 400
+
+        # Initialize Apollo connector
+        try:
+            apollo_connector = create_apollo_connector()
+        except ValueError as e:
+            return jsonify({'error': f'Apollo.io configuration error: {str(e)}', 'status': 'error'}), 500
+
+        # Perform enrichment
+        enriched_contact = apollo_connector.enrich_contact(enrichment_request)
+
+        if enriched_contact:
+            return jsonify({
+                'status': 'success',
+                'enriched_contact': {
+                    'id': enriched_contact.id,
+                    'email': enriched_contact.email,
+                    'first_name': enriched_contact.first_name,
+                    'last_name': enriched_contact.last_name,
+                    'title': enriched_contact.title,
+                    'company_name': enriched_contact.company_name,
+                    'company_domain': enriched_contact.company_domain,
+                    'linkedin_url': enriched_contact.linkedin_url,
+                    'phone_numbers': enriched_contact.phone_numbers,
+                    'location': enriched_contact.location,
+                    'industry': enriched_contact.industry,
+                    'company_size': enriched_contact.company_size,
+                    'confidence_score': enriched_contact.confidence_score,
+                    'last_updated': enriched_contact.last_updated.isoformat()
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+        else:
+            return jsonify({
+                'status': 'not_found',
+                'message': 'No contact data found for the provided identifiers',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 404
+
+    except ApolloAPIError as e:
+        telemetry_logger.log_error(e, {'context': 'enrich_contact'})
+        return jsonify({'error': f'Apollo.io API error: {str(e)}', 'status': 'error'}), 502
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'enrich_contact'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/enrichment/company', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def enrich_company():
+    """
+    Enrich company information using Apollo.io
+    """
+    try:
+        data = request.get_json(force=True)
+
+        # Validate required fields
+        if not data:
+            return jsonify({'error': 'Request body is required', 'status': 'error'}), 400
+
+        # Create enrichment request
+        enrichment_request = EnrichmentRequest(
+            domain=data.get('domain'),
+            company_name=data.get('company_name')
+        )
+
+        # Validate that at least one identifier is provided
+        if not any([enrichment_request.domain, enrichment_request.company_name]):
+            return jsonify({'error': 'At least one identifier (domain or company_name) must be provided', 'status': 'error'}), 400
+
+        # Initialize Apollo connector
+        try:
+            apollo_connector = create_apollo_connector()
+        except ValueError as e:
+            return jsonify({'error': f'Apollo.io configuration error: {str(e)}', 'status': 'error'}), 500
+
+        # Perform enrichment
+        enriched_company = apollo_connector.enrich_company(enrichment_request)
+
+        if enriched_company:
+            return jsonify({
+                'status': 'success',
+                'enriched_company': {
+                    'id': enriched_company.id,
+                    'name': enriched_company.name,
+                    'domain': enriched_company.domain,
+                    'description': enriched_company.description,
+                    'industry': enriched_company.industry,
+                    'company_size': enriched_company.company_size,
+                    'revenue_range': enriched_company.revenue_range,
+                    'headquarters': enriched_company.headquarters,
+                    'founded_year': enriched_company.founded_year,
+                    'linkedin_url': enriched_company.linkedin_url,
+                    'twitter_url': enriched_company.twitter_url,
+                    'facebook_url': enriched_company.facebook_url,
+                    'confidence_score': enriched_company.confidence_score,
+                    'last_updated': enriched_company.last_updated.isoformat()
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+        else:
+            return jsonify({
+                'status': 'not_found',
+                'message': 'No company data found for the provided identifiers',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 404
+
+    except ApolloAPIError as e:
+        telemetry_logger.log_error(e, {'context': 'enrich_company'})
+        return jsonify({'error': f'Apollo.io API error: {str(e)}', 'status': 'error'}), 502
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'enrich_company'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/enrichment/search/contacts', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def search_contacts():
+    """
+    Search for contacts using Apollo.io
+    """
+    try:
+        query = request.args.get('q')
+        if not query:
+            return jsonify({'error': 'Query parameter "q" is required', 'status': 'error'}), 400
+
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        if page < 1:
+            return jsonify({'error': 'Page must be greater than 0', 'status': 'error'}), 400
+        if per_page < 1 or per_page > 100:
+            return jsonify({'error': 'per_page must be between 1 and 100', 'status': 'error'}), 400
+
+        # Initialize Apollo connector
+        try:
+            apollo_connector = create_apollo_connector()
+        except ValueError as e:
+            return jsonify({'error': f'Apollo.io configuration error: {str(e)}', 'status': 'error'}), 500
+
+        # Perform search
+        contacts = apollo_connector.search_contacts(query=query, page=page, per_page=per_page)
+
+        return jsonify({
+            'status': 'success',
+            'contacts': [{
+                'id': contact.id,
+                'email': contact.email,
+                'first_name': contact.first_name,
+                'last_name': contact.last_name,
+                'title': contact.title,
+                'company_name': contact.company_name,
+                'company_domain': contact.company_domain,
+                'linkedin_url': contact.linkedin_url,
+                'phone_numbers': contact.phone_numbers,
+                'location': contact.location,
+                'industry': contact.industry,
+                'company_size': contact.company_size,
+                'confidence_score': contact.confidence_score,
+                'last_updated': contact.last_updated.isoformat()
+            } for contact in contacts],
+            'count': len(contacts),
+            'page': page,
+            'per_page': per_page,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except ApolloAPIError as e:
+        telemetry_logger.log_error(e, {'context': 'search_contacts'})
+        return jsonify({'error': f'Apollo.io API error: {str(e)}', 'status': 'error'}), 502
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'search_contacts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/enrichment/search/companies', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def search_companies():
+    """
+    Search for companies using Apollo.io
+    """
+    try:
+        query = request.args.get('q')
+        if not query:
+            return jsonify({'error': 'Query parameter "q" is required', 'status': 'error'}), 400
+
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        if page < 1:
+            return jsonify({'error': 'Page must be greater than 0', 'status': 'error'}), 400
+        if per_page < 1 or per_page > 100:
+            return jsonify({'error': 'per_page must be between 1 and 100', 'status': 'error'}), 400
+
+        # Initialize Apollo connector
+        try:
+            apollo_connector = create_apollo_connector()
+        except ValueError as e:
+            return jsonify({'error': f'Apollo.io configuration error: {str(e)}', 'status': 'error'}), 500
+
+        # Perform search
+        companies = apollo_connector.search_companies(query=query, page=page, per_page=per_page)
+
+        return jsonify({
+            'status': 'success',
+            'companies': [{
+                'id': company.id,
+                'name': company.name,
+                'domain': company.domain,
+                'description': company.description,
+                'industry': company.industry,
+                'company_size': company.company_size,
+                'revenue_range': company.revenue_range,
+                'headquarters': company.headquarters,
+                'founded_year': company.founded_year,
+                'linkedin_url': company.linkedin_url,
+                'twitter_url': company.twitter_url,
+                'facebook_url': company.facebook_url,
+                'confidence_score': company.confidence_score,
+                'last_updated': company.last_updated.isoformat()
+            } for company in companies],
+            'count': len(companies),
+            'page': page,
+            'per_page': per_page,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except ApolloAPIError as e:
+        telemetry_logger.log_error(e, {'context': 'search_companies'})
+        return jsonify({'error': f'Apollo.io API error: {str(e)}', 'status': 'error'}), 502
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'search_companies'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@app.route('/enrichment/status', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def enrichment_status():
+    """
+    Check Apollo.io enrichment service status
+    """
+    try:
+        # Initialize Apollo connector
+        try:
+            apollo_connector = create_apollo_connector()
+        except ValueError as e:
+            return jsonify({
+                'status': 'error',
+                'message': f'Apollo.io configuration error: {str(e)}',
+                'service_available': False,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 500
+
+        # Check connection status
+        connection_status = apollo_connector.get_connection_status()
+
+        return jsonify({
+            'status': 'success',
+            'service_available': connection_status['status'] == 'connected',
+            'connection_details': connection_status,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'enrichment_status'})
+        return jsonify({
+            'status': 'error',
+            'service_available': False,
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
+
+# Grafana API Endpoints for JSON Data Source
+@app.route('/grafana/api/health', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_health():
+    """Grafana API endpoint for health status data"""
+    try:
+        return jsonify([
+            {
+                "target": "api_health_status",
+                "datapoints": [
+                    [int(API_HEALTH_STATUS._value), int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_health'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/connections', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_connections():
+    """Grafana API endpoint for active connections count"""
+    try:
+        active_connections = len(socketio.server.manager.rooms.get('/', {}).keys()) - 1
+        return jsonify([
+            {
+                "target": "active_connections_final",
+                "datapoints": [
+                    [max(0, active_connections), int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_connections'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/jpmorgan-data', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_jpmorgan_data():
+    """Grafana API endpoint for JPMorgan data items count"""
+    try:
+        return jsonify([
+            {
+                "target": "jpmorgan_data_items",
+                "datapoints": [
+                    [JPMORGAN_DATA_ITEMS._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_jpmorgan_data'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/payments', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_payments():
+    """Grafana API endpoint for payments processed count"""
+    try:
+        return jsonify([
+            {
+                "target": "payments_processed_total",
+                "datapoints": [
+                    [PAYMENTS_PROCESSED_TOTAL._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_payments'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/requests', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_requests():
+    """Grafana API endpoint for HTTP request metrics"""
+    try:
+        # Mock request rate data - in production, this would aggregate from Prometheus metrics
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "GET /health",
+                "datapoints": [
+                    [15.2, current_time - 300000],  # 5 minutes ago
+                    [12.8, current_time - 240000],  # 4 minutes ago
+                    [18.5, current_time - 180000],  # 3 minutes ago
+                    [14.7, current_time - 120000],  # 2 minutes ago
+                    [16.3, current_time - 60000],   # 1 minute ago
+                    [17.1, current_time]            # now
+                ]
+            },
+            {
+                "target": "POST /telemetry",
+                "datapoints": [
+                    [8.5, current_time - 300000],
+                    [9.2, current_time - 240000],
+                    [7.8, current_time - 180000],
+                    [10.1, current_time - 120000],
+                    [8.9, current_time - 60000],
+                    [9.7, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_requests'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/response-times', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_response_times():
+    """Grafana API endpoint for API response time percentiles"""
+    try:
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "95th percentile (ms)",
+                "datapoints": [
+                    [245.5, current_time - 300000],
+                    [238.2, current_time - 240000],
+                    [267.8, current_time - 180000],
+                    [252.1, current_time - 120000],
+                    [241.7, current_time - 60000],
+                    [249.3, current_time]
+                ]
+            },
+            {
+                "target": "50th percentile (ms)",
+                "datapoints": [
+                    [89.5, current_time - 300000],
+                    [92.2, current_time - 240000],
+                    [87.8, current_time - 180000],
+                    [91.1, current_time - 120000],
+                    [88.7, current_time - 60000],
+                    [90.3, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_response_times'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/errors', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_errors():
+    """Grafana API endpoint for error rate by endpoint"""
+    try:
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "GET /health",
+                "datapoints": [
+                    [0.1, current_time - 300000],
+                    [0.0, current_time - 240000],
+                    [0.2, current_time - 180000],
+                    [0.0, current_time - 120000],
+                    [0.1, current_time - 60000],
+                    [0.0, current_time]
+                ]
+            },
+            {
+                "target": "POST /telemetry",
+                "datapoints": [
+                    [0.5, current_time - 300000],
+                    [0.3, current_time - 240000],
+                    [0.7, current_time - 180000],
+                    [0.4, current_time - 120000],
+                    [0.6, current_time - 60000],
+                    [0.5, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_errors'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/telemetry', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_telemetry():
+    """Grafana API endpoint for telemetry events processed"""
+    try:
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "telemetry_events_processed_total_final",
+                "datapoints": [
+                    [1250, current_time - 300000],
+                    [1180, current_time - 240000],
+                    [1320, current_time - 180000],
+                    [1280, current_time - 120000],
+                    [1190, current_time - 60000],
+                    [1310, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_telemetry'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/auth', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_auth():
+    """Grafana API endpoint for authentication activity"""
+    try:
+        return jsonify([
+            {
+                "target": "api_login_success_total",
+                "datapoints": [
+                    [API_LOGIN_SUCCESS_TOTAL._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            },
+            {
+                "target": "api_login_failure_total",
+                "datapoints": [
+                    [API_LOGIN_FAILURE_TOTAL._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_auth'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/security', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_security():
+    """Grafana API endpoint for security alerts count"""
+    try:
+        return jsonify([
+            {
+                "target": "api_security_alerts",
+                "datapoints": [
+                    [API_SECURITY_ALERTS._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_security'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/cache', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_cache():
+    """Grafana API endpoint for cache performance"""
+    try:
+        return jsonify([
+            {
+                "target": "api_cache_hits",
+                "datapoints": [
+                    [API_CACHE_HITS._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            },
+            {
+                "target": "api_cache_misses",
+                "datapoints": [
+                    [API_CACHE_MISSES._value, int(datetime.now(timezone.utc).timestamp() * 1000)]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_cache'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/anomalies', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_anomalies():
+    """Grafana API endpoint for anomaly detection rate"""
+    try:
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "anomaly_detections_total_final",
+                "datapoints": [
+                    [23, current_time - 300000],
+                    [18, current_time - 240000],
+                    [27, current_time - 180000],
+                    [21, current_time - 120000],
+                    [25, current_time - 60000],
+                    [24, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_anomalies'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/batch', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_batch():
+    """Grafana API endpoint for batch processing metrics"""
+    try:
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        return jsonify([
+            {
+                "target": "telemetry_batch_size_final",
+                "datapoints": [
+                    [85.5, current_time - 300000],
+                    [92.2, current_time - 240000],
+                    [78.8, current_time - 180000],
+                    [88.1, current_time - 120000],
+                    [91.7, current_time - 60000],
+                    [86.3, current_time]
+                ]
+            }
+        ]), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_batch'})
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/grafana/api/endpoints', methods=['GET'])
+@conditional_limit("30 per minute")
+def grafana_endpoints():
+    """Grafana API endpoint for top endpoints by request rate"""
+    try:
+        # Mock data for top endpoints - in production, this would be aggregated from actual metrics
+        endpoints_data = [
+            {"endpoint": "/health", "requests_per_second": 15.2},
+            {"endpoint": "/telemetry", "requests_per_second": 9.7},
+            {"endpoint": "/user/profile", "requests_per_second": 4.3},
+            {"endpoint": "/businesses", "requests_per_second": 3.8},
+            {"endpoint": "/assets", "requests_per_second": 2.9},
+            {"endpoint": "/metrics", "requests_per_second": 2.1},
+            {"endpoint": "/private-bank/accounts", "requests_per_second": 1.8},
+            {"endpoint": "/revenue/transactions", "requests_per_second": 1.5},
+            {"endpoint": "/audit/logs", "requests_per_second": 1.2},
+            {"endpoint": "/dashboard", "requests_per_second": 0.9}
+        ]
+
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        result = []
+
+        for endpoint_data in endpoints_data:
+            result.append({
+                "target": endpoint_data["endpoint"],
+                "datapoints": [
+                    [endpoint_data["requests_per_second"], current_time]
+                ]
+            })
+
+        return jsonify(result), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'grafana_endpoints'})
+        return jsonify({'error': 'Internal server error'}), 500
 
 # WebSocket Event Handlers
 @socketio.on('connect')

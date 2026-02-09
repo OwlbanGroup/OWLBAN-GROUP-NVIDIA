@@ -1,0 +1,270 @@
+_format_version: "3.0"
+
+# Kong Gateway Configuration for JPMorgan Financial APIs
+# This configuration sets up Kong as an API Gateway in front of the Flask application
+
+# Upstream service (Flask API)
+upstreams:
+  - name: jpmorgan-flask-api
+    targets:
+      - target: flask-api:5000
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: "/health"
+        timeout: 5
+        concurrency: 10
+        interval: 10
+        success_count: 2
+        http_statuses: [200, 302]
+
+# Services
+services:
+  - name: jpmorgan-api
+    url: http://flask-api:5000
+    routes:
+      - name: root-route
+        paths:
+          - /
+        methods: ["GET"]
+        strip_path: false
+
+      - name: health-route
+        paths:
+          - /health
+        methods: ["GET"]
+        strip_path: false
+
+      - name: metrics-route
+        paths:
+          - /metrics
+        methods: ["GET"]
+        strip_path: false
+
+      - name: user-routes
+        paths:
+          - /user
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: telemetry-routes
+        paths:
+          - /telemetry
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: business-routes
+        paths:
+          - /businesses
+        methods: ["GET", "POST", "PUT", "DELETE"]
+        strip_path: false
+
+      - name: assets-routes
+        paths:
+          - /assets
+        methods: ["GET", "POST", "PUT", "DELETE"]
+        strip_path: false
+
+      - name: private-bank-routes
+        paths:
+          - /private-bank
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: api-jpmorgan-data-route
+        paths:
+          - /api/jpmorgan-data
+        methods: ["GET"]
+        strip_path: false
+
+      - name: audit-routes
+        paths:
+          - /audit
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: revenue-routes
+        paths:
+          - /revenue
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: payments-routes
+        paths:
+          - /payments
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: grafana-api-routes
+        paths:
+          - /grafana/api
+        methods: ["GET"]
+        strip_path: false
+
+      - name: dashboard-route
+        paths:
+          - /dashboard
+        methods: ["GET"]
+        strip_path: false
+
+      - name: deploy-route
+        paths:
+          - /deploy
+        methods: ["POST"]
+        strip_path: false
+
+      - name: data-routes
+        paths:
+          - /data
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: ml-routes
+        paths:
+          - /ml
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: batch-routes
+        paths:
+          - /batch
+        methods: ["GET", "POST"]
+        strip_path: false
+
+      - name: ws-status-route
+        paths:
+          - /ws/status
+        methods: ["GET"]
+        strip_path: false
+
+# Global Plugins
+plugins:
+  - name: cors
+    service: jpmorgan-api
+    config:
+      origins:
+        - "*"
+      methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+        - "OPTIONS"
+      headers:
+        - "Accept"
+        - "Accept-Version"
+        - "Content-Length"
+        - "Content-MD5"
+        - "Content-Type"
+        - "Date"
+        - "X-Auth-Token"
+        - "Authorization"
+      exposed_headers:
+        - "X-Auth-Token"
+      credentials: true
+      max_age: 3600
+
+  - name: rate-limiting
+    service: jpmorgan-api
+    config:
+      minute: 200
+      hour: 5000
+      day: 50000
+      policy: local
+      hide_client_headers: false
+
+  - name: request-transformer
+    service: jpmorgan-api
+    config:
+      add:
+        headers:
+          - "X-Kong-Forwarded: true"
+          - "X-API-Gateway: Kong-Konnect"
+
+  - name: response-transformer
+    service: jpmorgan-api
+    config:
+      add:
+        headers:
+          - "X-Powered-By: Kong-Konnect"
+          - "X-API-Version: v1.0"
+
+  - name: prometheus
+    service: jpmorgan-api
+    config:
+      per_consumer: false
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+
+# Authentication Plugin (Key Auth)
+  - name: key-auth
+    service: jpmorgan-api
+    config:
+      key_names:
+        - "apikey"
+        - "X-API-Key"
+      hide_credentials: true
+
+# Consumers (API Keys)
+consumers:
+  - username: jpmorgan-admin
+    keyauth_credentials:
+      - key: jpmorgan-admin-key-2024
+        tags:
+          - admin
+
+  - username: jpmorgan-user
+    keyauth_credentials:
+      - key: jpmorgan-user-key-2024
+        tags:
+          - user
+
+  - username: grafana-service
+    keyauth_credentials:
+      - key: grafana-service-key-2024
+        tags:
+          - monitoring
+
+# Certificates (for HTTPS)
+certificates:
+  - cert: |
+      -----BEGIN CERTIFICATE-----
+      # Add your SSL certificate here
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      # Add your private key here
+      -----END PRIVATE KEY-----
+    snis:
+      - api.jpmorgan-financial.com
+
+# Additional Security Plugins for Production
+# Uncomment and configure as needed
+
+# - name: bot-detection
+#   service: jpmorgan-api
+#   config:
+#     allow:
+#       - "googlebot"
+#       - "bingbot"
+#     deny:
+#       - "badbot1"
+#       - "badbot2"
+
+# - name: ip-restriction
+#   service: jpmorgan-api
+#   config:
+#     allow:
+#       - "10.0.0.0/8"
+#       - "172.16.0.0/12"
+#       - "192.168.0.0/16"
+
+# - name: request-size-limiting
+#   service: jpmorgan-api
+#   config:
+#     allowed_payload_size: 128
+#     size_unit: "kilobytes"
+#     require_content_length: true

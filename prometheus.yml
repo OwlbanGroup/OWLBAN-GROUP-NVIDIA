@@ -7,27 +7,41 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: 'prometheus'
+  # Kong Gateway metrics
+  - job_name: 'kong-gateway'
     static_configs:
-      - targets: ['localhost:9090']
-
-  - job_name: 'jpmorgan-apis'
-    static_configs:
-      - targets: ['host.docker.internal:5000']
-    scrape_interval: 5s
+      - targets: ['kong:8001']
     metrics_path: '/metrics'
+    scrape_interval: 15s
 
+  # Flask API metrics
+  - job_name: 'jpmorgan-flask-api'
+    static_configs:
+      - targets: ['flask-api:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # PostgreSQL metrics (if using postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:9187']
+    scrape_interval: 15s
+
+  # Redis metrics (if using redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:9121']
+    scrape_interval: 15s
+
+  # Node Exporter for system metrics
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
+    scrape_interval: 15s
 
-  - job_name: 'cadvisor'
+  # Kong Dev Portal metrics (if enabled)
+  - job_name: 'kong-portal'
     static_configs:
-      - targets: ['cadvisor:8080']
-    scrape_interval: 5s
+      - targets: ['kong-portal:8004']
     metrics_path: '/metrics'
-
-  - job_name: 'grafana'
-    static_configs:
-      - targets: ['grafana:3000']
+    scrape_interval: 15s
