@@ -115,7 +115,7 @@ services:
       - kong-net
     restart: unless-stopped
 
-  # PostgreSQL database (if needed)
+  # PostgreSQL database
   postgres:
     image: postgres:15
     container_name: postgres-db
@@ -123,14 +123,21 @@ services:
       - POSTGRES_DB=jpmorgan_financial
       - POSTGRES_USER=jpmorgan_user
       - POSTGRES_PASSWORD=jpmorgan_password_2024
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./jpmorgan_database_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./init_database.py:/docker-entrypoint-initdb.d/02-init.py:ro
     networks:
       - kong-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jpmorgan_user -d jpmorgan_financial"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis for caching (optional)
   redis:

@@ -1,0 +1,19 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python app_final.py"
+  },
+  "env": {
+    "FLASK_ENV": "production",
+    "TESTING": "0",
+    "SECRET_KEY": "${SECRET_KEY}",
+    "JWT_SECRET_KEY": "${JWT_SECRET_KEY}",
+    "DATABASE_URL": "${DATABASE_URL}",
+    "REDIS_URL": "${REDIS_URL}",
+    "ALLOWED_ORIGINS": "${ALLOWED_ORIGINS}",
+    "AUDIT_LOG_ENABLED": "true",
+    "LOG_LEVEL": "INFO"
+  }
+}

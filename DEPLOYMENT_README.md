@@ -1,378 +1,124 @@
-# 🚀 JPMorgan Financial APIs - Production Deployment Guide
+# JPMorgan Financial APIs - Railway Deployment Guide
 
-## Overview
+## 🚀 Quick Railway Deployment
 
-This guide provides the complete production deployment procedure for the JPMorgan Financial APIs platform. The deployment is designed for enterprise-grade reliability, scalability, and security.
+### Prerequisites
+- Railway account (https://railway.com)
+- GitHub account (for connecting repository)
 
-## Prerequisites
+### Step 1: Prepare Your Repository
+1. Ensure all files are committed to your Git repository
+2. The `railway.json` configuration file is already created in your project root
 
-### System Requirements
-- **Kubernetes Cluster**: 1.24+ with GPU support
-- **Docker**: 20.10+ with NVIDIA Container Toolkit
-- **kubectl**: 1.24+ configured for your cluster
-- **Helm**: 3.8+ (optional, for Helm-based deployment)
-- **Environment Variables**: All required secrets and configuration
+### Step 2: Deploy to Railway
+1. Go to [Railway.com](https://railway.com) and sign in
+2. Click "New Project" → "Deploy from GitHub repo"
+3. Connect your GitHub account and select the `jpmorgan_financial_apis` repository
+4. Railway will automatically detect the Python application and start deployment
 
-### Required Environment Variables
-```bash
-# OAuth Credentials
-TOKEN_CLIENT_ID=your_jpmorgan_client_id
-TOKEN_CLIENT_SECRET=your_jpmorgan_client_secret
+### Step 3: Configure Environment Variables
+In your Railway project dashboard, go to "Variables" and add these required variables:
 
-# Application Secrets
-SECRET_KEY=your_256_bit_secret_key
-
-# Database Configuration
+#### Required Variables
+```
+SECRET_KEY=your-32-character-secret-key
+JWT_SECRET_KEY=your-32-character-jwt-secret-key
 DATABASE_URL=postgresql://user:password@host:5432/database
-
-# Redis Configuration
-REDIS_URL=redis://host:6379/0
-
-# Optional: GPU Configuration
-NVIDIA_VISIBLE_DEVICES=all
-CUDA_VISIBLE_DEVICES=0
+ALLOWED_ORIGINS=https://your-app-name.railway.app
 ```
 
-## Quick Start Deployment
-
-### 1. Prepare Environment
-```bash
-# Navigate to project directory
-cd jpmorgan_financial_apis
-
-# Set required environment variables
-export TOKEN_CLIENT_ID="0369026e-0d67-4454-8a13-a0129a5cd3f6"
-export TOKEN_CLIENT_SECRET="piAKagzhmiQFFnGbdwvDkCz0mvdC1IBGIzdYl6bLch-vegBy4HmhXNATJwLNFfmGYlWeIDH3eHTF6q0KNcJoqg"
-export SECRET_KEY="your-secure-session-secret-key-256-bits"
-export DATABASE_URL="postgresql://jpmorgan_user:secure_password@postgresql:5432/jpmorgan_financial_apis"
-export REDIS_URL="redis://redis-cluster:6379/0"
+#### Optional Variables
 ```
-
-### 2. Run Production Deployment
-```bash
-# Execute the final deployment script
-./deploy_production_final.sh deploy
-```
-
-### 3. Verify Deployment
-```bash
-# Check deployment status
-./deploy_production_final.sh status
-
-# View application logs
-./deploy_production_final.sh logs
-```
-
-## Detailed Deployment Steps
-
-### Step 1: Pre-deployment Validation
-The deployment script automatically performs:
-- ✅ Environment variable validation
-- ✅ Kubernetes cluster connectivity check
-- ✅ Required tool availability check
-- ✅ Namespace existence verification
-- ✅ Docker image availability check
-
-### Step 2: Backup Creation
-- Creates timestamped backup of current state
-- Exports Kubernetes resources (deployments, services, configmaps)
-- Creates database backup if PostgreSQL is running
-- Stores backups in `backups/backup_YYYYMMDD_HHMMSS/`
-
-### Step 3: Compliance & Security Checks
-- Runs automated compliance validation (GDPR, SOC 2, Security)
-- Performs security scanning for vulnerabilities
-- Validates configuration security
-- Generates compliance report
-
-### Step 4: Infrastructure Deployment
-Deploys in order:
-1. **PostgreSQL Database** - Primary with read replicas
-2. **Redis Cluster** - Distributed caching with failover
-3. **Istio Service Mesh** - Traffic management and security
-4. **Monitoring Stack** - Prometheus, Grafana, AlertManager
-
-### Step 5: Application Deployment
-- Builds and pushes Docker image (if needed)
-- Creates Kubernetes secrets and configmaps
-- Deploys application with rolling update strategy
-- Configures horizontal pod autoscaling
-- Sets up health checks and readiness probes
-
-### Step 6: Post-deployment Validation
-- Waits for deployment rollout completion
-- Performs health check validation
-- Tests API endpoints
-- Runs basic functionality tests
-- Validates monitoring integration
-
-## Deployment Configurations
-
-### Production Environment Variables
-Create a `.env.production` file:
-```bash
-# Application Configuration
-FLASK_ENV=production
-SECRET_KEY=your-256-bit-secret-here
+REDIS_URL=redis://user:password@host:port/db
+TOKEN_CLIENT_ID=your-jpmorgan-client-id
+TOKEN_CLIENT_SECRET=your-jpmorgan-client-secret
+APOLLO_API_KEY=your-apollo-api-key
+AUDIT_LOG_ENABLED=true
 LOG_LEVEL=INFO
-
-# Database Configuration
-DATABASE_URL=postgresql://jpmorgan_user:secure_password@postgresql.jpmorgan-apis.svc.cluster.local:5432/jpmorgan_financial_apis
-DATABASE_SSL_MODE=require
-DATABASE_CONNECTION_POOL_SIZE=20
-DATABASE_CONNECTION_POOL_MAX_OVERFLOW=30
-
-# Redis Configuration
-REDIS_URL=redis://redis-cluster.jpmorgan-apis.svc.cluster.local:6379/0
-
-# OAuth Configuration
-TOKEN_CLIENT_ID=0369026e-0d67-4454-8a13-a0129a5cd3f6
-TOKEN_CLIENT_SECRET=piAKagzhmiQFFnGbdwvDkCz0mvdC1IBGIzdYl6bLch-vegBy4HmhXNATJwLNFfmGYlWeIDH3eHTF6q0KNcJoqg
-TOKEN_URL=https://id.payments.jpmorgan.com/am/oauth2/alpha/access_token
-TOKEN_SCOPE=openid profile
-
-# GPU Configuration (if applicable)
-NVIDIA_VISIBLE_DEVICES=all
-CUDA_VISIBLE_DEVICES=0
-GPU_MEMORY_FRACTION=0.8
-
-# Monitoring Configuration
-METRICS_ENABLED=true
-TELEMETRY_ENABLED=true
 ```
 
-### Kubernetes Namespace Setup
-```bash
-# Create namespace
-kubectl create namespace jpmorgan-apis
+### Step 4: Database Setup
+1. Add a PostgreSQL database to your Railway project
+2. Railway will provide a `DATABASE_URL` automatically
+3. The application will create tables automatically on first run
 
-# Create service account
-kubectl create serviceaccount jpmorgan-apis-sa -n jpmorgan-apis
+### Step 5: Verify Deployment
+1. Once deployed, Railway will provide a URL (e.g., `https://your-app-name.railway.app`)
+2. Test the health endpoint: `https://your-app-name.railway.app/health`
+3. Check the API documentation: `https://your-app-name.railway.app/`
 
-# Apply RBAC policies
-kubectl apply -f k8s/rbac.yml
-```
+## 📋 API Endpoints Available
 
-### SSL/TLS Configuration
-```yaml
-# Certificate management with cert-manager
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: jpmorgan-apis-tls
-  namespace: jpmorgan-apis
-spec:
-  secretName: jpmorgan-apis-tls-secret
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-  - api.jpmorgan.com
-  - api.jpmorgan-finance.com
-```
+### Core Endpoints
+- `GET /health` - Health check
+- `GET /` - API information and available endpoints
+- `POST /user/register` - User registration
+- `POST /user/login` - User authentication
+- `GET /user/profile` - User profile (requires JWT)
 
-## Monitoring & Observability
+### Financial Data Endpoints
+- `GET /api/jpmorgan-data` - JPMorgan financial metrics and stock data
+- `GET /private-bank/accounts` - Private banking accounts
+- `GET /private-bank/wealth` - Wealth management portfolio
+- `GET /private-bank/investments` - Investment portfolio
 
-### Accessing Monitoring Dashboards
-```bash
-# Port forward Grafana
-kubectl port-forward -n monitoring svc/grafana 3000:3000
+### Business Management
+- `GET /businesses` - List businesses
+- `POST /businesses` - Create business
+- `GET /assets` - List assets
+- `POST /assets` - Create asset
 
-# Access at http://localhost:3000
-# Default credentials: admin/admin
+### Audit & Monitoring
+- `GET /audit/logs` - Query audit logs
+- `GET /audit/summary` - Audit statistics
+- `GET /metrics` - Prometheus metrics
 
-# Port forward Prometheus
-kubectl port-forward -n monitoring svc/prometheus 9090:9090
+### Data Enrichment (Apollo.io)
+- `POST /enrichment/contact` - Enrich contact information
+- `POST /enrichment/company` - Enrich company information
+- `GET /enrichment/search/contacts` - Search contacts
+- `GET /enrichment/search/companies` - Search companies
 
-# Access at http://localhost:9090
-```
-
-### Key Metrics to Monitor
-- **Application Health**: Response times, error rates, throughput
-- **Database Performance**: Connection pools, query latency, lock waits
-- **Cache Efficiency**: Hit rates, memory usage, eviction rates
-- **Infrastructure**: CPU, memory, disk, network utilization
-- **External APIs**: JPMorgan API response times and success rates
-
-## Troubleshooting Deployment Issues
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-#### Deployment Stuck in Pending
-```bash
-# Check pod status
-kubectl get pods -n jpmorgan-apis
+**Application won't start:**
+- Check that all required environment variables are set
+- Verify DATABASE_URL is correct
+- Check Railway build logs for Python dependency errors
 
-# Check pod events
-kubectl describe pod <pod-name> -n jpmorgan-apis
+**Database connection errors:**
+- Ensure PostgreSQL database is added to your Railway project
+- Verify DATABASE_URL environment variable
+- Check database credentials
 
-# Check resource availability
-kubectl get nodes --show-labels
-```
+**Port binding errors:**
+- Railway automatically assigns PORT environment variable
+- The app is configured to use this automatically
 
-#### Database Connection Failures
-```bash
-# Test database connectivity
-kubectl exec -it deployment/postgresql -n jpmorgan-apis -- psql -U jpmorgan_user -d jpmorgan_financial_apis
+### Logs and Monitoring
+- View application logs in Railway dashboard under "Logs" tab
+- Check build logs for deployment issues
+- Monitor resource usage in Railway metrics
 
-# Check database logs
-kubectl logs -f deployment/postgresql -n jpmorgan-apis
-```
+## 🔒 Security Notes
 
-#### Application Startup Failures
-```bash
-# Check application logs
-kubectl logs -f deployment/jpmorgan-financial-apis -n jpmorgan-apis
+- The application uses JWT authentication for protected endpoints
+- Audit logging is enabled by default
+- CORS is configured for Railway domain
+- All secrets should be set as Railway environment variables (not in code)
 
-# Check configuration
-kubectl get configmap -n jpmorgan-apis
-kubectl get secrets -n jpmorgan-apis
-```
+## 📞 Support
 
-### Rollback Procedures
+For Railway-specific issues:
+- Railway Documentation: https://docs.railway.com/
+- Railway Community: https://discord.gg/railway
 
-#### Automatic Rollback
-If deployment fails, the script automatically initiates rollback:
-```bash
-# Manual rollback if needed
-./deploy_production_final.sh rollback
-```
-
-#### Manual Rollback Steps
-1. Rollback deployment: `kubectl rollout undo deployment/jpmorgan-financial-apis -n jpmorgan-apis`
-2. Restore from backup if data corruption suspected
-3. Verify application functionality
-4. Update monitoring alerts
-
-## Performance Optimization
-
-### Resource Allocation
-```yaml
-# Optimized resource requests and limits
-resources:
-  requests:
-    cpu: 500m
-    memory: 1Gi
-  limits:
-    cpu: 2000m
-    memory: 4Gi
-```
-
-### Auto-scaling Configuration
-```yaml
-# Horizontal Pod Autoscaler
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: jpmorgan-apis-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: jpmorgan-financial-apis
-  minReplicas: 3
-  maxReplicas: 50
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-```
-
-## Security Considerations
-
-### Network Policies
-```yaml
-# Restrict pod-to-pod communication
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: api-server-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: jpmorgan-financial-apis
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ingress-nginx
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgresql
-    ports:
-    - protocol: TCP
-      port: 5432
-```
-
-### Secrets Management
-- All sensitive data stored in Kubernetes secrets
-- Environment variables used for non-sensitive configuration
-- Secrets rotated regularly via CI/CD pipeline
-- Audit logging enabled for secret access
-
-## Maintenance Procedures
-
-### Regular Maintenance Tasks
-- **Daily**: Monitor dashboards, review alerts, check logs
-- **Weekly**: Update dependencies, review security scans
-- **Monthly**: Performance optimization, capacity planning
-- **Quarterly**: Security audits, compliance reviews
-
-### Backup Strategy
-- **Database**: Daily automated backups with 30-day retention
-- **Configuration**: Version controlled in Git
-- **Infrastructure**: Infrastructure as Code with Terraform
-- **Logs**: Aggregated and archived for 90 days
-
-## Support and Contact
-
-### Emergency Contacts
-- **Production Issues**: production-support@jpmorgan.com
-- **Security Incidents**: security@jpmorgan.com
-- **Infrastructure**: infra@jpmorgan.com
-- **On-call Engineer**: +1-800-JPM-HELP
-
-### Documentation Resources
-- [API Documentation](docs/api.md)
-- [Troubleshooting Guide](docs/troubleshooting.md)
-- [Performance Tuning](docs/performance-tuning.md)
-- [Security Best Practices](docs/security.md)
-
-## Deployment Checklist
-
-### Pre-deployment
-- [ ] Environment variables configured
-- [ ] Kubernetes cluster access verified
-- [ ] Required tools installed
-- [ ] Backup strategy confirmed
-- [ ] Rollback plan documented
-
-### During Deployment
-- [ ] Pre-deployment checks passed
-- [ ] Infrastructure deployed successfully
-- [ ] Application deployed without errors
-- [ ] Health checks passing
-- [ ] Monitoring configured
-
-### Post-deployment
-- [ ] Application accessible
-- [ ] API endpoints responding
-- [ ] Monitoring dashboards working
-- [ ] Alerting configured
-- [ ] Logs being collected
-- [ ] Performance baselines established
+For application-specific issues:
+- Check the API documentation at `/` endpoint
+- Review application logs in Railway dashboard
 
 ---
 
-**Deployment Script**: `deploy_production_final.sh`
-**Version**: 1.0.0
-**Last Updated**: November 2024
-**Supported Platforms**: Kubernetes 1.24+, Docker 20.10+
+**🎉 Your JPMorgan Financial APIs are now deployed on Railway!**

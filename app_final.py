@@ -3176,10 +3176,14 @@ if __name__ == '__main__':
     # Configure SSL context for HTTPS (disabled for testing)
     ssl_context = None
 
+    # Railway deployment: Use PORT environment variable provided by Railway
+    # Fallback to FLASK_RUN_PORT for local development, then default to 5000
+    port = int(os.environ.get('PORT', os.environ.get('FLASK_RUN_PORT', 5000)))
+
     # Run the application with SocketIO
     socketio.run(
         app,
         host='0.0.0.0',
-        port=int(os.environ.get('FLASK_RUN_PORT', 5000)),
+        port=port,
         debug=config.LOG_LEVEL == 'DEBUG'
     )

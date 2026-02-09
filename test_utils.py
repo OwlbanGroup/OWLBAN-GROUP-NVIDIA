@@ -1,26 +1,35 @@
-#!/usr/bin/env python3
 """
-Test utilities and fixtures for JPMorgan Financial APIs E2E testing
+Test utilities for JPMorgan Financial APIs comprehensive testing
+Provides test helpers, data generators, and assertion utilities
 """
-import copy
+
 import json
-import os
-import random
-import tempfile
 import time
-from datetime import datetime, timezone
+import random
+import string
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional
-from shutil import rmtree
+import unittest
+from unittest.mock import Mock, patch
 
-from faker import Faker
-from flask.testing import FlaskClient
-from werkzeug.test import TestResponse
-
-# Sample data for testing - matches the format expected by the app
-SAMPLE_TELEMETRY_DATA: Dict[str, Any] = {
-    "operation": "test_operation",
-    "pfn": "test_pfn",
-    "event_name": "sample_event",
+# Sample telemetry data for testing
+SAMPLE_TELEMETRY_DATA = {
+    "ver": "4.0",
+    "name": "Microsoft.Windows.ApplicationModel.Store.Telemetry.NetworkRequest",
+    "time": "2025-09-22T19:42:13.2549325Z",
+    "data": {
+        "Op": "StoreConfigurationServer::DownloadConfigurationAsync",
+        "PFN": "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe",
+        "OS": "Windows 10",
+        "DeviceModel": "Dell XPS 13",
+        "UserId": "test_user_123",
+        "URL": "https://config.store.microsoft.com/config",
+        "ResponseTime": 150
+    },
+    "ext": {
+        "flags": 1,
+        "privacy": "public"
+    }
 }
 
 LARGE_BATCH_DATA = {
@@ -32,15 +41,15 @@ LARGE_BATCH_DATA = {
             "time": "2025-09-22T19:42:11.2549325Z",
             "data": {
                 "Op": "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync",
-                "PFN": (
-                    "Microsoft.WindowsStore_22507.1401.7.0_x64__"
-                    "8wekyb3d8bbwe"
-                ),
+                "PFN": "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe",
                 "OS": "Windows 11",
                 "DeviceModel": "Surface Pro 9",
-                "UserId": "test_user_456",
+                "UserId": "test_user_456"
             },
-            "ext": {"flags": 1, "privacy": "public"},
+            "ext": {
+                "flags": 1,
+                "privacy": "public"
+            }
         },
         {
             "ver": "4.0",
@@ -48,461 +57,258 @@ LARGE_BATCH_DATA = {
             "time": "2025-09-22T19:42:12.2549325Z",
             "data": {
                 "Op": "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync",
-                "PFN": (
-                    "Microsoft.WindowsStore_22507.1401.7.0_x64__"
-                    "8wekyb3d8bbwe"
-                ),
+                "PFN": "Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe",
                 "OS": "Windows 11",
                 "DeviceModel": "Surface Pro 9",
                 "UserId": "test_user_789",
-                "ErrorCode": "0x80070005",
+                "ErrorCode": "0x80070005"
             },
-            "ext": {"flags": 1, "privacy": "public"},
-        },
+            "ext": {
+                "flags": 1,
+                "privacy": "public"
+            }
+        }
     ]
 }
 
-SAMPLE_BUSINESS_DATA = {
-    "name": "Test Business Corp",
-    "description": "A test business for E2E testing",
-    "industry": "Technology",
-    "location": "New York, NY",
-    "contact_email": "contact@testbusiness.com",
-    "website": "https://testbusiness.com",
-}
-
-SAMPLE_ASSET_DATA = {
-    "name": "Test Asset Server",
-    "description": "A test server asset",
-    "asset_type": "Server",
-    "value": 50000.00,
-    "location": "Data Center A",
-    "status": "Active",
-    "purchase_date": "2023-01-15",
-    "business_id": None,  # Will be set dynamically
-}
-
-
 class TestUser:
-    """Test user management for E2E tests"""
+    """Test user helper for authentication testing"""
 
-    def __init__(self, username: str = "testuser", password: str = "testpass"):
-        self.username = username
-        self.password = password
-        self.token: Optional[str] = None
-        self.client: Optional[FlaskClient] = None
+    def __init__(self, username: str = None, password: str = None, role: str = "USER"):
+        self.username = username or f"test_user_{random.randint(1000, 9999)}"
+        self.password = password or "testpass123"
+        self.role = role
+        self.token = None
+        self.user_id = None
 
-    def register(self, client: FlaskClient) -> bool:
+    def register(self, client) -> Dict[str, Any]:
         """Register the test user"""
-        self.client = client
-        response = client.post(
-            "/user/login", json={"username": self.username, "password": self.password}
-        )
-        return response.status_code == 200
+        response = client.post('/user/register', json={
+            'username': self.username,
+            'password': self.password,
+            'email': f"{self.username}@test.com",
+            'role': self.role
+        })
+        if response.status_code == 201:
+            data = json.loads(response.data)
+            self.user_id = data['user']['id']
+        return json.loads(response.data)
 
-    def login(self, client: FlaskClient) -> bool:
-        """Login and get token"""
-        self.client = client
-        response = client.post(
-            "/user/login", json={"username": self.username, "password": self.password}
-        )
+    def login(self, client) -> Dict[str, Any]:
+        """Login the test user and get token"""
+        response = client.post('/user/login', json={
+            'username': self.username,
+            'password': self.password
+        })
         if response.status_code == 200:
-            data = response.get_json()
-            self.token = data.get("token")
-            return True
-        return False
+            data = json.loads(response.data)
+            self.token = data['token']
+        return json.loads(response.data)
 
     def get_auth_headers(self) -> Dict[str, str]:
-        """Get authorization headers for authenticated requests"""
-        if self.token:
-            return {"Authorization": f"Bearer {self.token}"}
-        return {}
-
-    def make_authenticated_request(self, method: str, endpoint: str, **kwargs):
-        """Make an authenticated request"""
-        if not self.client:
-            raise ValueError("Client not set. Call register() or login() first.")
-
-        headers = kwargs.get("headers", {})
-        headers.update(self.get_auth_headers())
-        kwargs["headers"] = headers
-
-        return getattr(self.client, method.lower())(endpoint, **kwargs)
-
+        """Get authentication headers for requests"""
+        return {'Authorization': f'Bearer {self.token}'} if self.token else {}
 
 class DatabaseTestHelper:
-    """Helper for database-related testing"""
+    """Helper for database testing operations"""
 
     @staticmethod
-    def get_telemetry_count(client: FlaskClient) -> int:
-        """Get current telemetry event count"""
-        response = client.get("/telemetry/metrics?hours=24")
-        if response.status_code == 200:
-            data = response.get_json()
-            return data.get("metrics", {}).get("total_events", 0)
-        return 0
+    def cleanup_test_data(db_manager):
+        """Clean up test data from database"""
+        try:
+            # Clean up test users
+            db_manager.execute_query("DELETE FROM users WHERE username LIKE 'test_%'")
+            # Clean up test businesses
+            db_manager.execute_query("DELETE FROM businesses WHERE name LIKE 'Test%'")
+            # Clean up test assets
+            db_manager.execute_query("DELETE FROM assets WHERE name LIKE 'Test%'")
+            # Clean up test transactions
+            db_manager.execute_query("DELETE FROM revenue_transactions WHERE description LIKE 'Test%'")
+        except Exception as e:
+            print(f"Warning: Could not cleanup test data: {e}")
 
     @staticmethod
-    def wait_for_database_operation(timeout: int = 5) -> None:
-        """Wait for database operations to complete"""
-        time.sleep(timeout)
-
-    @staticmethod
-    def clear_test_data(
-        client: FlaskClient, user: TestUser  # pylint: disable=unused-argument
-    ) -> None:
-        """Clear test data from database"""
-        # This would require admin endpoints - for now, just wait
-        DatabaseTestHelper.wait_for_database_operation()
-        # Note: client and user parameters are unused but kept for future implementation
-
+    def get_table_counts(db_manager) -> Dict[str, int]:
+        """Get row counts for main tables"""
+        counts = {}
+        try:
+            tables = ['users', 'businesses', 'assets', 'revenue_transactions', 'audit_logs']
+            for table in tables:
+                result = db_manager.execute_query(f"SELECT COUNT(*) as count FROM {table}")
+                counts[table] = result[0]['count'] if result else 0
+        except Exception as e:
+            print(f"Warning: Could not get table counts: {e}")
+        return counts
 
 class PerformanceTestHelper:
     """Helper for performance testing"""
 
     @staticmethod
-    def measure_response_time(func, *args, **kwargs) -> tuple:
-        """Measure function execution time"""
+    def measure_response_time(func, *args, **kwargs) -> float:
+        """Measure execution time of a function"""
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
-        return result, end_time - start_time
+        return end_time - start_time, result
 
     @staticmethod
-    def generate_bulk_telemetry(count: int) -> List[Dict[str, Any]]:
-        """Generate bulk telemetry data for testing"""
-        telemetry_list: List[Dict[str, Any]] = []
-        base_time = datetime.now(timezone.utc)
+    def run_load_test(client, endpoint: str, num_requests: int = 100, concurrent: bool = False) -> Dict[str, Any]:
+        """Run basic load test on an endpoint"""
+        import concurrent.futures
 
-        for i in range(count):
-            telemetry = copy.deepcopy(SAMPLE_TELEMETRY_DATA)
-            # Ensure telemetry is a dict
-            if not isinstance(telemetry, dict):
-                telemetry = {}
+        def make_request():
+            start = time.time()
+            response = client.get(endpoint)
+            end = time.time()
+            return response.status_code, end - start
 
-            telemetry["time"] = (
-                base_time.replace(microsecond=i * 1000)
-            ).isoformat() + "Z"
-            # Ensure 'data' is a dictionary before assignment; if it's a JSON string, try to parse it
-            telemetry.setdefault("data", {})
-            if not isinstance(telemetry["data"], dict):
-                if isinstance(telemetry["data"], str):
-                    try:
-                        parsed = json.loads(telemetry["data"])
-                        telemetry["data"] = parsed if isinstance(parsed, dict) else {}
-                    except (ValueError, TypeError):
-                        telemetry["data"] = {}
-                else:
-                    telemetry["data"] = {}
-            # Type assertion for mypy
-            assert isinstance(telemetry["data"], dict)
+        results = []
+        if concurrent:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(make_request) for _ in range(num_requests)]
+                for future in concurrent.futures.as_completed(futures):
+                    results.append(future.result())
+        else:
+            for _ in range(num_requests):
+                results.append(make_request())
 
-            telemetry["data"]["UserId"] = f"bulk_user_{i}"
-            telemetry_list.append(telemetry)
+        status_codes = [r[0] for r in results]
+        response_times = [r[1] for r in results]
 
-        return telemetry_list
-
-
-class ExternalServiceMock:
-    """Mock external services for testing"""
-
-    @staticmethod
-    def mock_ngc_service():
-        """Mock NGC service calls"""
-        # This would mock NGC API calls
-        raise NotImplementedError("Mock not implemented")
-
-    @staticmethod
-    def mock_redis_service():
-        """Mock Redis service"""
-        # This would mock Redis operations
-        raise NotImplementedError("Mock not implemented")
-
-    @staticmethod
-    def mock_cloud_storage():
-        """Mock cloud storage operations"""
-        # This would mock cloud storage calls
-        raise NotImplementedError("Mock not implemented")
-
+        return {
+            'total_requests': num_requests,
+            'successful_requests': status_codes.count(200),
+            'failed_requests': len([s for s in status_codes if s != 200]),
+            'avg_response_time': sum(response_times) / len(response_times),
+            'min_response_time': min(response_times),
+            'max_response_time': max(response_times),
+            'status_codes': {code: status_codes.count(code) for code in set(status_codes)}
+        }
 
 class TestDataGenerator:
-    """Generate test data for various scenarios"""
+    """Generator for test data"""
 
     @staticmethod
-    def generate_telemetry_data(
-        count: int = 1, realistic: bool = True  # pylint: disable=unused-argument
-    ) -> List[Dict[str, Any]]:
-        """Generate realistic telemetry data for testing"""
-        # Note: realistic parameter is unused but kept for future implementation
-        fake = Faker()
-        telemetry_list: List[Dict[str, Any]] = []
-
-        operations = ["CREATE", "UPDATE", "DELETE", "READ", "EXECUTE"]
-        event_names = [
-            "app_launch",
-            "user_action",
-            "system_event",
-            "error_occurred",
-            "performance_metric",
+    def generate_telemetry_data(count: int = 1) -> List[Dict[str, Any]]:
+        """Generate sample telemetry data"""
+        data = []
+        operations = [
+            "StoreConfigurationServer::DownloadConfigurationAsync",
+            "StoreConfigurationServer::FilterUnsupportedSystemFeaturesAsync",
+            "StoreConfigurationServer::GetCachedConfiguration",
+            "StoreConfigurationServer::UpdateConfiguration"
         ]
-        os_types = ["Windows", "macOS", "Linux", "iOS", "Android"]
-        device_models = [
-            "Surface Pro 9",
-            "Dell XPS 13",
-            "HP Spectre",
-            "Lenovo ThinkPad",
-            "ASUS ROG",
-        ]
+        devices = ["Dell XPS 13", "Surface Pro 9", "HP Spectre", "MacBook Pro", "ThinkPad X1"]
+        os_versions = ["Windows 10", "Windows 11", "macOS 12", "macOS 13"]
 
         for i in range(count):
-            base_time = datetime.now(timezone.utc)
-
             telemetry = {
                 "ver": "4.0",
-                "name": (
-                    "Microsoft.Windows.ApplicationModel.Store.Telemetry."
-                    f"{random.choice(['BeginOperation', 'EndOperation', 'Error'])}"
-                ),
-                "time": (base_time.replace(microsecond=i * 1000)).isoformat() + "Z",
+                "name": "Microsoft.Windows.ApplicationModel.Store.Telemetry.NetworkRequest",
+                "time": datetime.now(timezone.utc).isoformat(),
                 "data": {
-                    "Op": f"StoreConfigurationServer::{random.choice(operations)}OperationAsync",
-                    "PFN": fake.bothify(text="????????????????"),
-                    # 16 char alphanumeric
-                    "OS": random.choice(os_types),
-                    "DeviceModel": random.choice(device_models),
-                    "UserId": f"test_user_{i+1}",
-                    "event_name": random.choice(event_names),
-                    "shell_id": random.randint(1, 1000),
-                    "event_flags": random.randint(0, 255),
-                    "pg_name": fake.domain_name(),
-                    "dvc_sample": random.uniform(0, 1),
-                    "flags": random.randint(0, 65535),
-                    "edition": random.randint(1, 10),
-                    "epoch": str(int(time.time())),
-                    "seq": random.randint(1, 1000000),
-                    "data_type": random.randint(1, 100),
-                    "is_required": random.choice([True, False]),
-                    "data_category": random.randint(1, 50),
-                    "product": random.randint(1, 100),
-                    "priv_tags": random.randint(0, 4294967295),
-                    "policies": random.randint(0, 4294967295),
-                    "cv": fake.bothify(text="????????"),
-                    # 8 char alphanumeric
-                    "boot_id": random.randint(1, 1000000),
-                    "os_name": random.choice(os_types),
-                    "os_version": fake.bothify(text="?.?.?"),
-                    "exp_id": fake.bothify(text="????????????"),
-                    # 12 char alphanumeric
-                    "app_id": fake.bothify(text="????????????????"),
-                    # 16 char alphanumeric
-                    "app_version": fake.bothify(text="?.?.?"),
-                    "is_1p": random.randint(0, 1),
-                    "as_id": random.randint(1, 1000),
-                    "local_id": fake.bothify(text="????????????????????"),
-                    # 20 char alphanumeric
-                    "device_class": random.choice(
-                        ["desktop", "mobile", "tablet", "server"]
-                    ),
-                    "dev_make": fake.company(),
-                    "dev_model": random.choice(
-                        ["Model A", "Model B", "Model C", "Professional", "Enterprise"]
-                    ),
-                    "ticket_keys": json.dumps({
-                        "ticket1": fake.bothify(
-                            text="???????????????????????????????"
-                        ),
-                        "ticket2": fake.bothify(
-                            text="???????????????????????????????"
-                        ),
-                    }),
-                    "user_local_id": fake.bothify(text="????????????????????????"),
-                    # 24 char alphanumeric
-                    "tz": random.choice(["UTC", "EST", "PST", "GMT", "CET"]),
-                    "pn1": fake.word(),
-                    "p1": fake.bothify(text="??????????"),
-                    # 10 char alphanumeric
-                    "pn2": fake.word(),
-                    "p2": fake.bothify(text="??????????"),
-                    "pn3": fake.word(),
-                    "p3": fake.bothify(text="??????????"),
-                    "pn4": fake.word(),
-                    "p4": fake.bothify(text="??????????"),
+                    "Op": random.choice(operations),
+                    "PFN": f"Microsoft.WindowsStore_22507.1401.7.0_x64__8wekyb3d8bbwe_{i}",
+                    "OS": random.choice(os_versions),
+                    "DeviceModel": random.choice(devices),
+                    "UserId": f"test_user_{i}",
+                    "URL": "https://config.store.microsoft.com/config",
+                    "ResponseTime": random.randint(50, 500)
                 },
-                "ext": {"flags": 1, "privacy": "public"},
+                "ext": {
+                    "flags": 1,
+                    "privacy": "public"
+                }
             }
-
-            # Add some edge cases for realistic testing
-            if random.random() < 0.1:  # 10% chance of error
-                # Ensure telemetry['data'] is a dict before setting ErrorCode
-                if isinstance(telemetry.get("data"), dict):
-                    data = telemetry["data"]
-                    assert isinstance(data, dict)
-                    data["ErrorCode"] = "0x80070005"
-                else:
-                    telemetry["data"] = {"ErrorCode": "0x80070005"}
-
-            telemetry_list.append(telemetry)
-
-        return telemetry_list
+            data.append(telemetry)
+        return data
 
     @staticmethod
-    def generate_large_batch(count: int = 1000) -> Dict[str, Any]:
-        """Generate a large batch of telemetry data"""
-        telemetry_data = TestDataGenerator.generate_telemetry_data(count)
-        return {"telemetry_data": telemetry_data}
+    def generate_business_data() -> Dict[str, Any]:
+        """Generate sample business data"""
+        return {
+            "name": f"Test Business Corp {random.randint(1000, 9999)}",
+            "type": random.choice(["corporation", "llc", "partnership"]),
+            "registration_number": f"REG{random.randint(100000, 999999)}",
+            "address": f"{random.randint(100, 9999)} Test Street, {random.choice(['New York', 'London', 'Tokyo'])}, NY",
+            "contact_info": {
+                "email": f"contact{random.randint(1000, 9999)}@testbusiness.com",
+                "phone": f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+            }
+        }
 
     @staticmethod
-    def generate_business_data(count: int = 1) -> List[Dict[str, Any]]:
-        """Generate test business data"""
-        businesses = []
-        for i in range(count):
-            business = SAMPLE_BUSINESS_DATA.copy()
-            business["name"] = f"{business['name']} {i+1}"
-            business["contact_email"] = f"contact{i+1}@testbusiness.com"
-            businesses.append(business)
-        return businesses
-
-    @staticmethod
-    def generate_asset_data(
-        count: int = 1, business_id: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
-        """Generate test asset data"""
-        assets = []
-        for i in range(count):
-            asset = SAMPLE_ASSET_DATA.copy()
-            asset["name"] = f"{asset['name']} {i+1}"
-            asset["business_id"] = business_id
-            assets.append(asset)
-        return assets
-
-    @staticmethod
-    def generate_invalid_telemetry() -> List[Dict[str, Any]]:
-        """Generate invalid telemetry data for error testing"""
-        return [
-            {},  # Empty
-            {"invalid": "data"},  # Missing required fields
-            {"ver": "4.0", "name": "", "time": "invalid", "data": {}},  # Invalid values
-        ]
-
-    @staticmethod
-    def generate_stress_test_data(scenarios: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-        """Generate data for stress testing scenarios"""
-        stress_data: Dict[str, List[Dict[str, Any]]] = {}
-
-        for scenario in scenarios:
-            if scenario == "high_volume":
-                stress_data[scenario] = TestDataGenerator.generate_telemetry_data(10000)
-            elif scenario == "large_payloads":
-                # Generate telemetry with very large data fields
-                large_telemetry = TestDataGenerator.generate_telemetry_data(100)
-                for item in large_telemetry:
-                    if isinstance(item["data"], dict):
-                        item["data"]["large_field"] = "x" * 10000  # type: ignore[index]
-                stress_data[scenario] = large_telemetry
-            elif scenario == "concurrent_users":
-                stress_data[scenario] = TestDataGenerator.generate_telemetry_data(1000)
-            elif scenario == "mixed_operations":
-                # Mix of different operation types
-                stress_data[scenario] = TestDataGenerator.generate_telemetry_data(500)
-
-        return stress_data
-
+    def generate_asset_data(business_id: int = None) -> Dict[str, Any]:
+        """Generate sample asset data"""
+        return {
+            "business_id": business_id or random.randint(1, 100),
+            "name": f"Test Asset {random.choice(['Server', 'Software', 'Equipment', 'Vehicle'])} {random.randint(1000, 9999)}",
+            "type": random.choice(["equipment", "software", "property", "vehicle"]),
+            "value": round(random.uniform(1000, 100000), 2),
+            "acquisition_date": (datetime.now(timezone.utc) - timedelta(days=random.randint(1, 365))).isoformat(),
+            "ownership_percentage": random.choice([100.0, 50.0, 75.0, 25.0]),
+            "description": f"Test asset description {random.randint(1000, 9999)}"
+        }
 
 class TestAssertions:
-    """Common test assertions"""
+    """Custom assertions for testing"""
 
     @staticmethod
-    def assert_success_response(response: TestResponse, expected_status: int = 200) -> Dict[str, Any]:
+    def assert_response_success(response, expected_status: int = 200):
         """Assert successful API response"""
-        assert response.status_code == expected_status
-        data = response.get_json()
-        # Allow both 'success' and 'healthy' status values, but only check if status field exists
-        if "status" in data:
-            expected_statuses = ["success", "healthy"]
-            assert data["status"] in expected_statuses, (
-                f"Expected {expected_statuses}, got '{data['status']}'"
-            )
-        if "timestamp" in data:
-            assert "timestamp" in data
-        return data
+        assert response.status_code == expected_status, f"Expected status {expected_status}, got {response.status_code}"
+        data = json.loads(response.data)
+        assert data['status'] == 'success', f"Expected success status, got {data.get('status')}"
 
     @staticmethod
-    def assert_error_response(response: TestResponse, expected_status: int = 400) -> Dict[str, Any]:
+    def assert_response_error(response, expected_status: int = 400):
         """Assert error API response"""
-        assert response.status_code == expected_status
-        data = response.get_json()
-        # Allow flexible error response format - may not always have 'status' field
-        if "status" in data:
-            assert data["status"] == "error"
-        if "error" in data:
-            assert "error" in data
-        return data
+        assert response.status_code == expected_status, f"Expected status {expected_status}, got {response.status_code}"
+        data = json.loads(response.data)
+        assert data['status'] == 'error', f"Expected error status, got {data.get('status')}"
+        assert 'error' in data, "Error response should contain 'error' field"
 
     @staticmethod
-    def assert_telemetry_processed(response: TestResponse) -> Dict[str, Any]:
-        """Assert telemetry processing response"""
-        data = TestAssertions.assert_success_response(response)
-        # Allow flexible response format - message may not always be present
-        # Just ensure it's a successful response
-        return data
+    def assert_telemetry_processed(response):
+        """Assert telemetry was processed successfully"""
+        TestAssertions.assert_response_success(response)
+        data = json.loads(response.data)
+        assert 'message' in data, "Response should contain message"
+        assert 'timestamp' in data, "Response should contain timestamp"
 
     @staticmethod
-    def assert_batch_processed(response: TestResponse) -> Dict[str, Any]:
-        """Assert batch processing response"""
-        data = TestAssertions.assert_success_response(response)
-        # Allow flexible response format - may have 'stats' instead of 'statistics'
-        if "statistics" not in data and "stats" not in data:
-            raise AssertionError("Expected 'statistics' or 'stats' in response")
-        if "message" not in data:
-            raise AssertionError("Expected 'message' in response")
-        return data
+    def assert_business_created(response):
+        """Assert business was created successfully"""
+        TestAssertions.assert_response_success(response, 201)
+        data = json.loads(response.data)
+        assert 'business' in data, "Response should contain business data"
+        assert 'id' in data['business'], "Business should have ID"
 
+    @staticmethod
+    def assert_asset_created(response):
+        """Assert asset was created successfully"""
+        TestAssertions.assert_response_success(response, 201)
+        data = json.loads(response.data)
+        assert 'asset' in data, "Response should contain asset data"
+        assert 'id' in data['asset'], "Asset should have ID"
 
-class TestEnvironment:
-    """Test environment setup and teardown"""
+    @staticmethod
+    def assert_user_authenticated(response):
+        """Assert user authentication was successful"""
+        TestAssertions.assert_response_success(response, 200)
+        data = json.loads(response.data)
+        assert 'token' in data, "Response should contain token"
+        assert 'user' in data, "Response should contain user data"
 
-    def __init__(self):
-        self.temp_dir = None
-        self.original_env = {}
+# Additional test data constants
+SAMPLE_BUSINESS_DATA = TestDataGenerator.generate_business_data()
+SAMPLE_ASSET_DATA = TestDataGenerator.generate_asset_data()
 
-    def setup(self) -> None:
-        """Setup test environment"""
-        # Create temporary directory for test files
-        self.temp_dir = tempfile.mkdtemp()
-
-        # Backup original environment
-        test_env_vars = ["TESTING", "DATABASE_URL", "REDIS_URL", "SECRET_KEY"]
-        for var in test_env_vars:
-            if var in os.environ:
-                self.original_env[var] = os.environ[var]
-
-        # Set test environment variables
-        os.environ["TESTING"] = "1"
-        os.environ["DATABASE_URL"] = f"sqlite:///{self.temp_dir}/test.db"
-        os.environ["SECRET_KEY"] = "test_secret_key"
-
-    def teardown(self) -> None:
-        """Teardown test environment"""
-        # Restore original environment
-        for var, value in self.original_env.items():
-            os.environ[var] = value
-        for var in ["TESTING", "DATABASE_URL", "REDIS_URL", "SECRET_KEY"]:
-            if var not in self.original_env and var in os.environ:
-                del os.environ[var]
-        # Clean up temporary directory
-        if self.temp_dir and os.path.exists(self.temp_dir):
-            rmtree(self.temp_dir)
-
-
-# Global test environment instance
-test_env = TestEnvironment()
-
-
-def setup_test_environment():
-    """Setup test environment for all tests"""
-    test_env.setup()
-
-
-def teardown_test_environment():
-    """Teardown test environment after all tests"""
-    test_env.teardown()
+# Test configuration
+TEST_CONFIG = {
+    'database_url': 'sqlite:///test.db',
+    'redis_url': None,  # Use in-memory for tests
+    'secret_key': 'test_secret_key_12345',
+    'testing': True,
+    'log_level': 'WARNING'  # Reduce log noise during tests
+}
