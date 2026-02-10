@@ -1,4 +1,4 @@
-"""
+https://cloud.redis.io/#/add-subscription/essential?recommendedPlan=essential"""
 JPMorgan Financial APIs - Enterprise-grade API for processing Microsoft Windows Store telemetry data.
 
 This module provides a comprehensive Flask-based API server with the following features:
@@ -42,6 +42,7 @@ from flask_socketio import SocketIO, emit  # type: ignore
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
+import mixpanel
 
 # Local imports
 try:
@@ -149,6 +150,9 @@ app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
 app.url_map.strict_slashes = False
 CORS(app, origins=config.ALLOWED_ORIGINS)
+
+# Initialize Mixpanel
+mp = mixpanel.Mixpanel('93a8d7dbce15')
 
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins=config.ALLOWED_ORIGINS)
@@ -316,6 +320,17 @@ def health_check():
     })
 
 
+@app.route('/welcome', methods=['GET'])
+@conditional_limit("10 per minute")
+def welcome():
+    """Welcome endpoint with request logging"""
+    telemetry_logger.get_logger().info(f"Request received: {request.method} {request.path}")
+    return jsonify({
+        'message': 'Welcome to the JPMorgan Financial APIs',
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
+
+
 # In-memory user store for demonstration (replace with DB in production)
 users = {}
 
@@ -403,6 +418,17 @@ def register_user():
                 username=username,
                 response_time_ms=response_time_ms
             )
+
+        # Track user registration event with Mixpanel
+        try:
+            mp.track(user.id, 'user_registration', {
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.value,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            telemetry_logger.log_error(e, {'context': 'mixpanel_user_registration_tracking'})
 
         return jsonify({
             'status': 'success',

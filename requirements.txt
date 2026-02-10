@@ -80,3 +80,6 @@ faker==26.0.0
 # Additional production dependencies
 gunicorn==23.0.0
 waitress==3.0.0  # Alternative production server
+
+# Analytics and tracking
+mixpanel==4.10.1
