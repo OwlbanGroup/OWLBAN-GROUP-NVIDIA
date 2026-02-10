@@ -117,7 +117,7 @@ class AssetModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    business = relationship("src.database_fixed.BusinessModel", backref="assets")
+    business = relationship("BusinessModel")
 
 
 class DatabaseManager:

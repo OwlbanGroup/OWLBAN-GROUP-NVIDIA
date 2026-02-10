@@ -87,7 +87,7 @@ class Config:
     DATABASE_CONNECTION_POOL_RECYCLE = int(os.getenv('DATABASE_CONNECTION_POOL_RECYCLE', '3600'))
 
     # Redis Settings
-    REDIS_URL = os.getenv('REDIS_URL')
+    REDIS_URL = os.getenv('REDIS_URL', None)
     # REDIS_URL is optional - if not provided, in-memory cache will be used
 
     # Token Management Settings - No defaults for security
