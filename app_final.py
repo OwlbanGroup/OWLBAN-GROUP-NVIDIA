@@ -34,6 +34,9 @@ from threading import Thread
 import requests
 from decimal import Decimal
 
+# Import sync scheduler for integrated data synchronization
+from sync_scheduler import JPMorganSyncScheduler, create_scheduler
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -97,6 +100,15 @@ setup_cloud_storage(config.get_all_settings())
 
 # Initialize ML model
 anomaly_detector = AnomalyDetector()
+
+# Initialize sync scheduler
+sync_scheduler = None
+try:
+    sync_scheduler = create_scheduler()
+    telemetry_logger.get_logger().info("Sync scheduler initialized successfully")
+except Exception as e:
+    telemetry_logger.get_logger().error(f"Failed to initialize sync scheduler: {e}")
+    sync_scheduler = None
 
 # Prometheus metrics (app_final version to avoid conflicts)
 REQUEST_COUNT_FINAL = Counter('http_requests_total_final', 'Total HTTP requests (final)', ['method', 'endpoint', 'status_code'])
@@ -1065,6 +1077,237 @@ def ai_service_status():
 
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'ai_service_status'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+# Data Synchronization Endpoints
+@app.route('/sync/start', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def start_sync_scheduler():
+    """
+    Start the data synchronization scheduler
+    """
+    try:
+        global sync_scheduler
+        if sync_scheduler is None:
+            sync_scheduler = create_scheduler()
+            telemetry_logger.get_logger().info("Sync scheduler created for manual start")
+
+        if sync_scheduler.running:
+            return jsonify({
+                'status': 'error',
+                'message': 'Sync scheduler is already running',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 400
+
+        sync_scheduler.start_scheduler()
+        return jsonify({
+            'status': 'success',
+            'message': 'Sync scheduler started successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'start_sync_scheduler'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/sync/stop', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def stop_sync_scheduler():
+    """
+    Stop the data synchronization scheduler
+    """
+    try:
+        global sync_scheduler
+        if sync_scheduler is None or not sync_scheduler.running:
+            return jsonify({
+                'status': 'error',
+                'message': 'Sync scheduler is not running',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 400
+
+        sync_scheduler.stop_scheduler()
+        return jsonify({
+            'status': 'success',
+            'message': 'Sync scheduler stopped successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'stop_sync_scheduler'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/sync/status', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_sync_status():
+    """
+    Get the current status of the data synchronization scheduler
+    """
+    try:
+        global sync_scheduler
+        if sync_scheduler is None:
+            return jsonify({
+                'status': 'success',
+                'scheduler_status': 'not_initialized',
+                'jobs': {},
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+
+        job_status = sync_scheduler.get_job_status()
+        return jsonify({
+            'status': 'success',
+            'scheduler_status': 'running' if sync_scheduler.running else 'stopped',
+            'jobs': job_status,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_sync_status'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/sync/run/<job_id>', methods=['POST'])
+@token_auth_required
+@conditional_limit("2 per minute")
+def run_sync_job(job_id):
+    """
+    Run a specific synchronization job immediately
+    """
+    try:
+        global sync_scheduler
+        if sync_scheduler is None:
+            return jsonify({
+                'status': 'error',
+                'message': 'Sync scheduler is not initialized',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 400
+
+        result = sync_scheduler.run_job_now(job_id)
+        return jsonify({
+            'status': 'success',
+            'job_id': job_id,
+            'result': result,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except ValueError as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 400
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'run_sync_job', 'job_id': job_id})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/sync/logs', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_sync_logs():
+    """
+    Get synchronization logs and history
+    """
+    try:
+        limit = request.args.get('limit', 50, type=int)
+        if limit <= 0 or limit > 500:
+            return jsonify({'error': 'Limit must be between 1 and 500', 'status': 'error'}), 400
+
+        # Query sync logs from database
+        with psycopg2.connect(sync_scheduler.db_manager.connection_string) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, sync_type, status, records_processed, records_failed,
+                           error_message, started_at, completed_at, duration_seconds
+                    FROM sync_logs
+                    ORDER BY started_at DESC
+                    LIMIT %s
+                """, (limit,))
+                logs = cursor.fetchall()
+
+        return jsonify({
+            'status': 'success',
+            'logs': [dict(log) for log in logs],
+            'count': len(logs),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_sync_logs'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+# Webhook Endpoints for Real-time Data Updates
+@app.route('/webhooks/jpmorgan/transactions', methods=['POST'])
+@require_auth
+@conditional_limit("100 per minute")
+def jpmorgan_transaction_webhook():
+    """
+    Webhook endpoint for real-time JPMorgan transaction updates
+    """
+    try:
+        webhook_data = request.get_json(force=True)
+        if not webhook_data:
+            return jsonify({'error': 'No webhook data provided', 'status': 'error'}), 400
+
+        telemetry_logger.get_logger().info(f"Received JPMorgan transaction webhook: {webhook_data}")
+
+        # Process webhook data immediately
+        # This would trigger enrichment and AI analysis for real-time data
+        transaction_data = webhook_data.get('transaction', {})
+
+        # Store webhook event
+        with psycopg2.connect(sync_scheduler.db_manager.connection_string) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO webhook_events (source, event_type, event_data, received_at)
+                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                """, ('jpmorgan', 'transaction', json.dumps(webhook_data)))
+                conn.commit()
+
+        # Trigger real-time processing (enrichment + AI analysis)
+        # This would be implemented based on the webhook payload
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Transaction webhook processed successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'jpmorgan_transaction_webhook'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/webhooks/jpmorgan/accounts', methods=['POST'])
+@require_auth
+@conditional_limit("50 per minute")
+def jpmorgan_account_webhook():
+    """
+    Webhook endpoint for real-time JPMorgan account updates
+    """
+    try:
+        webhook_data = request.get_json(force=True)
+        if not webhook_data:
+            return jsonify({'error': 'No webhook data provided', 'status': 'error'}), 400
+
+        telemetry_logger.get_logger().info(f"Received JPMorgan account webhook: {webhook_data}")
+
+        # Store webhook event
+        with psycopg2.connect(sync_scheduler.db_manager.connection_string) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO webhook_events (source, event_type, event_data, received_at)
+                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                """, ('jpmorgan', 'account', json.dumps(webhook_data)))
+                conn.commit()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Account webhook processed successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'jpmorgan_account_webhook'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.errorhandler(404)

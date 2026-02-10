@@ -21,6 +21,21 @@ import psycopg2
 from psycopg2.extras import execute_values
 import json
 
+# Import enrichment and AI services for post-sync processing
+try:
+    from apollo_connector import ApolloConnector, create_apollo_connector
+    APOLLO_AVAILABLE = True
+except ImportError:
+    APOLLO_AVAILABLE = False
+    print("Warning: Apollo connector not available for enrichment")
+
+try:
+    from src.ai_service import ai_service
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+    print("Warning: AI service not available for analysis")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -236,6 +251,24 @@ class JPMorganSyncScheduler:
     def __init__(self, db_connection_string: str, max_workers: int = 3):
         self.db_manager = DatabaseManager(db_connection_string)
         self.connector = create_jpmorgan_connector()
+
+        # Initialize enrichment and AI services if available
+        self.apollo_connector = None
+        if APOLLO_AVAILABLE:
+            try:
+                self.apollo_connector = create_apollo_connector()
+                logger.info("Apollo connector initialized for enrichment")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Apollo connector: {e}")
+
+        self.ai_service = None
+        if AI_AVAILABLE:
+            try:
+                self.ai_service = ai_service
+                logger.info("AI service initialized for analysis")
+            except Exception as e:
+                logger.warning(f"Failed to initialize AI service: {e}")
+
         self.jobs: Dict[str, SyncJob] = {}
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.running = False
@@ -396,6 +429,10 @@ class JPMorganSyncScheduler:
             # Upsert to database
             processed, failed = self.db_manager.upsert_transactions(transactions_data)
 
+            # Post-sync processing: enrichment and AI analysis
+            if processed > 0:
+                self._post_sync_processing(transactions_data, 'transactions')
+
             self.db_manager.log_sync_complete(sync_id, processed, failed)
 
             return {
@@ -547,6 +584,94 @@ class JPMorganSyncScheduler:
 
         job = self.jobs[job_id]
         return job.run()
+
+    def _post_sync_processing(self, data: list, data_type: str):
+        """
+        Perform post-sync processing: enrichment and AI analysis
+
+        Args:
+            data: List of synced data records
+            data_type: Type of data ('transactions', 'accounts', 'balances')
+        """
+        try:
+            logger.info(f"Starting post-sync processing for {len(data)} {data_type} records")
+
+            # Step 1: Apollo.io enrichment (if available)
+            if self.apollo_connector and data_type == 'transactions':
+                logger.info("Starting Apollo.io enrichment")
+                enriched_count = 0
+
+                for record in data:
+                    try:
+                        # Extract contact information from transaction description
+                        # This is a simplified example - in practice, you'd parse the description
+                        # to extract names, emails, companies, etc.
+                        description = record.get('description', '')
+
+                        # Search for contacts based on transaction description
+                        # This is a placeholder - actual implementation would depend on data structure
+                        if len(description) > 5:  # Basic filter
+                            search_results = self.apollo_connector.search_contacts(
+                                q=description[:50],  # Limit search query length
+                                page=1,
+                                per_page=1
+                            )
+
+                            if search_results and len(search_results) > 0:
+                                # Enrich the transaction record with contact data
+                                record['enriched_contact'] = search_results[0]
+                                enriched_count += 1
+
+                    except Exception as e:
+                        logger.warning(f"Failed to enrich transaction {record.get('id')}: {e}")
+                        continue
+
+                logger.info(f"Apollo.io enrichment completed: {enriched_count}/{len(data)} records enriched")
+
+            # Step 2: AI Analysis (if available)
+            if self.ai_service and data_type == 'transactions':
+                logger.info("Starting AI-powered financial analysis")
+
+                # Prepare data for AI analysis
+                financial_data = {
+                    'transactions': data[:50],  # Limit for analysis
+                    'summary': {
+                        'total_transactions': len(data),
+                        'data_type': data_type,
+                        'sync_timestamp': datetime.now().isoformat()
+                    }
+                }
+
+                # Perform AI analysis
+                try:
+                    # Analyze financial patterns
+                    analysis_result = self.ai_service.analyze_financial_data(
+                        financial_data,
+                        question="Analyze these recent financial transactions for patterns, anomalies, and insights",
+                        context="Automated post-sync analysis of JPMorgan financial data"
+                    )
+
+                    # Perform risk assessment
+                    risk_result = self.ai_service.assess_transaction_risk(
+                        {
+                            'transactions': data[:20],  # Sample for risk assessment
+                            'analysis_context': 'Post-sync automated risk assessment'
+                        },
+                        historical_patterns=[],
+                        market_conditions={}
+                    )
+
+                    logger.info("AI analysis completed successfully")
+                    logger.info(f"Analysis summary: {analysis_result.get('summary', 'N/A')}")
+                    logger.info(f"Risk assessment: {risk_result.get('risk_level', 'N/A')}")
+
+                except Exception as e:
+                    logger.error(f"AI analysis failed: {e}")
+
+            logger.info("Post-sync processing completed")
+
+        except Exception as e:
+            logger.error(f"Post-sync processing failed: {e}")
 
     def get_job_status(self) -> dict:
         """Get status of all jobs"""
