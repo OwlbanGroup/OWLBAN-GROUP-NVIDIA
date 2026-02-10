@@ -117,3 +117,42 @@ To complete the LangSmith integration, visit the provided onboarding URL to set 
 - `OPENAI_API_KEY` - OpenAI API key for GPT-4
 
 Once you complete the onboarding and set these environment variables, the AI service will be fully operational with comprehensive tracing and monitoring capabilities.
+
+### ✅ **Component 11: Grafana Cloud Stack Integration**
+- Automated Grafana Cloud stack creation script (`create_grafana_stack.py`)
+- Dashboard import functionality for production monitoring
+- Integration with existing Grafana dashboard JSON
+- API key authentication for programmatic stack management
+- Updated deployment guide with Grafana Cloud setup instructions
+
+## 🚀 Grafana Cloud Integration
+
+To integrate with Grafana Cloud for production monitoring:
+
+1. **Get Grafana Cloud API Key:**
+   - Visit https://grafana.com/orgs/your-org/api-keys
+   - Create a new API key with "Admin" permissions
+
+2. **Set Environment Variable:**
+   ```bash
+   export GRAFANA_CLOUD_API_KEY=your-api-key-here
+   ```
+
+3. **Run the Stack Creation Script:**
+   ```bash
+   cd jpmorgan_financial_apis
+   python create_grafana_stack.py
+   ```
+
+4. **Access Your Stack:**
+   - The script will output the stack URL and dashboard URL
+   - Login to Grafana Cloud to view the imported dashboard
+
+### Grafana Cloud Features Enabled:
+- **Production Monitoring Dashboard** - Real-time metrics and alerts
+- **API Health Monitoring** - Status checks and performance metrics
+- **Security Monitoring** - Authentication and anomaly detection
+- **Error Tracking** - Request failures and response times
+- **Telemetry Integration** - Event processing and batch monitoring
+
+The Grafana Cloud stack will be automatically configured with your existing dashboard for comprehensive monitoring of the JPMorgan Financial APIs system.

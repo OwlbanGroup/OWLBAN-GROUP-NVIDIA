@@ -109,11 +109,65 @@ LOG_LEVEL=INFO
 - CORS is configured for Railway domain
 - All secrets should be set as Railway environment variables (not in code)
 
+## 📊 Grafana Cloud Integration
+
+### Automated Grafana Cloud Stack Setup
+
+The project includes an automated script to create and configure a Grafana Cloud stack with your monitoring dashboard.
+
+#### Prerequisites
+- Grafana Cloud account (https://grafana.com/auth/sign-up)
+- Grafana Cloud API key with Admin permissions
+
+#### Setup Steps
+
+1. **Get Grafana Cloud API Key:**
+   - Visit https://grafana.com/orgs/your-org/api-keys
+   - Create a new API key with "Admin" permissions
+   - Copy the API key
+
+2. **Set Environment Variable:**
+   ```bash
+   export GRAFANA_CLOUD_API_KEY=your-api-key-here
+   ```
+
+3. **Run the Stack Creation Script:**
+   ```bash
+   cd jpmorgan_financial_apis
+   python create_grafana_stack.py
+   ```
+
+4. **Access Your Stack:**
+   - The script will output the stack URL and dashboard URL
+   - Login to Grafana Cloud to view the imported dashboard
+
+#### Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+1. Go to [Grafana Cloud](https://grafana.com/auth/sign-up) and create an account
+2. Click "Add Stack" in your Grafana Cloud portal
+3. Choose a stack name (e.g., "jpmorgan-financial-stack")
+4. Select your preferred region
+5. Once created, go to Dashboards → Import
+6. Upload the `grafana_dashboard.json` file from this project
+
+#### Grafana Cloud Features Enabled
+- **Production Monitoring Dashboard** - Real-time metrics and alerts
+- **API Health Monitoring** - Status checks and performance metrics
+- **Security Monitoring** - Authentication and anomaly detection
+- **Error Tracking** - Request failures and response times
+- **Telemetry Integration** - Event processing and batch monitoring
+
 ## 📞 Support
 
 For Railway-specific issues:
 - Railway Documentation: https://docs.railway.com/
 - Railway Community: https://discord.gg/railway
+
+For Grafana Cloud issues:
+- Grafana Cloud Documentation: https://grafana.com/docs/grafana-cloud/
+- Grafana Community: https://community.grafana.com/
 
 For application-specific issues:
 - Check the API documentation at `/` endpoint
