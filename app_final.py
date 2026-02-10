@@ -1,4 +1,39 @@
-https://cloud.redis.io/#/add-subscription/essential?recommendedPlan=essential"""
+PS C:\Users\bizle\Desktop> cd jpmorgan_financial_apis && python comprehensive_e2e_test.py
+At line:1 char:28
++ cd jpmorgan_financial_apis && python comprehensive_e2e_test.py
++                            ~~
+The token '&&' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErro 
+   rRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+PS C:\Users\bizle\Desktop> cd C:/Users/bizle/Desktop/jpmorgan_financial_apis && python comprehensive_e2e_test.py
+At line:1 char:51
++ cd C:/Users/bizle/Desktop/jpmorgan_financial_apis && python 
+comprehen ...
++                                                   ~~
+The token '&&' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErro 
+   rRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+PS C:\Users\bizle\Desktop> cd C:/Users/bizle/Desktop/jpmorgan_financial_apis ; python comprehensive_e2e_test.py
+Traceback (most recent call last):
+  File "C:\Users\bizle\Desktop\jpmorgan_financial_apis\comprehensive_e2e_test.py", line 11, in <module>
+    from app_final import app
+  File "C:\Users\bizle\Desktop\jpmorgan_financial_apis\app_final.py", line 3185
+    """Handle 500 errors"""
+                        ^
+SyntaxError: unterminated triple-quoted string literal (detected at line 3215)
+PS C:\Users\bizle\Desktop\jpmorgan_financial_apis> cd "C:\Users\bizle\Desktop"
+PS C:\Users\bizle\Desktop> cd C:/Users/bizle/Desktop/jpmorgan_financial_apis ; python comprehensive_e2e_test.py
+Traceback (most recent call last):
+  File "C:\Users\bizle\Desktop\jpmorgan_financial_apis\comprehensive_e2e_test.py", line 11, in <module>
+    from app_final import app
+  File "C:\Users\bizle\Desktop\jpmorgan_financial_apis\app_final.py", line 45, in <module>
+    import mixpanel
+ModuleNotFoundError: No module named 'mixpanel'
+PS C:\Users\bizle\Desktop\jpmorgan_financial_apis> """
 JPMorgan Financial APIs - Enterprise-grade API for processing Microsoft Windows Store telemetry data.
 
 This module provides a comprehensive Flask-based API server with the following features:
