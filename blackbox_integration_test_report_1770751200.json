@@ -1,0 +1,115 @@
+{
+  "test_summary": {
+    "total_tests": 10,
+    "passed_tests": 0,
+    "failed_tests": 10,
+    "timestamp": "2026-02-10T19:20:00.417875+00:00"
+  },
+  "test_results": [
+    {
+      "test_name": "Blackbox AI Configuration",
+      "success": false,
+      "message": "Blackbox AI not configured",
+      "timestamp": "2026-02-10T19:19:42.203096+00:00",
+      "details": {
+        "config": {
+          "api_key_configured": false,
+          "base_url": "https://cloud.blackbox.ai/",
+          "model": "gpt-3.5-turbo",
+          "temperature": 0.1
+        },
+        "ai_service_status": {
+          "status": "unhealthy",
+          "provider": "none",
+          "model": "gpt-4",
+          "temperature": 0.1,
+          "langsmith_enabled": false,
+          "project": "jpmorgan-financial-apis",
+          "timestamp": "2026-02-10T19:19:42.203096+00:00"
+        }
+      }
+    },
+    {
+      "test_name": "AI Business Analysis",
+      "success": false,
+      "message": "Financial analysis failed",
+      "timestamp": "2026-02-10T19:19:43.206870+00:00",
+      "details": {
+        "model_used": null,
+        "analysis_length": 0
+      }
+    },
+    {
+      "test_name": "AI Risk Assessment",
+      "success": false,
+      "message": "Risk assessment failed",
+      "timestamp": "2026-02-10T19:19:44.208303+00:00",
+      "details": {
+        "model_used": null,
+        "assessment_length": 0
+      }
+    },
+    {
+      "test_name": "AI Natural Language Query",
+      "success": false,
+      "message": "Natural language query failed",
+      "timestamp": "2026-02-10T19:19:45.211166+00:00",
+      "details": {
+        "model_used": null,
+        "response_length": 0
+      }
+    },
+    {
+      "test_name": "Revenue-Payment Sync",
+      "success": false,
+      "message": "Sync test failed: (sqlite3.OperationalError) table revenue_transactions has no column named transaction_data_json\n[SQL: INSERT INTO revenue_transactions (transaction_id, user_id, business_id, revenue_type, amount, currency, status, description, merchant_name, category, fee_amount, tax_amount, net_amount, processing_date, settlement_date, payment_method, source_system, external_reference, transaction_data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: ('TXN-979E9E756E5A', 'test_user_123', None, 'PURCHASE', 1000.0, 'USD', 'PENDING', 'Test purchase', 'Test Merchant', None, 29.0, 80.0, 891.0, '2026-02-10 19:19:46.250781', None, None, 'api', None, None, '2026-02-10 19:19:46.250781', '2026-02-10 19:19:46.250781')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+      "timestamp": "2026-02-10T19:19:46.255020+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Stripe Payment Integration",
+      "success": false,
+      "message": "Stripe not configured",
+      "timestamp": "2026-02-10T19:19:47.258216+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Business Intelligence Endpoints",
+      "success": false,
+      "message": "API endpoint test failed: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /ai/analyze (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025FD5F851C0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2026-02-10T19:19:52.334085+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "End-to-End Business Workflow",
+      "success": false,
+      "message": "E2E workflow test failed: (sqlite3.OperationalError) table revenue_transactions has no column named transaction_data_json\n[SQL: INSERT INTO revenue_transactions (transaction_id, user_id, business_id, revenue_type, amount, currency, status, description, merchant_name, category, fee_amount, tax_amount, net_amount, processing_date, settlement_date, payment_method, source_system, external_reference, transaction_data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: ('TXN-A991CFBF6CEA', 'e2e_test_user', None, 'PURCHASE', 2500.0, 'USD', 'PENDING', 'E2E test purchase', None, None, 72.5, 200.0, 2227.5, '2026-02-10 19:19:53.338014', None, None, 'api', None, None, '2026-02-10 19:19:53.338014', '2026-02-10 19:19:53.338014')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+      "timestamp": "2026-02-10T19:19:53.341825+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "GitHub Organizations Endpoint",
+      "success": false,
+      "message": "GitHub orgs endpoint test failed: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/github/orgs (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000025FD5F85DF0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2026-02-10T19:19:58.400416+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Performance and Scalability",
+      "success": false,
+      "message": "Performance test failed",
+      "timestamp": "2026-02-10T19:19:59.402369+00:00",
+      "details": {
+        "total_time": 0.0,
+        "average_time": 0.0,
+        "queries_processed": 4,
+        "all_successful": false
+      }
+    }
+  ],
+  "system_info": {
+    "blackbox_ai_configured": false,
+    "stripe_configured": false,
+    "ai_service_provider": "none"
+  }
+}
