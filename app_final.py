@@ -90,6 +90,7 @@ from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+from src.ai_service import ai_service  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -900,7 +901,7 @@ def index():
     return jsonify({
         'message': 'Welcome to JPMorgan Financial APIs',
         'version': get_version(),
-        'description': 'Enterprise-grade API for telemetry processing, ML anomaly detection, cloud integration, and business asset management',
+        'description': 'Enterprise-grade API for telemetry processing, ML anomaly detection, cloud integration, business asset management, and AI-powered financial insights',
         'endpoints': [
             '/health - Health check',
             '/auth/login - Auth0 login URL',
@@ -920,6 +921,10 @@ def index():
             '/businesses - Business management (CRUD) - Auth0 required',
             '/assets - Asset management (CRUD)',
             '/businesses/{id}/assets - Business-asset relationships',
+            '/ai/analyze - AI-powered financial data analysis',
+            '/ai/risk-assess - AI transaction risk assessment',
+            '/ai/query - Natural language financial queries',
+            '/ai/status - AI service status',
             '/dashboard - Web dashboard',
             '/welcome/create-workspace - Create workspace page (Auth0 required)',
             '/api/workspaces - Create workspace API (Auth0 required)'
@@ -972,6 +977,94 @@ def create_workspace():
         }), 201
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'create_workspace'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+# AI-Powered Endpoints
+@app.route('/ai/analyze', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def ai_analyze_data():
+    """
+    AI-powered financial data analysis
+    """
+    try:
+        data = request.get_json(force=True)
+        financial_data = data.get('data', {})
+        question = data.get('question', 'Analyze this financial data')
+        context = data.get('context', 'General financial analysis')
+
+        if not financial_data:
+            return jsonify({'error': 'Financial data is required', 'status': 'error'}), 400
+
+        result = ai_service.analyze_financial_data(financial_data, question, context)
+        return jsonify(result), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_analyze_data'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/ai/risk-assess', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def ai_risk_assessment():
+    """
+    AI-powered transaction risk assessment
+    """
+    try:
+        data = request.get_json(force=True)
+        transaction_data = data.get('transaction_data', {})
+        historical_patterns = data.get('historical_patterns', [])
+        market_conditions = data.get('market_conditions', {})
+
+        if not transaction_data:
+            return jsonify({'error': 'Transaction data is required', 'status': 'error'}), 400
+
+        result = ai_service.assess_transaction_risk(transaction_data, historical_patterns, market_conditions)
+        return jsonify(result), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_risk_assessment'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/ai/query', methods=['POST'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def ai_natural_language_query():
+    """
+    Natural language financial queries using AI
+    """
+    try:
+        data = request.get_json(force=True)
+        query = data.get('query', '')
+        data_schema = data.get('data_schema', {})
+        available_data = data.get('available_data', {})
+
+        if not query:
+            return jsonify({'error': 'Query is required', 'status': 'error'}), 400
+
+        result = ai_service.process_natural_language_query(query, data_schema, available_data)
+        return jsonify(result), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_natural_language_query'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/ai/status', methods=['GET'])
+@conditional_limit("30 per minute")
+def ai_service_status():
+    """
+    Get AI service status and configuration
+    """
+    try:
+        status = ai_service.get_service_status()
+        return jsonify({
+            'status': 'success',
+            'ai_service': status,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_service_status'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.errorhandler(404)

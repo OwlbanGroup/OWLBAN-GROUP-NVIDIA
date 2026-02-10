@@ -184,6 +184,17 @@ class Config:
     AUTH0_ISSUER = f"https://{AUTH0_DOMAIN}/" if AUTH0_DOMAIN else None
     AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json" if AUTH0_DOMAIN else None
 
+    # LangSmith Settings for AI tracing and monitoring
+    LANGCHAIN_TRACING_V2 = os.getenv('LANGCHAIN_TRACING_V2', 'true').lower() == 'true'
+    LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
+    LANGCHAIN_PROJECT = os.getenv('LANGCHAIN_PROJECT', 'jpmorgan-financial-apis')
+    LANGCHAIN_ENDPOINT = os.getenv('LANGCHAIN_ENDPOINT', 'https://api.smith.langchain.com')
+
+    # OpenAI Settings for LangChain
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4')
+    OPENAI_TEMPERATURE = float(os.getenv('OPENAI_TEMPERATURE', '0.1'))
+
     @classmethod
     def get_database_url(cls) -> str:
         """Generate database URL based on configuration"""
