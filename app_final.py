@@ -150,6 +150,9 @@ token_manager = TokenManager(
     scope=config.TOKEN_SCOPE
 )
 
+# Setup Auth0 routes
+setup_auth0_routes(app)
+
 # Initialize Redis cache
 if config.REDIS_URL:
     try:
@@ -626,7 +629,7 @@ def convert_data_format():
 
 # Business Management Endpoints
 @app.route('/businesses', methods=['GET'])
-@token_auth_required
+@auth0_required
 @conditional_limit("10 per minute")
 def list_businesses():
     """
@@ -646,7 +649,7 @@ def list_businesses():
 
 
 @app.route('/businesses', methods=['POST'])
-@token_auth_required
+@auth0_required
 @conditional_limit("5 per minute")
 def create_business():
     """
@@ -900,8 +903,12 @@ def index():
         'description': 'Enterprise-grade API for telemetry processing, ML anomaly detection, cloud integration, and business asset management',
         'endpoints': [
             '/health - Health check',
-            '/user/register - User registration',
-            '/user/login - User login',
+            '/auth/login - Auth0 login URL',
+            '/auth/callback - Auth0 callback',
+            '/auth/userinfo - Current user info (Auth0)',
+            '/auth/logout - Auth0 logout',
+            '/user/register - User registration (legacy)',
+            '/user/login - User login (legacy)',
             '/user/profile - User profile (requires token)',
             '/telemetry - Process telemetry events',
             '/telemetry/batch - Batch telemetry processing',
@@ -910,7 +917,7 @@ def index():
             '/ml/anomalies - ML anomaly detection',
             '/ml/train - Train ML model',
             '/data/convert - Data format conversion',
-            '/businesses - Business management (CRUD)',
+            '/businesses - Business management (CRUD) - Auth0 required',
             '/assets - Asset management (CRUD)',
             '/businesses/{id}/assets - Business-asset relationships',
             '/dashboard - Web dashboard'

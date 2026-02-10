@@ -83,3 +83,6 @@ waitress==3.0.0  # Alternative production server
 
 # Analytics and tracking
 mixpanel==4.10.1
+
+# Auth0 Authentication
+auth0-python==4.7.1

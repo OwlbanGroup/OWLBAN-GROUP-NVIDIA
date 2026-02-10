@@ -175,6 +175,15 @@ class Config:
     AUDIT_HASH_CHAIN_ENABLED = os.getenv(
         'AUDIT_HASH_CHAIN_ENABLED', 'true').lower() == 'true'
 
+    # Auth0 Authentication Settings
+    AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+    AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
+    AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
+    AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE')
+    AUTH0_ALGORITHMS = os.getenv('AUTH0_ALGORITHMS', 'RS256').split(',')
+    AUTH0_ISSUER = f"https://{AUTH0_DOMAIN}/" if AUTH0_DOMAIN else None
+    AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json" if AUTH0_DOMAIN else None
+
     @classmethod
     def get_database_url(cls) -> str:
         """Generate database URL based on configuration"""
@@ -258,7 +267,14 @@ class Config:
             'audit_log_retention_days': cls.AUDIT_LOG_RETENTION_DAYS,
             'audit_alert_enabled': cls.AUDIT_ALERT_ENABLED,
             'audit_failed_login_threshold': cls.AUDIT_FAILED_LOGIN_THRESHOLD,
-            'audit_rate_limit_threshold': cls.AUDIT_RATE_LIMIT_THRESHOLD
+            'audit_rate_limit_threshold': cls.AUDIT_RATE_LIMIT_THRESHOLD,
+            'auth0_domain': cls.AUTH0_DOMAIN,
+            'auth0_client_id': cls.AUTH0_CLIENT_ID,
+            'auth0_client_secret': cls.AUTH0_CLIENT_SECRET,
+            'auth0_audience': cls.AUTH0_AUDIENCE,
+            'auth0_algorithms': cls.AUTH0_ALGORITHMS,
+            'auth0_issuer': cls.AUTH0_ISSUER,
+            'auth0_jwks_url': cls.AUTH0_JWKS_URL
         }
 
 
