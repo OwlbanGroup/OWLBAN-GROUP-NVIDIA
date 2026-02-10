@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Hightouch - Create Workspace</title>
+  <meta charset="UTF-8" />
+  <link rel="shortcut icon" href="/favicon.ico?v=3" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      font-size: 1.125rem;
+      color: #64748b;
+    }
+
+    .form-container {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      padding: 2rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-input.error {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .error-message {
+      color: #ef4444;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: #2563eb;
+    }
+
+    .btn-primary:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: #475569;
+      margin-left: 0.75rem;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo svg {
+      width: 120px;
+      height: 24px;
+    }
+
+    .workspace-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      color: white;
+      font-size: 2rem;
+    }
+
+    .help-text {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .success-message {
+      display: none;
+      background-color: #dcfce7;
+      color: #166534;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-top: 1rem;
+      border: 1px solid #bbf7d0;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .form-container {
+        padding: 1.5rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .btn-secondary {
+        margin-left: 0;
+        margin-top: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <svg viewBox="0 0 128 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="m26.728 1.928 2.725-1.5a.155.155 0 0 1 .23.137v7.759a3.936 3.936 0 0 1 3.088-1.449c2.636 0 4.22 1.696 4.22 4.571v6.645a.154.154 0 0 1-.155.155h-2.8a.154.154 0 0 1-.154-.155v-6.229c0-1.513-.692-2.386-2.053-2.386-1.161 0-2.12.805-2.12 2.676v5.939a.154.154 0 0 1-.156.155h-2.75a.154.154 0 0 1-.155-.155V2.063c0-.057.032-.109.081-.136v.001ZM59.339 1.928l2.769-1.5c.103-.056.23.02.23.137l-.043 7.76a3.924 3.924 0 0 1 3.088-1.449c2.633 0 4.217 1.696 4.217 4.571v6.645a.154.154 0 0 1-.155.155h-2.777a.154.154 0 0 1-.155-.155v-6.229c0-1.513-.692-2.386-2.053-2.386-1.161 0-2.12.805-2.12 2.676v5.939a.154.154 0 0 1-.156.155h-2.75a.155.155 0 0 1-.154-.155l-.022-16.027c0-.057.031-.11.08-.137ZM117.739 1.928l2.724-1.5a.155.155 0 0 1 .23.137v7.759a3.924 3.924 0 0 1 3.087-1.449c2.634 0 4.22 1.696 4.22 4.571v6.645a.154.154 0 0 1-.154.155h-2.799a.155.155 0 0 1-.156-.155v-6.229c0-1.513-.691-2.386-2.055-2.386-1.161 0-2.121.805-2.121 2.676v5.939a.155.155 0 0 1-.155.155h-2.746a.155.155 0 0 1-.155-.155V2.063c0-.057.031-.109.08-.136v.001ZM53.56 8.279a4.378 4.378 0 0 0-3.328-1.427c-2.523 0-5.424 1.851-5.424 5.796 0 3.946 3.013 5.796 5.38 5.811a4.36 4.36 0 0 0 3.372-1.47v1.048a2.655 2.655 0 0 1-1.65 2.542c-.334.136-.69.203-1.052.198a3.29 3.29 0 0 1-2.13-.683.156.156 0 0 0-.17-.015l-2.51 1.37a.155.155 0 0 0-.035.247c1.094 1.106 2.766 1.895 4.844 1.895 3.773 0 5.759-2.54 5.759-5.683V6.859a.155.155 0 0 0-.23-.136L53.56 8.28Zm-2.77 7.356a2.942 2.942 0 0 1-2.99-3.01c-.01-.396.061-.788.207-1.155a2.92 2.92 0 0 1 1.628-1.624c.367-.147.76-.218 1.156-.208 1.652 0 2.859 1.338 2.859 2.987s-1.207 3.01-2.86 3.01ZM79.129 18.246H77.39c-3.55 0-4.71-1.205-4.71-4.84V4.593c0-.056.03-.109.08-.136l2.75-1.512a.155.155 0 0 1 .23.137V7.1h1.94c.086 0 .155.068.155.154v2.43a.155.155 0 0 1-.155.155h-1.94v3.545c0 1.659.202 1.979 1.848 2.005h.13c.053 0 .102.03.127.075l1.412 2.568a.145.145 0 0 1-.128.213ZM79.31 12.674a5.77 5.77 0 0 1 3.585-5.318 5.79 5.79 0 0 1 6.296 1.266 5.77 5.77 0 0 1 1.244 6.29 5.79 5.79 0 0 1-5.34 3.559 5.774 5.774 0 0 1-5.784-5.797Zm8.596 0a2.865 2.865 0 0 0-2.813-2.9 2.83 2.83 0 0 0-2.778 2.9 2.82 2.82 0 0 0 1.695 2.66c.342.15.71.231 1.083.238a2.86 2.86 0 0 0 2.813-2.897ZM92.989 13.898V7.272c0-.087.069-.156.155-.156h2.792c.087 0 .155.07.155.156v6.225c0 1.495.692 2.364 2.053 2.364 1.161 0 2.121-.804 2.121-2.675v-5.93c0-.086.069-.155.155-.155h2.75c.086 0 .155.07.155.156v10.835a.154.154 0 0 1-.155.155h-2.725a.154.154 0 0 1-.155-.155v-1.078a3.935 3.935 0 0 1-3.087 1.448c-2.629.007-4.214-1.688-4.214-4.564ZM39.78 7.101h2.749c.086 0 .155.07.155.156v10.835a.154.154 0 0 1-.155.155h-2.75a.154.154 0 0 1-.155-.155V7.257c0-.087.07-.156.155-.156ZM41.143 2.308a1.78 1.78 0 0 1 1.336.515 1.772 1.772 0 0 1 .516 1.335 1.757 1.757 0 0 1-.519 1.325 1.763 1.763 0 0 1-1.333.503 1.727 1.727 0 0 1-1.325-.506 1.72 1.72 0 0 1-.505-1.322 1.744 1.744 0 0 1 1.11-1.732c.229-.09.474-.13.72-.118ZM116.197 15.371a.156.156 0 0 1 .095.229 5.89 5.89 0 0 1-.732 1.01 6.297 6.297 0 0 1-.435.428 5.385 5.385 0 0 1-.48.382 5.7 5.7 0 0 1-3.201 1.049 5.844 5.844 0 0 1-2.236-.358l-.133-.05a5.464 5.464 0 0 1-.536-.248c-.037-.018-.072-.038-.106-.056a5.767 5.767 0 0 1-2.276-2.281l-.001-.001a5.746 5.746 0 0 1-.703-2.58l-.002-.004a5.733 5.733 0 0 1 .511-2.628l.001-.001a5.749 5.749 0 0 1 2.388-2.62 6.6 6.6 0 0 1 .331-.177l.131-.062a5.197 5.197 0 0 1 .395-.164 5.812 5.812 0 0 1 1.807-.357 5.684 5.684 0 0 1 3.269.809c.058.035.118.07.174.108a5.313 5.313 0 0 1 .798.633c.257.243.491.51.699.797a.154.154 0 0 1-.049.223l-2.304 1.361a.158.158 0 0 1-.199-.034 2.906 2.906 0 0 0-5.049 2.469 2.914 2.914 0 0 0 2.388 2.29 2.916 2.916 0 0 0 1.923-.355c.226-.133.432-.293.612-.477a.152.152 0 0 1 .148-.043c.412.102 2.182.554 2.772.708Z" fill="#787674"/>
+        <path d="M17.52 12.673H5.572V.724c0-.174.142-.316.316-.316h11.633c.174 0 .315.142.315.316v11.634a.317.317 0 0 1-.316.315Z" fill="#787674"/>
+        <path d="M5.257 18.246H.316A.315.315 0 0 1 0 17.93V12.99c0-.175.141-.316.316-.316h5.256v5.257a.315.315 0 0 1-.315.316Z" fill="#787674"/>
+      </svg>
+    </div>
+
+    <div class="header">
+      <div class="workspace-icon">🏢</div>
+      <h1>Create your workspace</h1>
+      <p>Set up your first workspace to get started with Hightouch</p>
+    </div>
+
+    <div class="form-container">
+      <form id="create-workspace-form">
+        <div class="form-group">
+          <label for="workspace-name" class="form-label">Workspace name</label>
+          <input
+            type="text"
+            id="workspace-name"
+            name="workspace-name"
+            class="form-input"
+            placeholder="e.g. Acme Corp"
+            required
+          />
+          <div class="error-message" id="name-error"></div>
+          <div class="help-text">This will be the name of your workspace</div>
+        </div>
+
+        <div class="form-group">
+          <label for="workspace-url" class="form-label">Workspace URL</label>
+          <div style="display: flex; align-items: center;">
+            <span style="color: #6b7280; margin-right: 0.5rem;">hightouch.com/</span>
+            <input
+              type="text"
+              id="workspace-url"
+              name="workspace-url"
+              class="form-input"
+              placeholder="acme-corp"
+              required
+              style="flex: 1;"
+            />
+          </div>
+          <div class="error-message" id="url-error"></div>
+          <div class="help-text">This will be your workspace's unique URL</div>
+        </div>
+
+        <div class="form-group">
+          <label for="workspace-description" class="form-label">Description (optional)</label>
+          <textarea
+            id="workspace-description"
+            name="workspace-description"
+            class="form-input form-textarea"
+            placeholder="Brief description of your workspace"
+            rows="3"
+          ></textarea>
+          <div class="help-text">Help your team understand what this workspace is for</div>
+        </div>
+
+        <div class="form-group">
+          <label for="workspace-region" class="form-label">Data region</label>
+          <select id="workspace-region" name="workspace-region" class="form-input" required>
+            <option value="">Select a region</option>
+            <option value="us-east-1">US East (N. Virginia)</option>
+            <option value="us-west-2">US West (Oregon)</option>
+            <option value="eu-west-1">EU West (Ireland)</option>
+            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+          </select>
+          <div class="error-message" id="region-error"></div>
+          <div class="help-text">Choose the region where your data will be stored</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">Create workspace</button>
+        </div>
+      </form>
+
+      <div class="loading" id="loading">
+        <p>Creating your workspace...</p>
+      </div>
+
+      <div class="success-message" id="success-message">
+        <p>Workspace created successfully! Redirecting...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('create-workspace-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const loading = document.getElementById('loading');
+    const successMessage = document.getElementById('success-message');
+
+    // Auto-generate URL from name
+    document.getElementById('workspace-name').addEventListener('input', function(e) {
+      const name = e.target.value;
+      const url = name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+      document.getElementById('workspace-url').value = url;
+    });
+
+    // Form validation
+    function validateForm() {
+      let isValid = true;
+      const name = document.getElementById('workspace-name').value.trim();
+      const url = document.getElementById('workspace-url').value.trim();
+      const region = document.getElementById('workspace-region').value;
+
+      // Reset errors
+      document.querySelectorAll('.error-message').forEach(el => {
+        el.style.display = 'none';
+        el.textContent = '';
+      });
+      document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+
+      // Name validation
+      if (!name) {
+        showError('name-error', 'Workspace name is required');
+        isValid = false;
+      } else if (name.length < 2) {
+        showError('name-error', 'Workspace name must be at least 2 characters');
+        isValid = false;
+      }
+
+      // URL validation
+      if (!url) {
+        showError('url-error', 'Workspace URL is required');
+        isValid = false;
+      } else if (!/^[a-z0-9-]+$/.test(url)) {
+        showError('url-error', 'URL can only contain lowercase letters, numbers, and hyphens');
+        isValid = false;
+      }
+
+      // Region validation
+      if (!region) {
+        showError('region-error', 'Please select a data region');
+        isValid = false;
+      }
+
+      return isValid;
+    }
+
+    function showError(elementId, message) {
+      const errorEl = document.getElementById(elementId);
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      errorEl.previousElementSibling.classList.add('error');
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      const formData = new FormData(e.target);
+      const workspaceData = {
+        name: formData.get('workspace-name').trim(),
+        url: formData.get('workspace-url').trim(),
+        description: formData.get('workspace-description').trim(),
+        region: formData.get('workspace-region')
+      };
+
+      // Show loading
+      submitBtn.disabled = true;
+      loading.style.display = 'block';
+      successMessage.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/workspaces', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`
+          },
+          body: JSON.stringify(workspaceData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successMessage.style.display = 'block';
+          loading.style.display = 'none';
+          // Redirect after success
+          setTimeout(() => {
+            window.location.href = `/workspaces/${result.workspace.id}`;
+          }, 2000);
+        } else {
+          throw new Error(result.error || 'Failed to create workspace');
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+        submitBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

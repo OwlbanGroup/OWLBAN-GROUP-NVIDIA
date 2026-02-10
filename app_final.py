@@ -920,7 +920,9 @@ def index():
             '/businesses - Business management (CRUD) - Auth0 required',
             '/assets - Asset management (CRUD)',
             '/businesses/{id}/assets - Business-asset relationships',
-            '/dashboard - Web dashboard'
+            '/dashboard - Web dashboard',
+            '/welcome/create-workspace - Create workspace page (Auth0 required)',
+            '/api/workspaces - Create workspace API (Auth0 required)'
         ],
         'timestamp': datetime.now(timezone.utc).isoformat()
     }), 200
@@ -929,6 +931,48 @@ def index():
 def dashboard():
     """Serve the web dashboard"""
     return render_template('index.html')
+
+@app.route('/welcome/create-workspace', methods=['GET'])
+@auth0_required
+def create_workspace_page():
+    """Serve the create workspace page"""
+    return render_template('create_workspace.html')
+
+@app.route('/api/workspaces', methods=['POST'])
+@auth0_required
+@conditional_limit("5 per minute")
+def create_workspace():
+    """
+    Create a new workspace
+    """
+    try:
+        data = request.get_json(force=True)
+        workspace_data = {
+            'name': data.get('name'),
+            'url': data.get('url'),
+            'description': data.get('description', ''),
+            'region': data.get('region'),
+            'created_by': g.user_id,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Validate required fields
+        if not workspace_data['name'] or not workspace_data['url'] or not workspace_data['region']:
+            return jsonify({'error': 'Name, URL, and region are required', 'status': 'error'}), 400
+
+        # Here you would typically save to database
+        # For now, we'll just return success
+        workspace_data['id'] = secrets.token_hex(8)  # Generate workspace ID
+
+        return jsonify({
+            'status': 'success',
+            'workspace': workspace_data,
+            'message': f'Workspace "{workspace_data["name"]}" created successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_workspace'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.errorhandler(404)
 def not_found(error):
