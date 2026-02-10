@@ -34,8 +34,6 @@ class AIService:
 
         # Initialize OpenAI LLM
         # Allow missing for testing - uncomment the raise for production
-        # if not config.OPENAI_API_KEY:
-        #     raise ValueError("OpenAI API key is required for AI services")
         if not config.OPENAI_API_KEY:
             self.logger.warning("OpenAI API key not configured - AI services disabled")
             self.llm = None
