@@ -1,4 +1,6 @@
-"""
+
+
+No more API keys to load"""
 Payments Service Module for JPMorgan Financial APIs
 Handles payment processing, transaction management, and payment-related operations.
 """
@@ -6,8 +8,10 @@ Handles payment processing, transaction management, and payment-related operatio
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 import uuid
+import stripe
 from src.models.payments import Payment, PaymentStatus, PaymentType
 from src.structured_logger import app_logger
+from config import config
 
 
 class PaymentsService:

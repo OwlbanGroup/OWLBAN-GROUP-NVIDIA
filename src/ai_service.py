@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langsmith import Client as LangSmithClient, LangChainTracer
+from langsmith import Client as LangSmithClient
 
 from config import config
 from src.logger import telemetry_logger
@@ -41,8 +41,7 @@ class AIService:
                     model=config.BLACKBOX_MODEL,
                     temperature=config.BLACKBOX_TEMPERATURE,
                     openai_api_key=config.BLACKBOX_API_KEY,
-                    openai_api_base=config.BLACKBOX_BASE_URL,
-                    callbacks=[LangChainTracer(project_name=config.LANGCHAIN_PROJECT)] if self.langsmith_client else []
+                    openai_api_base=config.BLACKBOX_BASE_URL
                 )
                 self.llm_provider = "blackbox"
                 self.logger.info("Blackbox AI initialized successfully")
