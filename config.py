@@ -88,8 +88,7 @@ class Config:
 
     # Redis Settings
     REDIS_URL = os.getenv('REDIS_URL')
-    if not REDIS_URL:
-        raise ValueError("REDIS_URL environment variable is required for Redis Cloud connection")
+    # REDIS_URL is optional - if not provided, in-memory cache will be used
 
     # Token Management Settings - No defaults for security
     TOKEN_CLIENT_ID = os.getenv('TOKEN_CLIENT_ID')
