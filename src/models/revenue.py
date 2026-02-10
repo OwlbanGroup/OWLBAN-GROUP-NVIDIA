@@ -1,4 +1,3 @@
-e
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Enum
 from sqlalchemy.orm import relationship
@@ -25,11 +24,6 @@ class TransactionStatus(enum.Enum):
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
 
-class RevenueTransaction(Base):
-    """Revenue transaction model"""
-    __tablename__ = 'revenue_transactions'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
 class RevenueTransaction(Base):
     """Revenue transaction model"""
     __tablename__ = 'revenue_transactions'
@@ -68,8 +62,6 @@ class RevenueTransaction(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-
-
     def to_dict(self):
         """Convert to dictionary"""
         return {
@@ -92,8 +84,8 @@ class RevenueTransaction(Base):
             'payment_method': self.payment_method,
             'source_system': self.source_system,
             'external_reference': self.external_reference,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class RevenueMetrics(Base):
@@ -139,6 +131,6 @@ class RevenueMetrics(Base):
             'failed_transactions': self.failed_transactions,
             'average_transaction_value': self.average_transaction_value,
             'processing_time_avg': self.processing_time_avg,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
