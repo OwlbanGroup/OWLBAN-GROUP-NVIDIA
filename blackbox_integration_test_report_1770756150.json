@@ -1,0 +1,122 @@
+{
+  "test_summary": {
+    "total_tests": 10,
+    "passed_tests": 3,
+    "failed_tests": 7,
+    "timestamp": "2026-02-10T20:42:30.272711+00:00"
+  },
+  "test_results": [
+    {
+      "test_name": "Blackbox AI Configuration",
+      "success": false,
+      "message": "Blackbox AI not configured",
+      "timestamp": "2026-02-10T20:42:15.088915+00:00",
+      "details": {
+        "config": {
+          "api_key_configured": false,
+          "base_url": "https://cloud.blackbox.ai/",
+          "model": "gpt-3.5-turbo",
+          "temperature": 0.1
+        },
+        "ai_service_status": {
+          "status": "unhealthy",
+          "provider": "none",
+          "model": "gpt-4",
+          "temperature": 0.1,
+          "langsmith_enabled": false,
+          "project": "jpmorgan-financial-apis",
+          "timestamp": "2026-02-10T20:42:15.088915+00:00"
+        }
+      }
+    },
+    {
+      "test_name": "AI Business Analysis",
+      "success": true,
+      "message": "Financial analysis completed",
+      "timestamp": "2026-02-10T20:42:16.091209+00:00",
+      "details": {
+        "model_used": "mock",
+        "analysis_length": 191
+      }
+    },
+    {
+      "test_name": "AI Risk Assessment",
+      "success": true,
+      "message": "Risk assessment completed",
+      "timestamp": "2026-02-10T20:42:17.099265+00:00",
+      "details": {
+        "model_used": "mock",
+        "assessment_length": 169
+      }
+    },
+    {
+      "test_name": "AI Natural Language Query",
+      "success": false,
+      "message": "Natural language query failed",
+      "timestamp": "2026-02-10T20:42:18.102902+00:00",
+      "details": {
+        "model_used": null,
+        "response_length": 0
+      }
+    },
+    {
+      "test_name": "Revenue-Payment Sync",
+      "success": false,
+      "message": "Sync test failed: (sqlite3.OperationalError) table revenue_transactions has no column named transaction_data_json\n[SQL: INSERT INTO revenue_transactions (transaction_id, user_id, business_id, revenue_type, amount, currency, status, description, merchant_name, category, fee_amount, tax_amount, net_amount, processing_date, settlement_date, payment_method, source_system, external_reference, transaction_data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: ('TXN-CC8FA7C730A5', 'test_user_123', None, 'PURCHASE', 1000.0, 'USD', 'PENDING', 'Test purchase', 'Test Merchant', None, 29.0, 80.0, 891.0, '2026-02-10 20:42:19.226699', None, None, 'api', None, None, '2026-02-10 20:42:19.226699', '2026-02-10 20:42:19.226699')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+      "timestamp": "2026-02-10T20:42:19.238203+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Stripe Payment Integration",
+      "success": false,
+      "message": "Stripe not configured",
+      "timestamp": "2026-02-10T20:42:20.245549+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Business Intelligence Endpoints",
+      "success": false,
+      "message": "AI analysis endpoint failed",
+      "timestamp": "2026-02-10T20:42:23.394252+00:00",
+      "details": {
+        "status_code": 401,
+        "response_time": 2.135985
+      }
+    },
+    {
+      "test_name": "End-to-End Business Workflow",
+      "success": false,
+      "message": "E2E workflow test failed: (sqlite3.OperationalError) table revenue_transactions has no column named transaction_data_json\n[SQL: INSERT INTO revenue_transactions (transaction_id, user_id, business_id, revenue_type, amount, currency, status, description, merchant_name, category, fee_amount, tax_amount, net_amount, processing_date, settlement_date, payment_method, source_system, external_reference, transaction_data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: ('TXN-14F68288C5BE', 'e2e_test_user', None, 'PURCHASE', 2500.0, 'USD', 'PENDING', 'E2E test purchase', None, None, 72.5, 200.0, 2227.5, '2026-02-10 20:42:24.403767', None, None, 'api', None, None, '2026-02-10 20:42:24.403767', '2026-02-10 20:42:24.403767')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+      "timestamp": "2026-02-10T20:42:24.405833+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "GitHub Organizations Endpoint",
+      "success": true,
+      "message": "GitHub orgs endpoint working correctly",
+      "timestamp": "2026-02-10T20:42:28.268330+00:00",
+      "details": {
+        "status_code": 401,
+        "response_time": 2.844889,
+        "endpoint_accessible": true
+      }
+    },
+    {
+      "test_name": "Performance and Scalability",
+      "success": false,
+      "message": "Performance test failed",
+      "timestamp": "2026-02-10T20:42:29.270180+00:00",
+      "details": {
+        "total_time": 0.0,
+        "average_time": 0.0,
+        "queries_processed": 4,
+        "all_successful": false
+      }
+    }
+  ],
+  "system_info": {
+    "blackbox_ai_configured": false,
+    "stripe_configured": false,
+    "ai_service_provider": "none"
+  }
+}
