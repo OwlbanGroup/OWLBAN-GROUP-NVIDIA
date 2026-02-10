@@ -1452,6 +1452,142 @@ def jpmorgan_account_webhook():
         telemetry_logger.log_error(e, {'context': 'jpmorgan_account_webhook'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
+@app.route('/api/business/intelligence/<user_id>', methods=['GET'])
+@require_auth
+@conditional_limit("10 per minute")
+def get_business_intelligence(user_id):
+    """
+    Get comprehensive business intelligence for a user
+    """
+    try:
+        days = int(request.args.get('days', 30))
+
+        result = sync_service.get_business_intelligence(user_id, days)
+
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'business_intelligence', 'user_id': user_id})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/business/forecast/<user_id>', methods=['GET'])
+@require_auth
+@conditional_limit("5 per minute")
+def forecast_revenue(user_id):
+    """
+    Get revenue forecast for a user
+    """
+    try:
+        forecast_days = int(request.args.get('days', 30))
+
+        result = sync_service.forecast_revenue(user_id, forecast_days)
+
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'revenue_forecast', 'user_id': user_id})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/sync/payment/<payment_id>', methods=['POST'])
+@require_auth
+@conditional_limit("20 per minute")
+def sync_payment_to_revenue(payment_id):
+    """
+    Sync a payment to create corresponding revenue transaction
+    """
+    try:
+        from src.models.revenue import RevenueType
+
+        revenue_type_str = request.json.get('revenue_type', 'purchase')
+        revenue_type = RevenueType(revenue_type_str.upper())
+
+        result = sync_service.sync_payment_to_revenue(payment_id, revenue_type)
+
+        if result['status'] == 'success':
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'sync_payment', 'payment_id': payment_id})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/ai/analyze', methods=['POST'])
+@require_auth
+@conditional_limit("10 per minute")
+def ai_analyze_data():
+    """
+    AI-powered financial data analysis
+    """
+    try:
+        data = request.json.get('data', {})
+        question = request.json.get('question', 'Analyze this financial data')
+
+        result = ai_service.analyze_financial_data(data, question)
+
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_analyze'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/ai/risk-assess', methods=['POST'])
+@require_auth
+@conditional_limit("10 per minute")
+def ai_risk_assess():
+    """
+    AI-powered transaction risk assessment
+    """
+    try:
+        transaction_data = request.json.get('transaction_data', {})
+        historical_patterns = request.json.get('historical_patterns', [])
+        market_conditions = request.json.get('market_conditions', {})
+
+        result = ai_service.assess_transaction_risk(
+            transaction_data, historical_patterns, market_conditions
+        )
+
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_risk_assess'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/ai/query', methods=['POST'])
+@require_auth
+@conditional_limit("20 per minute")
+def ai_natural_language_query():
+    """
+    AI-powered natural language query processing
+    """
+    try:
+        query = request.json.get('query', '')
+        data_schema = request.json.get('data_schema', {})
+        available_data = request.json.get('available_data', {})
+
+        result = ai_service.process_natural_language_query(query, data_schema, available_data)
+
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'ai_query'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""

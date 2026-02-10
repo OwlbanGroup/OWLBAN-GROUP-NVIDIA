@@ -22,7 +22,7 @@ class RevenueService:
                           description: str = None, merchant_name: str = None,
                           category: str = None, payment_method: str = None,
                           business_id: int = None, external_reference: str = None,
-                          metadata: Dict = None) -> RevenueTransaction:
+                          additional_metadata: str = None) -> RevenueTransaction:
         """
         Create a new revenue transaction
 

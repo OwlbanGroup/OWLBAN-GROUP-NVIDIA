@@ -54,8 +54,7 @@ class AIService:
                 self.llm = ChatOpenAI(
                     model=config.OPENAI_MODEL,
                     temperature=config.OPENAI_TEMPERATURE,
-                    openai_api_key=config.OPENAI_API_KEY,
-                    callbacks=[LangChainTracer(project_name=config.LANGCHAIN_PROJECT)] if self.langsmith_client else []
+                    openai_api_key=config.OPENAI_API_KEY
                 )
                 self.llm_provider = "openai"
                 self.logger.info("OpenAI initialized successfully")
@@ -149,18 +148,27 @@ class AIService:
             Analysis results with insights and recommendations
         """
         try:
-            chain = self.financial_analysis_prompt | self.llm
+            if not self.llm:
+                return {
+                    "status": "error",
+                    "error": "AI service not configured",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
 
-            result = chain.invoke({
-                "data": str(data),
-                "context": context,
-                "question": question
-            })
+            # Format the prompt
+            prompt_text = self.financial_analysis_prompt.format(
+                data=str(data),
+                context=context,
+                question=question
+            )
+
+            # Call the LLM directly
+            result = self.llm([{"role": "user", "content": prompt_text}])
 
             model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
-                "analysis": result.content,
+                "analysis": result.content if hasattr(result, 'content') else str(result),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "model_used": model_used
             }
@@ -188,18 +196,27 @@ class AIService:
             Risk assessment with recommendations
         """
         try:
-            chain = self.risk_assessment_prompt | self.llm
+            if not self.llm:
+                return {
+                    "status": "error",
+                    "error": "AI service not configured",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
 
-            result = chain.invoke({
-                "transaction_data": str(transaction_data),
-                "historical_patterns": str(historical_patterns or []),
-                "market_conditions": str(market_conditions or {})
-            })
+            # Format the prompt
+            prompt_text = self.risk_assessment_prompt.format(
+                transaction_data=str(transaction_data),
+                historical_patterns=str(historical_patterns or []),
+                market_conditions=str(market_conditions or {})
+            )
+
+            # Call the LLM directly
+            result = self.llm.invoke(prompt_text)
 
             model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
-                "risk_assessment": result.content,
+                "risk_assessment": result.content if hasattr(result, 'content') else str(result),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "model_used": model_used
             }
@@ -227,18 +244,27 @@ class AIService:
             Processed query response with insights
         """
         try:
-            chain = self.nl_query_prompt | self.llm
+            if not self.llm:
+                return {
+                    "status": "error",
+                    "error": "AI service not configured",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
 
-            result = chain.invoke({
-                "query": query,
-                "data_schema": str(data_schema),
-                "available_data": str(available_data or {})
-            })
+            # Format the prompt
+            prompt_text = self.nl_query_prompt.format(
+                query=query,
+                data_schema=str(data_schema),
+                available_data=str(available_data or {})
+            )
+
+            # Call the LLM directly
+            result = self.llm.invoke(prompt_text)
 
             model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
-                "response": result.content,
+                "response": result.content if hasattr(result, 'content') else str(result),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "model_used": model_used
             }
