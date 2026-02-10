@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langsmith import Client as LangSmithClient
+from langsmith import Client as LangSmithClient, LangChainTracer
 
 from config import config
 from src.logger import telemetry_logger
