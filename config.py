@@ -87,7 +87,9 @@ class Config:
     DATABASE_CONNECTION_POOL_RECYCLE = int(os.getenv('DATABASE_CONNECTION_POOL_RECYCLE', '3600'))
 
     # Redis Settings
-    REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    REDIS_URL = os.getenv('REDIS_URL')
+    if not REDIS_URL:
+        raise ValueError("REDIS_URL environment variable is required for Redis Cloud connection")
 
     # Token Management Settings - No defaults for security
     TOKEN_CLIENT_ID = os.getenv('TOKEN_CLIENT_ID')

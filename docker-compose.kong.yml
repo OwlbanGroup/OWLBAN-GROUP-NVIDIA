@@ -139,15 +139,8 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis for caching (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: redis-cache
-    ports:
-      - "6379:6379"
-    networks:
-      - kong-net
-    restart: unless-stopped
+  # Redis Cloud is used for caching (no local Redis container needed)
+  # Configure REDIS_URL environment variable with your Redis Cloud connection URL
 
 volumes:
   prometheus_data:
