@@ -1644,7 +1644,7 @@ def ai_risk_assess():
 @app.route('/api/ai/query', methods=['POST'])
 @require_auth
 @conditional_limit("20 per minute")
-def ai_natural_language_query():
+def api_ai_natural_language_query():
     """
     AI-powered natural language query processing
     """

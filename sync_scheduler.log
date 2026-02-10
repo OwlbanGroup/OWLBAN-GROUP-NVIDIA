@@ -21,3 +21,15 @@
 2026-02-10 14:18:30,102 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
 2026-02-10 14:18:30,103 - telemetry_logger - INFO - No GPU found, using CPU
 2026-02-10 14:18:30,103 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-10 15:10:44,537 - jpmorgan_api - WARNING - {"timestamp": "2026-02-10T20:10:44.537511+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-10 15:10:44,540 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-10 15:10:44,541 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-10 15:10:44,542 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-10 15:14:23,320 - jpmorgan_api - WARNING - {"timestamp": "2026-02-10T20:14:23.320776+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-10 15:14:23,325 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-10 15:14:23,337 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-10 15:14:23,339 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-10 15:16:54,221 - jpmorgan_api - WARNING - {"timestamp": "2026-02-10T20:16:54.221715+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-10 15:16:54,226 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-10 15:16:54,228 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-10 15:16:54,230 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
