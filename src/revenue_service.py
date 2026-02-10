@@ -22,7 +22,7 @@ class RevenueService:
                           description: str = None, merchant_name: str = None,
                           category: str = None, payment_method: str = None,
                           business_id: int = None, external_reference: str = None,
-                          metadata: str = None) -> RevenueTransaction:
+                          transaction_data_json: str = None) -> RevenueTransaction:
         """
         Create a new revenue transaction
 
@@ -66,8 +66,8 @@ class RevenueService:
                 tax_amount=tax_amount,
                 net_amount=net_amount,
                 payment_method=payment_method,
-                external_reference=external_reference,
-                transaction_meta_json=metadata
+            external_reference=external_reference,
+            transaction_data_json=transaction_data_json
             )
 
             # Save to database

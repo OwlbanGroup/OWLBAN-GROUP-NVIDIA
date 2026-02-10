@@ -142,7 +142,7 @@ def create_tables(conn, db_type):
         payment_method VARCHAR(50),
         source_system VARCHAR(100) DEFAULT 'api',
         external_reference VARCHAR(255),
-        transaction_data TEXT,
+        transaction_data_json TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
