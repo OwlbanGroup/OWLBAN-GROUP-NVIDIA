@@ -19,6 +19,10 @@ class PaymentsService:
     Service class for handling payment operations
     """
 
+    # Expose enums for external access
+    PaymentType = PaymentType
+    PaymentStatus = PaymentStatus
+
     def __init__(self):
         self.logger = app_logger
         self._payments = {}  # In-memory storage for demo purposes

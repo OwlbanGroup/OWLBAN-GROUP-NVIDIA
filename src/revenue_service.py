@@ -67,7 +67,7 @@ class RevenueService:
                 net_amount=net_amount,
                 payment_method=payment_method,
                 external_reference=external_reference,
-                additional_metadata=str(metadata) if metadata else None
+                additional_data=additional_metadata
             )
 
             # Save to database
