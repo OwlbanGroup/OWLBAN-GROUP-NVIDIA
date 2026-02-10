@@ -87,6 +87,9 @@ mixpanel==4.10.1
 # Auth0 Authentication
 auth0-python==4.7.1
 
+# Stripe Payment Processing
+stripe==10.3.0
+
 # LangChain and LangSmith for AI-powered features
 langchain==1.2.9
 langchain-core==0.3.0

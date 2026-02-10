@@ -1237,6 +1237,146 @@ def get_sync_logs():
         telemetry_logger.log_error(e, {'context': 'get_sync_logs'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
+# Stripe Payment Endpoints
+@app.route('/stripe/payment-intent', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def create_stripe_payment_intent():
+    """
+    Create a Stripe payment intent
+    """
+    try:
+        data = request.get_json(force=True)
+        amount = data.get('amount')
+        currency = data.get('currency', config.STRIPE_CURRENCY)
+        description = data.get('description', '')
+        metadata = data.get('metadata', {})
+
+        if not amount or amount <= 0:
+            return jsonify({'error': 'Valid amount is required', 'status': 'error'}), 400
+
+        result = payments_service.create_stripe_payment_intent(
+            amount=amount,
+            currency=currency,
+            description=description,
+            metadata=metadata
+        )
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'payment_intent_id': result['payment_intent_id'],
+                'client_secret': result['client_secret'],
+                'amount': result['amount'],
+                'currency': result['currency'],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 201
+        else:
+            return jsonify({'error': result['error'], 'status': 'error'}), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_stripe_payment_intent'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/stripe/payment-intent/<payment_intent_id>/confirm', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def confirm_stripe_payment(payment_intent_id):
+    """
+    Confirm a Stripe payment intent
+    """
+    try:
+        result = payments_service.confirm_stripe_payment(payment_intent_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'payment_intent_id': result['payment_intent_id'],
+                'amount': result['amount'],
+                'currency': result['currency'],
+                'payment_status': result['status'],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+        elif result['status'] == 'pending':
+            return jsonify({
+                'status': 'pending',
+                'payment_intent_id': result['payment_intent_id'],
+                'payment_status': result['status'],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 202
+        else:
+            return jsonify({'error': result['error'], 'status': 'error'}), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'confirm_stripe_payment', 'payment_intent_id': payment_intent_id})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/stripe/refund', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def create_stripe_refund():
+    """
+    Create a Stripe refund
+    """
+    try:
+        data = request.get_json(force=True)
+        payment_intent_id = data.get('payment_intent_id')
+        amount = data.get('amount')  # Optional, full refund if not specified
+        reason = data.get('reason', 'requested_by_customer')
+
+        if not payment_intent_id:
+            return jsonify({'error': 'Payment intent ID is required', 'status': 'error'}), 400
+
+        result = payments_service.create_stripe_refund(
+            payment_intent_id=payment_intent_id,
+            amount=amount,
+            reason=reason
+        )
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'refund_id': result['refund_id'],
+                'amount': result['amount'],
+                'currency': result['currency'],
+                'refund_status': result['status'],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 201
+        else:
+            return jsonify({'error': result['error'], 'status': 'error'}), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_stripe_refund'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    """
+    Handle Stripe webhook events
+    """
+    try:
+        payload = request.get_data(as_text=True)
+        sig_header = request.headers.get('stripe-signature')
+
+        if not sig_header:
+            return jsonify({'error': 'Missing Stripe signature', 'status': 'error'}), 400
+
+        result = payments_service.process_stripe_webhook(payload, sig_header)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'event_type': result['event_type'],
+                'event_id': result['event_id'],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+        else:
+            return jsonify({'error': result['error'], 'status': 'error'}), 400
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'stripe_webhook'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
 # Webhook Endpoints for Real-time Data Updates
 @app.route('/webhooks/jpmorgan/transactions', methods=['POST'])
 @require_auth

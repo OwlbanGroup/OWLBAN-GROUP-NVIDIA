@@ -204,6 +204,13 @@ class Config:
     BLACKBOX_MODEL = os.getenv('BLACKBOX_MODEL', 'gpt-3.5-turbo')
     BLACKBOX_TEMPERATURE = float(os.getenv('BLACKBOX_TEMPERATURE', '0.1'))
 
+    # Stripe Payment Processing Settings
+    STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+    STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+    STRIPE_API_VERSION = os.getenv('STRIPE_API_VERSION', '2023-10-16')
+    STRIPE_CURRENCY = os.getenv('STRIPE_CURRENCY', 'usd')
+
     @classmethod
     def get_database_url(cls) -> str:
         """Generate database URL based on configuration"""
@@ -294,7 +301,12 @@ class Config:
             'auth0_audience': cls.AUTH0_AUDIENCE,
             'auth0_algorithms': cls.AUTH0_ALGORITHMS,
             'auth0_issuer': cls.AUTH0_ISSUER,
-            'auth0_jwks_url': cls.AUTH0_JWKS_URL
+            'auth0_jwks_url': cls.AUTH0_JWKS_URL,
+            'stripe_publishable_key': cls.STRIPE_PUBLISHABLE_KEY,
+            'stripe_secret_key': cls.STRIPE_SECRET_KEY,
+            'stripe_webhook_secret': cls.STRIPE_WEBHOOK_SECRET,
+            'stripe_api_version': cls.STRIPE_API_VERSION,
+            'stripe_currency': cls.STRIPE_CURRENCY
         }
 
 

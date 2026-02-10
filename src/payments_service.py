@@ -19,6 +19,14 @@ class PaymentsService:
         self.logger = app_logger
         self._payments = {}  # In-memory storage for demo purposes
 
+        # Initialize Stripe
+        if config.STRIPE_SECRET_KEY:
+            stripe.api_key = config.STRIPE_SECRET_KEY
+            stripe.api_version = config.STRIPE_API_VERSION
+            self.logger.info("Stripe payment service initialized")
+        else:
+            self.logger.warning("Stripe secret key not configured - Stripe payments disabled")
+
     def create_payment(self, amount: float, payment_type: PaymentType,
                       user_id: str, description: str = "",
                       currency: str = "USD", metadata: Optional[Dict[str, Any]] = None) -> Payment:
@@ -603,6 +611,221 @@ class PaymentsService:
         """
         all_alerts = self.get_all_alerts()
         return [alert for alert in all_alerts if alert['alert_triggered']]
+
+    # Stripe-specific methods
+    def create_stripe_payment_intent(self, amount: float, currency: str = None,
+                                    description: str = "", metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Create a Stripe payment intent
+
+        Args:
+            amount: Payment amount in cents
+            currency: Currency code (defaults to config)
+            description: Payment description
+            metadata: Additional metadata
+
+        Returns:
+            Dict with payment intent details
+        """
+        try:
+            if not config.STRIPE_SECRET_KEY:
+                return {
+                    'status': 'error',
+                    'error': 'Stripe not configured'
+                }
+
+            currency = currency or config.STRIPE_CURRENCY
+
+            # Convert amount to cents if it's in dollars
+            if currency.lower() == 'usd' and amount < 100:
+                amount_cents = int(amount * 100)
+            else:
+                amount_cents = int(amount)
+
+            intent = stripe.PaymentIntent.create(
+                amount=amount_cents,
+                currency=currency,
+                description=description,
+                metadata=metadata or {},
+                automatic_payment_methods={'enabled': True}
+            )
+
+            self.logger.info(f"Stripe payment intent created: {intent.id}")
+
+            return {
+                'status': 'success',
+                'payment_intent_id': intent.id,
+                'client_secret': intent.client_secret,
+                'amount': amount_cents,
+                'currency': currency,
+                'description': description
+            }
+
+        except stripe.error.StripeError as e:
+            self.logger.error(f"Stripe payment intent creation failed: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+        except Exception as e:
+            self.logger.error(f"Unexpected error creating Stripe payment intent: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def confirm_stripe_payment(self, payment_intent_id: str) -> Dict[str, Any]:
+        """
+        Confirm a Stripe payment intent
+
+        Args:
+            payment_intent_id: Stripe payment intent ID
+
+        Returns:
+            Dict with confirmation details
+        """
+        try:
+            if not config.STRIPE_SECRET_KEY:
+                return {
+                    'status': 'error',
+                    'error': 'Stripe not configured'
+                }
+
+            intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+
+            if intent.status == 'succeeded':
+                self.logger.info(f"Stripe payment confirmed: {payment_intent_id}")
+                return {
+                    'status': 'success',
+                    'payment_intent_id': payment_intent_id,
+                    'amount': intent.amount,
+                    'currency': intent.currency,
+                    'status': intent.status
+                }
+            else:
+                return {
+                    'status': 'pending',
+                    'payment_intent_id': payment_intent_id,
+                    'status': intent.status
+                }
+
+        except stripe.error.StripeError as e:
+            self.logger.error(f"Stripe payment confirmation failed: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+        except Exception as e:
+            self.logger.error(f"Unexpected error confirming Stripe payment: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def process_stripe_webhook(self, payload: str, signature: str) -> Dict[str, Any]:
+        """
+        Process Stripe webhook events
+
+        Args:
+            payload: Raw webhook payload
+            signature: Stripe signature header
+
+        Returns:
+            Dict with processing result
+        """
+        try:
+            if not config.STRIPE_WEBHOOK_SECRET:
+                return {
+                    'status': 'error',
+                    'error': 'Stripe webhook secret not configured'
+                }
+
+            # Verify webhook signature
+            event = stripe.Webhook.construct_event(
+                payload, signature, config.STRIPE_WEBHOOK_SECRET
+            )
+
+            self.logger.info(f"Stripe webhook received: {event.type}")
+
+            # Handle different event types
+            if event.type == 'payment_intent.succeeded':
+                payment_intent = event.data.object
+                self.logger.info(f"Payment succeeded: {payment_intent.id}")
+
+                # Update local payment record if it exists
+                # This would typically update the payment status in your database
+
+            elif event.type == 'payment_intent.payment_failed':
+                payment_intent = event.data.object
+                self.logger.error(f"Payment failed: {payment_intent.id}")
+
+            return {
+                'status': 'success',
+                'event_type': event.type,
+                'event_id': event.id
+            }
+
+        except stripe.error.SignatureVerificationError as e:
+            self.logger.error(f"Stripe webhook signature verification failed: {str(e)}")
+            return {
+                'status': 'error',
+                'error': 'Invalid signature'
+            }
+        except Exception as e:
+            self.logger.error(f"Error processing Stripe webhook: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def create_stripe_refund(self, payment_intent_id: str, amount: Optional[int] = None,
+                           reason: str = 'requested_by_customer') -> Dict[str, Any]:
+        """
+        Create a Stripe refund
+
+        Args:
+            payment_intent_id: Original payment intent ID
+            amount: Refund amount in cents (full refund if not specified)
+            reason: Refund reason
+
+        Returns:
+            Dict with refund details
+        """
+        try:
+            if not config.STRIPE_SECRET_KEY:
+                return {
+                    'status': 'error',
+                    'error': 'Stripe not configured'
+                }
+
+            refund = stripe.Refund.create(
+                payment_intent=payment_intent_id,
+                amount=amount,
+                reason=reason
+            )
+
+            self.logger.info(f"Stripe refund created: {refund.id} for payment {payment_intent_id}")
+
+            return {
+                'status': 'success',
+                'refund_id': refund.id,
+                'amount': refund.amount,
+                'currency': refund.currency,
+                'status': refund.status
+            }
+
+        except stripe.error.StripeError as e:
+            self.logger.error(f"Stripe refund creation failed: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+        except Exception as e:
+            self.logger.error(f"Unexpected error creating Stripe refund: {str(e)}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
 
 
 # Global payments service instance
