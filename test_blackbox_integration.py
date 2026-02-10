@@ -19,9 +19,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from ai_service import ai_service
 from payments_service import payments_service
 from revenue_service import revenue_service, RevenueType
-from src.models.payments import PaymentType
 from config import config
 from logger import telemetry_logger
+
+# Use PaymentType from payments_service to ensure consistency
+PaymentType = payments_service.PaymentType
 
 class BlackboxIntegrationTester:
     """Comprehensive tester for Blackbox AI business integration"""

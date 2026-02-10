@@ -1597,9 +1597,9 @@ def sync_payment_to_revenue(payment_id):
 @app.route('/api/ai/analyze', methods=['POST'])
 @require_auth
 @conditional_limit("10 per minute")
-def ai_analyze_data():
+def api_ai_analyze_data():
     """
-    AI-powered financial data analysis
+    AI-powered financial data analysis (API version)
     """
     try:
         data = request.json.get('data', {})
@@ -1613,7 +1613,7 @@ def ai_analyze_data():
             return jsonify(result), 400
 
     except Exception as e:
-        telemetry_logger.log_error(e, {'context': 'ai_analyze'})
+        telemetry_logger.log_error(e, {'context': 'api_ai_analyze'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.route('/api/ai/risk-assess', methods=['POST'])
