@@ -942,7 +942,8 @@ def index():
             '/dashboard - Web dashboard',
             '/welcome/create-workspace - Create workspace page (Auth0 required)',
             '/api/workspaces - Create workspace API (Auth0 required)',
-            '/api/github/orgs - Get GitHub organizations'
+            '/api/github/orgs - Get GitHub organizations',
+            '/api/github/repos - Get GitHub repositories'
         ],
         'timestamp': datetime.now(timezone.utc).isoformat()
     }), 200
@@ -1411,6 +1412,46 @@ def get_github_orgs():
         return jsonify({'error': 'Failed to connect to Blackbox API', 'status': 'error'}), 500
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'get_github_orgs'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/github/repos', methods=['GET'])
+def get_github_repos():
+    """
+    Retrieve repositories for a specific GitHub user or organization
+    """
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header', 'status': 'error'}), 401
+
+        owner = request.args.get('owner')
+        if not owner:
+            return jsonify({'error': 'Missing required parameter: owner', 'status': 'error'}), 400
+
+        api_key = auth_header.split(' ')[1]
+
+        # Make request to Blackbox API
+        response = requests.get(f'https://cloud.blackbox.ai/api/github/repos?owner={owner}', headers={'Authorization': f'Bearer {api_key}'})
+
+        if response.status_code == 200:
+            repositories = response.json()
+            return jsonify(repositories), 200
+        elif response.status_code == 400:
+            return jsonify({'error': 'Bad Request', 'message': 'Missing required parameter: owner', 'status': 400}), 400
+        elif response.status_code == 401:
+            return jsonify({'error': 'Unauthorized', 'message': 'Invalid or missing API key', 'status': 401}), 401
+        elif response.status_code == 404:
+            return jsonify({'error': 'Not Found', 'message': 'GitHub token not found or expired', 'status': 404}), 404
+        elif response.status_code == 502:
+            return jsonify({'error': 'Bad Gateway', 'message': 'GitHub API error occurred', 'status': 502}), 502
+        else:
+            return jsonify({'error': 'Internal server error', 'status': response.status_code}), 500
+
+    except requests.RequestException as e:
+        telemetry_logger.log_error(e, {'context': 'get_github_repos'})
+        return jsonify({'error': 'Failed to connect to Blackbox API', 'status': 'error'}), 500
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_github_repos'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 # Webhook Endpoints for Real-time Data Updates
