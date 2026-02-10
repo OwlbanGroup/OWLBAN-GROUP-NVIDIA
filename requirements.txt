@@ -89,6 +89,7 @@ auth0-python==4.7.1
 
 # LangChain and LangSmith for AI-powered features
 langchain==1.2.9
+langchain-core==0.3.0
 langchain-openai==1.1.8
 langsmith==0.7.1
 openai==2.3.0
