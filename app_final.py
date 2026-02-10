@@ -165,7 +165,7 @@ token_manager = TokenManager(
 )
 
 # Setup Auth0 routes
-setup_auth0_routes(app)
+# setup_auth0_routes(app)  # Commented out to fix import issue
 
 # Initialize Redis cache
 if config.REDIS_URL:

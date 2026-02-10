@@ -8,8 +8,6 @@ from datetime import datetime, timezone
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.callbacks.manager import LangChainTracer
 from langsmith import Client as LangSmithClient
 
 from config import config
@@ -32,18 +30,41 @@ class AIService:
             self.langsmith_client = None
             self.logger.warning("LangSmith API key not configured - tracing disabled")
 
-        # Initialize OpenAI LLM
-        # Allow missing for testing - uncomment the raise for production
-        if not config.OPENAI_API_KEY:
-            self.logger.warning("OpenAI API key not configured - AI services disabled")
-            self.llm = None
-        else:
-            self.llm = ChatOpenAI(
-                model=config.OPENAI_MODEL,
-                temperature=config.OPENAI_TEMPERATURE,
-                openai_api_key=config.OPENAI_API_KEY,
-                callbacks=[LangChainTracer(project_name=config.LANGCHAIN_PROJECT)] if self.langsmith_client else []
-            )
+        # Initialize LLM - prefer Blackbox AI if configured, fallback to OpenAI
+        self.llm = None
+        self.llm_provider = None
+
+        # Try Blackbox AI first
+        if config.BLACKBOX_API_KEY:
+            try:
+                self.llm = ChatOpenAI(
+                    model=config.BLACKBOX_MODEL,
+                    temperature=config.BLACKBOX_TEMPERATURE,
+                    openai_api_key=config.BLACKBOX_API_KEY,
+                    openai_api_base=config.BLACKBOX_BASE_URL,
+                    callbacks=[LangChainTracer(project_name=config.LANGCHAIN_PROJECT)] if self.langsmith_client else []
+                )
+                self.llm_provider = "blackbox"
+                self.logger.info("Blackbox AI initialized successfully")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize Blackbox AI: {str(e)}")
+
+        # Fallback to OpenAI if Blackbox not available or failed
+        if not self.llm and config.OPENAI_API_KEY:
+            try:
+                self.llm = ChatOpenAI(
+                    model=config.OPENAI_MODEL,
+                    temperature=config.OPENAI_TEMPERATURE,
+                    openai_api_key=config.OPENAI_API_KEY,
+                    callbacks=[LangChainTracer(project_name=config.LANGCHAIN_PROJECT)] if self.langsmith_client else []
+                )
+                self.llm_provider = "openai"
+                self.logger.info("OpenAI initialized successfully")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize OpenAI: {str(e)}")
+
+        if not self.llm:
+            self.logger.warning("No AI provider configured - AI services disabled")
 
         # Initialize prompt templates
         self._setup_prompts()
@@ -137,11 +158,12 @@ class AIService:
                 "question": question
             })
 
+            model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
                 "analysis": result.content,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "model_used": config.OPENAI_MODEL
+                "model_used": model_used
             }
 
         except Exception as e:
@@ -175,11 +197,12 @@ class AIService:
                 "market_conditions": str(market_conditions or {})
             })
 
+            model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
                 "risk_assessment": result.content,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "model_used": config.OPENAI_MODEL
+                "model_used": model_used
             }
 
         except Exception as e:
@@ -213,11 +236,12 @@ class AIService:
                 "available_data": str(available_data or {})
             })
 
+            model_used = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
             return {
                 "status": "success",
                 "response": result.content,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "model_used": config.OPENAI_MODEL
+                "model_used": model_used
             }
 
         except Exception as e:
@@ -230,10 +254,14 @@ class AIService:
 
     def get_service_status(self) -> Dict[str, Any]:
         """Get AI service status and configuration"""
+        model = config.BLACKBOX_MODEL if self.llm_provider == "blackbox" else config.OPENAI_MODEL
+        temperature = config.BLACKBOX_TEMPERATURE if self.llm_provider == "blackbox" else config.OPENAI_TEMPERATURE
+
         return {
             "status": "healthy" if self.llm else "unhealthy",
-            "model": config.OPENAI_MODEL,
-            "temperature": config.OPENAI_TEMPERATURE,
+            "provider": self.llm_provider or "none",
+            "model": model,
+            "temperature": temperature,
             "langsmith_enabled": self.langsmith_client is not None,
             "project": config.LANGCHAIN_PROJECT,
             "timestamp": datetime.now(timezone.utc).isoformat()

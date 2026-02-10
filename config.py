@@ -198,6 +198,12 @@ class Config:
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4')
     OPENAI_TEMPERATURE = float(os.getenv('OPENAI_TEMPERATURE', '0.1'))
 
+    # Blackbox AI Settings (OpenAI-compatible)
+    BLACKBOX_API_KEY = os.getenv('BLACKBOX_API_KEY')
+    BLACKBOX_BASE_URL = os.getenv('BLACKBOX_BASE_URL', 'https://cloud.blackbox.ai/')
+    BLACKBOX_MODEL = os.getenv('BLACKBOX_MODEL', 'gpt-3.5-turbo')
+    BLACKBOX_TEMPERATURE = float(os.getenv('BLACKBOX_TEMPERATURE', '0.1'))
+
     @classmethod
     def get_database_url(cls) -> str:
         """Generate database URL based on configuration"""
