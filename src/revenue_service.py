@@ -67,7 +67,7 @@ class RevenueService:
                 net_amount=net_amount,
                 payment_method=payment_method,
                 external_reference=external_reference,
-                additional_data=additional_metadata
+                metadata=additional_metadata
             )
 
             # Save to database
