@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from src.logger import telemetry_logger
 from src.database_fixed import db_manager
 from src.models.user import User, UserRole, RolePermission
+from src.validators_comprehensive import ComprehensiveValidators as validator
 
 
 class AuthService:
@@ -70,6 +71,16 @@ class AuthService:
                    role: UserRole = UserRole.USER, business_id: int = None) -> User:
         """Create a new user"""
         try:
+            # Validate inputs
+            validator.validate_string(username, 'username', min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$')
+            validator.validate_string(password, 'password', min_length=8, max_length=128)
+            if email:
+                validator.validate_email(email)
+            if not isinstance(role, UserRole):
+                raise ValueError("Invalid role")
+            if business_id is not None:
+                validator.validate_number(business_id, 'business_id', min_value=1)
+
             hashed_password = self.hash_password(password)
 
             user = User(

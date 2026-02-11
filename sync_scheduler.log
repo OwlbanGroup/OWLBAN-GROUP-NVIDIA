@@ -56,3 +56,171 @@
 2026-02-10 17:35:03,684 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
 2026-02-10 17:35:03,686 - telemetry_logger - INFO - No GPU found, using CPU
 2026-02-10 17:35:03,686 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 14:52:52,071 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T19:52:52.071789+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 14:52:52,071 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 14:52:52,071 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 14:52:52,071 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 14:52:52,143 - telemetry_logger - INFO - Health check requested
+2026-02-11 14:52:52,143 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 14:52:52,157 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 14:52:53,437 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 14:53:01,501 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 14:53:01,504 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 14:53:02,198 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 14:53:02,369 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 14:53:02,372 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 14:53:02,376 - telemetry_logger - INFO - Health check requested
+2026-02-11 14:53:02,378 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 14:53:02,380 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 14:53:02,385 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 14:53:02,386 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 14:57:08,215 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T19:57:08.215752+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 14:57:08,215 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 14:57:08,217 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 14:57:08,217 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 14:57:08,258 - telemetry_logger - INFO - Health check requested
+2026-02-11 14:57:08,263 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 14:57:08,275 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 14:57:09,202 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 14:57:17,893 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 14:57:17,899 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 14:57:18,746 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 14:57:18,926 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 14:57:18,928 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 14:57:18,934 - telemetry_logger - INFO - Health check requested
+2026-02-11 14:57:18,937 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 14:57:18,941 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 14:57:18,944 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 14:57:18,946 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:10:50,581 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:10:50.581337+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:10:50,581 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:10:50,583 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:10:50,583 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:10:50,650 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:10:50,656 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:10:50,665 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:10:52,421 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 15:11:01,003 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 15:11:01,007 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:11:01,728 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:11:01,899 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:11:01,904 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 15:11:01,910 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:11:01,912 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:11:01,914 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:11:01,917 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 15:11:01,919 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:14:51,290 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:14:51.290879+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:14:51,292 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:14:51,294 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:14:51,294 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:14:51,333 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:14:51,333 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:14:51,343 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:14:51,802 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 15:14:53,486 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 15:14:53,489 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:14:54,133 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:14:54,317 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:14:54,319 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 15:14:54,323 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:14:54,326 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:14:54,327 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:14:54,331 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 15:14:54,332 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:15:52,686 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:15:52.686484+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:15:52,687 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:15:52,687 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:15:52,688 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:15:52,724 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:15:52,728 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:15:52,737 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:15:53,420 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 15:15:54,753 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 15:15:54,756 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:15:55,432 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:15:55,616 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:15:55,618 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 15:15:55,623 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:15:55,626 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:15:55,630 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:15:55,634 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 15:15:55,635 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:16:03,463 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:16:03.463990+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:16:03,464 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:16:03,464 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:16:03,464 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:16:03,492 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:16:03,495 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:16:03,502 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:16:03,923 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 15:16:04,637 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 15:16:04,640 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[AssetModel(assets)]'. Original exception was: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:16:05,563 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:16:05,771 - telemetry_logger - WARNING - Token verification failed: JWKS client not initialized
+2026-02-11 15:16:05,773 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 15:16:05,778 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:16:05,782 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:20:30,211 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:20:30.211162+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:20:30,212 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:20:30,213 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:20:30,213 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:20:30,275 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:20:30,280 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:20:30,288 - telemetry_logger - ERROR - Error: Multiple classes found for path "BusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:40:08,077 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T20:40:08.077882+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 15:40:08,077 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 15:40:08,077 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 15:40:08,077 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 15:40:08,137 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:40:08,140 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:40:08,150 - telemetry_logger - ERROR - Error: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:40:09,538 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 15:40:17,866 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 15:40:17,870 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBAssetModel(assets)]'. Original exception was: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 15:40:18,611 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBAssetModel(assets)]'. Original exception was: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'create_business'}
+2026-02-11 15:40:18,816 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBAssetModel(assets)]'. Original exception was: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'create_business'}
+2026-02-11 15:40:18,818 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 15:40:18,822 - telemetry_logger - INFO - Health check requested
+2026-02-11 15:40:18,823 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 15:40:18,827 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBAssetModel(assets)]'. Original exception was: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 15:40:18,831 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 15:40:18,832 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBAssetModel(assets)]'. Original exception was: Multiple classes found for path "DBBusinessModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 16:01:32,576 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T21:01:32.576258+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 16:01:32,576 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 16:01:32,576 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 16:01:32,576 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 16:01:32,639 - telemetry_logger - INFO - Health check requested
+2026-02-11 16:01:32,647 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 16:01:35,251 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 16:01:42,609 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 16:01:43,432 - telemetry_logger - ERROR - Error: (sqlite3.IntegrityError) UNIQUE constraint failed: businesses.registration_number
+[SQL: INSERT INTO businesses (name, type, registration_number, address, contact_info, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('Test Business Corp', <BusinessType.CORPORATION: 'corporation'>, '123456789', '123 Test Street, New York, NY', '{"email": "contact@testbusiness.com", "phone": "+1-555-0123"}', '2026-02-11 21:01:43.431527', '2026-02-11 21:01:43.431527')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) | Context: {'context': 'create_business'}
+2026-02-11 16:01:43,771 - telemetry_logger - ERROR - Error: (sqlite3.IntegrityError) UNIQUE constraint failed: businesses.registration_number
+[SQL: INSERT INTO businesses (name, type, registration_number, address, contact_info, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('Test Business Corp', <BusinessType.CORPORATION: 'corporation'>, '123456789', '123 Test Street, New York, NY', '{"email": "contact@testbusiness.com", "phone": "+1-555-0123"}', '2026-02-11 21:01:43.770450', '2026-02-11 21:01:43.770450')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) | Context: {'context': 'create_business'}
+2026-02-11 16:01:43,774 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 16:01:43,780 - telemetry_logger - INFO - Health check requested
+2026-02-11 16:01:43,782 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 16:01:43,786 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 16:04:53,834 - jpmorgan_api - WARNING - {"timestamp": "2026-02-11T21:04:53.834975+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-11 16:04:53,836 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-11 16:04:53,836 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-11 16:04:53,837 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-11 16:04:53,887 - telemetry_logger - INFO - Health check requested
+2026-02-11 16:04:53,890 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 16:04:53,898 - telemetry_logger - ERROR - Error: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 16:04:54,774 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-11 16:04:56,115 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-11 16:04:56,117 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBBusinessModel(businesses)]'. Original exception was: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}
+2026-02-11 16:04:56,789 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBBusinessModel(businesses)]'. Original exception was: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'create_business'}
+2026-02-11 16:04:57,003 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBBusinessModel(businesses)]'. Original exception was: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'create_business'}
+2026-02-11 16:04:57,005 - flask-limiter - INFO - ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: register_user
+2026-02-11 16:04:57,010 - telemetry_logger - INFO - Health check requested
+2026-02-11 16:04:57,012 - telemetry_logger - INFO - Batch processing completed: 0/2 events processed successfully
+2026-02-11 16:04:57,015 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBBusinessModel(businesses)]'. Original exception was: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'getting_metrics_summary'}
+2026-02-11 16:04:57,019 - flask-limiter - INFO - ratelimit 1 per 1 hour (127.0.0.1) exceeded at endpoint: train_ml_model
+2026-02-11 16:04:57,020 - telemetry_logger - ERROR - Error: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[DBBusinessModel(businesses)]'. Original exception was: Multiple classes found for path "DBAssetModel" in the registry of this declarative base. Please use a fully module-qualified path. | Context: {'context': 'exporting_events'}

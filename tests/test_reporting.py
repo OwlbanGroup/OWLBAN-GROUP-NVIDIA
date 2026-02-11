@@ -12,7 +12,7 @@ import pandas as pd
 from jinja2 import Template
 import glob
 
-class TestReportGenerator:
+class ReportGenerator:
     """Generate comprehensive test reports"""
 
     def __init__(self, results_dir="test_results"):

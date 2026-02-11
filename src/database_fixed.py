@@ -27,6 +27,10 @@ class TelemetryEventModel(Base):
     __tablename__ = 'telemetry_events'
     __table_args__ = {'extend_existing': True}
 
+    __mapper_args__ = {
+        'polymorphic_identity': 'src.database_fixed.TelemetryEventModel'
+    }
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(String, nullable=False)
     operation = Column(String, nullable=False)
@@ -85,10 +89,15 @@ class TelemetryMetricsModel(Base):
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
-class BusinessModel(Base):
+class DBBusinessModel(Base):
     """SQLAlchemy model for businesses"""
     __tablename__ = 'businesses'
     __table_args__ = {'extend_existing': True}
+
+    # Use fully qualified name to avoid conflicts
+    __mapper_args__ = {
+        'polymorphic_identity': 'src.database_fixed.DBBusinessModel'
+    }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -99,11 +108,18 @@ class BusinessModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    assets = relationship("DBAssetModel", back_populates="business", overlaps="business")
 
-class AssetModel(Base):
+
+class DBAssetModel(Base):
     """SQLAlchemy model for assets"""
     __tablename__ = 'assets'
     __table_args__ = {'extend_existing': True}
+
+    # Use fully qualified name to avoid conflicts
+    __mapper_args__ = {
+        'polymorphic_identity': 'src.database_fixed.DBAssetModel'
+    }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
@@ -117,7 +133,7 @@ class AssetModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    business = relationship("BusinessModel")
+    business = relationship("DBBusinessModel", back_populates="assets", overlaps="business")
 
 
 class DatabaseManager:
@@ -195,7 +211,7 @@ class DatabaseManager:
             Base.metadata.create_all(bind=self.engine)
 
             # Create businesses table explicitly first
-            BusinessModel.__table__.create(bind=self.engine, checkfirst=True)
+            DBBusinessModel.__table__.create(bind=self.engine, checkfirst=True)
 
             # Create audit_logs table if available
             if AuditLogModel is not None:
@@ -333,7 +349,7 @@ class DatabaseManager:
             return 0
 
     # Business Management Methods
-    def create_business(self, business_data: dict) -> BusinessModel:
+    def create_business(self, business_data: dict) -> DBBusinessModel:
         """Create a new business"""
         try:
             with self.get_session() as session:
@@ -342,7 +358,7 @@ class DatabaseManager:
                     import json
                     business_data['contact_info'] = json.dumps(business_data['contact_info'])
 
-                business = BusinessModel(**business_data)
+                business = DBBusinessModel(**business_data)
                 session.add(business)
                 session.commit()
                 session.refresh(business)
@@ -351,29 +367,29 @@ class DatabaseManager:
             print(f"Failed to create business: {e}")
             raise
 
-    def get_business_by_id(self, business_id: int) -> Optional[BusinessModel]:
+    def get_business_by_id(self, business_id: int) -> Optional[DBBusinessModel]:
         """Get business by ID"""
         try:
             with self.get_session() as session:
-                return session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+                return session.query(DBBusinessModel).filter(DBBusinessModel.id == business_id).first()
         except Exception as e:
             print(f"Failed to get business: {e}")
             return None
 
-    def get_all_businesses(self) -> List[BusinessModel]:
+    def get_all_businesses(self) -> List[DBBusinessModel]:
         """Get all businesses"""
         try:
             with self.get_session() as session:
-                return session.query(BusinessModel).all()
+                return session.query(DBBusinessModel).all()
         except Exception as e:
             print(f"Failed to get businesses: {e}")
             return []
 
-    def update_business(self, business_id: int, update_data: dict) -> Optional[BusinessModel]:
+    def update_business(self, business_id: int, update_data: dict) -> Optional[DBBusinessModel]:
         """Update business details"""
         try:
             with self.get_session() as session:
-                business = session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+                business = session.query(DBBusinessModel).filter(DBBusinessModel.id == business_id).first()
                 if not business:
                     return None
                 for key, value in update_data.items():
@@ -390,7 +406,7 @@ class DatabaseManager:
         """Delete a business"""
         try:
             with self.get_session() as session:
-                business = session.query(BusinessModel).filter(BusinessModel.id == business_id).first()
+                business = session.query(DBBusinessModel).filter(DBBusinessModel.id == business_id).first()
                 if not business:
                     return False
                 session.delete(business)
@@ -401,7 +417,7 @@ class DatabaseManager:
             return False
 
     # Asset Management Methods
-    def create_asset(self, asset_data: dict) -> AssetModel:
+    def create_asset(self, asset_data: dict) -> DBAssetModel:
         """Create a new asset"""
         try:
             with self.get_session() as session:
@@ -413,7 +429,7 @@ class DatabaseManager:
                         # If conversion fails, set to None
                         asset_data['acquisition_date'] = None
 
-                asset = AssetModel(**asset_data)
+                asset = DBAssetModel(**asset_data)
                 session.add(asset)
                 session.commit()
                 session.refresh(asset)
@@ -422,38 +438,38 @@ class DatabaseManager:
             print(f"Failed to create asset: {e}")
             raise
 
-    def get_asset_by_id(self, asset_id: int) -> Optional[AssetModel]:
+    def get_asset_by_id(self, asset_id: int) -> Optional[DBAssetModel]:
         """Get asset by ID"""
         try:
             with self.get_session() as session:
-                return session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+                return session.query(DBAssetModel).filter(DBAssetModel.id == asset_id).first()
         except Exception as e:
             print(f"Failed to get asset: {e}")
             return None
 
-    def get_all_assets(self) -> List[AssetModel]:
+    def get_all_assets(self) -> List[DBAssetModel]:
         """Get all assets"""
         try:
             with self.get_session() as session:
-                return session.query(AssetModel).all()
+                return session.query(DBAssetModel).all()
         except Exception as e:
             print(f"Failed to get assets: {e}")
             return []
 
-    def get_assets_by_business_id(self, business_id: int) -> List[AssetModel]:
+    def get_assets_by_business_id(self, business_id: int) -> List[DBAssetModel]:
         """Get assets for a specific business"""
         try:
             with self.get_session() as session:
-                return session.query(AssetModel).filter(AssetModel.business_id == business_id).all()
+                return session.query(DBAssetModel).filter(DBAssetModel.business_id == business_id).all()
         except Exception as e:
             print(f"Failed to get assets for business: {e}")
             return []
 
-    def update_asset(self, asset_id: int, update_data: dict) -> Optional[AssetModel]:
+    def update_asset(self, asset_id: int, update_data: dict) -> Optional[DBAssetModel]:
         """Update asset details"""
         try:
             with self.get_session() as session:
-                asset = session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+                asset = session.query(DBAssetModel).filter(DBAssetModel.id == asset_id).first()
                 if not asset:
                     return None
                 for key, value in update_data.items():
@@ -470,7 +486,7 @@ class DatabaseManager:
         """Delete an asset"""
         try:
             with self.get_session() as session:
-                asset = session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+                asset = session.query(DBAssetModel).filter(DBAssetModel.id == asset_id).first()
                 if not asset:
                     return False
                 session.delete(asset)

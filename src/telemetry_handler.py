@@ -28,6 +28,10 @@ except ImportError:
     class Config:
         DATABASE_URL = 'sqlite:///telemetry.db'
         TELEMETRY_BATCH_SIZE = 100
+        OAUTH_CLIENT_SECRET = ''
+        FLASK_ENV = 'development'
+        HOST = '127.0.0.1'
+        PORT = 5000
     config = Config()
 
 # Query performance tracking

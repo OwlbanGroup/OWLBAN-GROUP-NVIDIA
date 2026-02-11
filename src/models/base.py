@@ -1,6 +1,8 @@
 """
 Shared SQLAlchemy Base for all models
 """
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import registry
 
-Base = declarative_base()
+# Create a registry to avoid conflicts with multiple classes of same name
+reg = registry()
+Base = reg.generate_base()

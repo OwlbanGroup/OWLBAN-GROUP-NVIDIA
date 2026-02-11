@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import logging
 from datetime import datetime, timezone
 
-from src.database_fixed import db_manager, AssetModel, BusinessModel
+from src.database_fixed import db_manager, DBAssetModel, DBBusinessModel
 from src.logger import telemetry_logger
 from src.models.payments import PaymentStatus
 
@@ -251,14 +251,14 @@ class BusinessTransactionManager(TransactionManager):
         """
         def operation(session: Session):
             # Verify asset exists and get current business
-            asset = session.query(AssetModel).filter(AssetModel.id == asset_id).first()
+            asset = session.query(DBAssetModel).filter(DBAssetModel.id == asset_id).first()
             if not asset:
                 raise ValueError(f"Asset {asset_id} not found")
 
             old_business_id = asset.business_id
 
             # Verify new business exists
-            new_business = session.query(BusinessModel).filter(BusinessModel.id == new_business_id).first()
+            new_business = session.query(DBBusinessModel).filter(DBBusinessModel.id == new_business_id).first()
             if not new_business:
                 raise ValueError(f"Business {new_business_id} not found")
 

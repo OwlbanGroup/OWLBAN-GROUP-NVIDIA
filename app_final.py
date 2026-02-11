@@ -91,7 +91,7 @@ from src.validation import InputValidator, ValidationError  # type: ignore
 from src.cloud_storage import setup_cloud_storage  # type: ignore
 from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
-from src.database_fixed import db_manager, BusinessModel, AssetModel  # type: ignore
+from src.database_fixed import db_manager, DBBusinessModel, DBAssetModel  # type: ignore
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 from src.ai_service import ai_service  # type: ignore
 from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
@@ -644,7 +644,7 @@ def convert_data_format():
 
 # Business Management Endpoints
 @app.route('/businesses', methods=['GET'])
-@auth0_required
+@token_auth_required
 @conditional_limit("10 per minute")
 def list_businesses():
     """
@@ -664,7 +664,7 @@ def list_businesses():
 
 
 @app.route('/businesses', methods=['POST'])
-@auth0_required
+@token_auth_required
 @conditional_limit("5 per minute")
 def create_business():
     """

@@ -31,6 +31,7 @@ try:
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False
+    BlobServiceClient = None
 
 try:
     from minio import Minio

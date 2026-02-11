@@ -3,10 +3,17 @@ Configuration settings for JP Morgan Financial APIs
 """
 from typing import List
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra='allow'
+    )
 
     # Application
     APP_NAME: str = "JPMorgan Financial APIs"
@@ -35,10 +42,14 @@ class Settings(BaseSettings):
     JPMORGAN_API_SECRET: str = ""
     JPMORGAN_BASE_URL: str = "https://api.jpmorgan.com"
 
-    class Config:
-        """Pydantic config"""
-        env_file = ".env"
-        case_sensitive = True
+    # Telemetry
+    TELEMETRY_BATCH_SIZE: int = 100
+
+    # Additional settings for compatibility
+    OAUTH_CLIENT_SECRET: str = ""
+    FLASK_ENV: str = "development"
+    HOST: str = "127.0.0.1"
+    PORT: int = 5000
 
 
 settings = Settings()

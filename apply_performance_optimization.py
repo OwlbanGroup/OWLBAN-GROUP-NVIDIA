@@ -22,7 +22,8 @@ except ImportError as e:
 
 def apply_database_indexes():
     """Apply all recommended database indexes"""
-    print("🔧 Applying database indexes...")
+    logger = telemetry_logger.get_logger()
+    logger.info("Applying database indexes...")
 
     try:
         # Get database session
@@ -35,16 +36,16 @@ def apply_database_indexes():
         success_count = sum(1 for result in results.values() if result)
         total_count = len(results)
 
-        print(f"✅ Database indexes applied: {success_count}/{total_count} successful")
+        print(f"Database indexes applied: {success_count}/{total_count} successful")
 
         for table, success in results.items():
-            status = "✅" if success else "❌"
+            status = "SUCCESS" if success else "FAILED"
             print(f"  {status} {table}")
 
         return True
 
     except Exception as e:
-        print(f"❌ Error applying indexes: {e}")
+        print(f"ERROR: Error applying indexes: {e}")
         return False
     finally:
         if 'session' in locals():
@@ -52,7 +53,7 @@ def apply_database_indexes():
 
 def run_query_performance_analysis():
     """Run performance analysis on key queries"""
-    print("📊 Running query performance analysis...")
+    print("Running query performance analysis...")
 
     try:
         session = db_manager.get_session()
@@ -72,16 +73,16 @@ def run_query_performance_analysis():
             try:
                 analysis = optimizer.analyze_query_performance(query)
                 analysis_results[query] = analysis
-                print(f"  ✅ Analyzed: {query[:50]}...")
+                print(f"  Analyzed: {query[:50]}...")
             except Exception as e:
-                print(f"  ❌ Failed to analyze: {query[:50]}... - {e}")
+                print(f"  Failed to analyze: {query[:50]}... - {e}")
                 analysis_results[query] = {'error': str(e)}
 
-        print(f"✅ Query analysis completed for {len(analysis_results)} queries")
+        print(f"Query analysis completed for {len(analysis_results)} queries")
         return analysis_results
 
     except Exception as e:
-        print(f"❌ Error in query analysis: {e}")
+        print(f"ERROR: Error in query analysis: {e}")
         return {}
     finally:
         if 'session' in locals():
@@ -89,7 +90,7 @@ def run_query_performance_analysis():
 
 def optimize_connection_pool():
     """Optimize database connection pool settings"""
-    print("🔗 Optimizing connection pool...")
+    print("Optimizing connection pool...")
 
     try:
         session = db_manager.get_session()
@@ -100,14 +101,14 @@ def optimize_connection_pool():
             max_overflow=20
         )
 
-        print("✅ Connection pool optimization recommendations:")
+        print("Connection pool optimization recommendations:")
         for key, value in recommendations.items():
             print(f"  {key}: {value}")
 
         return recommendations
 
     except Exception as e:
-        print(f"❌ Error optimizing connection pool: {e}")
+        print(f"ERROR: Error optimizing connection pool: {e}")
         return {}
     finally:
         if 'session' in locals():
@@ -115,13 +116,13 @@ def optimize_connection_pool():
 
 def generate_optimization_report():
     """Generate comprehensive optimization report"""
-    print("📋 Generating optimization report...")
+    print("Generating optimization report...")
 
     try:
         session = db_manager.get_session()
         report = get_optimization_report(session)
 
-        print("✅ Optimization report generated:")
+        print("Optimization report generated:")
         print(f"  Tables analyzed: {len(report.get('tables', {}))}")
         print(f"  Recommendations: {len(report.get('recommendations', []))}")
 
@@ -138,7 +139,7 @@ def generate_optimization_report():
         return report
 
     except Exception as e:
-        print(f"❌ Error generating report: {e}")
+        print(f"ERROR: Error generating report: {e}")
         return {}
     finally:
         if 'session' in locals():
@@ -146,8 +147,8 @@ def generate_optimization_report():
 
 def main():
     """Main performance optimization function"""
-    print("🚀 Starting Performance Optimization...")
-    print(f"⏰ Start time: {datetime.now(timezone.utc).isoformat()}")
+    print("Starting Performance Optimization...")
+    print(f"Start time: {datetime.now(timezone.utc).isoformat()}")
 
     results = {
         'indexes_applied': False,
@@ -169,8 +170,8 @@ def main():
     # Step 4: Generate optimization report
     results['optimization_report'] = generate_optimization_report()
 
-    print("
-✅ Performance optimization completed!"    print(f"⏰ End time: {datetime.now(timezone.utc).isoformat()}")
+    print("\nPerformance optimization completed!")
+    print(f"End time: {datetime.now(timezone.utc).isoformat()}")
 
     # Log completion
     logger = telemetry_logger.get_logger()

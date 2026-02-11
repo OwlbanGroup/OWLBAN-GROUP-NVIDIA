@@ -8,6 +8,9 @@ import sys
 # Set testing environment
 os.environ['TESTING'] = '1'
 
+# Add the current directory to sys.path to ensure imports work when run from different locations
+sys.path.insert(0, os.path.dirname(__file__))
+
 try:
     from app_final import app
     print('✅ Flask app imported and initialized successfully')

@@ -70,6 +70,15 @@ class Config:
     TELEMETRY_ENABLED = os.getenv('TELEMETRY_ENABLED', 'true').lower() == 'true'
     TELEMETRY_BATCH_SIZE = int(os.getenv('TELEMETRY_BATCH_SIZE', '100'))
 
+    # Database URL for telemetry
+    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///telemetry.db')
+
+    # Additional compatibility settings
+    OAUTH_CLIENT_SECRET = os.getenv('OAUTH_CLIENT_SECRET', '')
+    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    HOST = os.getenv('HOST', '127.0.0.1')
+    PORT = int(os.getenv('PORT', '5000'))
+
     # Database Settings
     DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///telemetry.db')
     DATABASE_TYPE = os.getenv('DATABASE_TYPE', 'sqlite')  # sqlite, postgresql
@@ -124,6 +133,24 @@ class Config:
     NVIDIA_DRIVER_CAPABILITIES = os.getenv('NVIDIA_DRIVER_CAPABILITIES', 'compute,utility,video')
     CUDA_VISIBLE_DEVICES = os.getenv('CUDA_VISIBLE_DEVICES', '0')
     GPU_MEMORY_FRACTION = float(os.getenv('GPU_MEMORY_FRACTION', '0.8'))
+
+    # Multi-GPU Support Configuration
+    MULTI_GPU_ENABLED = os.getenv('MULTI_GPU_ENABLED', 'false').lower() == 'true'
+    GPU_COUNT = int(os.getenv('GPU_COUNT', '1'))
+    GPU_STRATEGY = os.getenv('GPU_STRATEGY', 'mirrored')  # mirrored, parameter_server, central_storage
+    GPU_MEMORY_GROWTH = os.getenv('GPU_MEMORY_GROWTH', 'true').lower() == 'true'
+    GPU_PER_PROCESS_MEMORY_FRACTION = float(os.getenv('GPU_PER_PROCESS_MEMORY_FRACTION', '0.8'))
+    GPU_ALLOW_GROWTH = os.getenv('GPU_ALLOW_GROWTH', 'true').lower() == 'true'
+
+    # TensorFlow/Keras GPU Configuration
+    TF_GPU_MEMORY_LIMIT_MB = int(os.getenv('TF_GPU_MEMORY_LIMIT_MB', '4096'))
+    TF_FORCE_GPU_ALLOW_GROWTH = os.getenv('TF_FORCE_GPU_ALLOW_GROWTH', 'true').lower() == 'true'
+    TF_VISIBLE_DEVICES = os.getenv('TF_VISIBLE_DEVICES', '0')
+
+    # PyTorch GPU Configuration
+    TORCH_GPU_COUNT = int(os.getenv('TORCH_GPU_COUNT', '1'))
+    TORCH_CUDA_VISIBLE_DEVICES = os.getenv('TORCH_CUDA_VISIBLE_DEVICES', '0')
+    TORCH_DISTRIBUTED_BACKEND = os.getenv('TORCH_DISTRIBUTED_BACKEND', 'nccl')
 
     # Security Settings - No hardcoded defaults for production security
     SECRET_KEY = os.getenv('SECRET_KEY')

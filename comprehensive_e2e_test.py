@@ -56,16 +56,22 @@ ENHANCED_TELEMETRY_DATA = [
     }
 ]
 
-SAMPLE_BUSINESS_DATA = {
-    "name": "Test Business Corp",
-    "type": "corporation",
-    "registration_number": "123456789",
-    "address": "123 Test Street, New York, NY",
-    "contact_info": {
-        "email": "contact@testbusiness.com",
-        "phone": "+1-555-0123"
+def get_unique_business_data():
+    """Generate unique business data for testing"""
+    import time
+    timestamp = str(int(time.time()))
+    return {
+        "name": f"Test Business Corp {timestamp}",
+        "type": "corporation",
+        "registration_number": f"123456789{timestamp}",
+        "address": "123 Test Street, New York, NY",
+        "contact_info": {
+            "email": f"contact{timestamp}@testbusiness.com",
+            "phone": "+1-555-0123"
+        }
     }
-}
+
+SAMPLE_BUSINESS_DATA = get_unique_business_data()
 
 SAMPLE_ASSET_DATA = {
     "business_id": 1,  # Will be set dynamically in tests
@@ -362,8 +368,9 @@ def test_business_crud(client):
     token = json.loads(login_response.data)['token']
     headers = {'Authorization': f'Bearer {token}'}
 
-    # Create business
-    response = client.post('/businesses', json=SAMPLE_BUSINESS_DATA, headers=headers)
+    # Create business with unique data
+    business_data = get_unique_business_data()
+    response = client.post('/businesses', json=business_data, headers=headers)
     assert response.status_code == 201
     business_data = json.loads(response.data)
     business_id = business_data['business']['id']
@@ -398,7 +405,8 @@ def test_asset_crud(client):
     headers = {'Authorization': f'Bearer {token}'}
 
     # First create a business to associate with the asset
-    business_response = client.post('/businesses', json=SAMPLE_BUSINESS_DATA, headers=headers)
+    unique_business_data = get_unique_business_data()
+    business_response = client.post('/businesses', json=unique_business_data, headers=headers)
     business_id = json.loads(business_response.data)['business']['id']
 
     # Create asset with the business_id
@@ -441,8 +449,9 @@ def test_business_asset_relationships(client):
     token = json.loads(login_response.data)['token']
     headers = {'Authorization': f'Bearer {token}'}
 
-    # Create business
-    response = client.post('/businesses', json=SAMPLE_BUSINESS_DATA, headers=headers)
+    # Create business with unique data
+    unique_business_data = get_unique_business_data()
+    response = client.post('/businesses', json=unique_business_data, headers=headers)
     business_id = json.loads(response.data)['business']['id']
 
     # Create asset for business
