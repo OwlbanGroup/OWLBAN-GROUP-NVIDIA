@@ -70,6 +70,29 @@ services:
     networks:
       - monitoring
 
+  app:
+    build: .
+    container_name: jpmorgan_app
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - TESTING=0
+    models:
+      - llm
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+models:
+  llm:
+    model: ai/smollm2
+    context_size: 4096
+    runtime_flags:
+      - "--no-prefill-assistant"
+
 volumes:
   prometheus_data:
   grafana_data:

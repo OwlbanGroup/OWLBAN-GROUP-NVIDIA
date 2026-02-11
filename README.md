@@ -14,6 +14,8 @@
 - [Quick Start](#-quick-start)
 - [API Documentation](#-api-documentation)
 - [Deployment](#-deployment)
+- [Migration](#-migration)
+- [Ask Gordon Integration](#-ask-gordon-integration)
 - [Monitoring](#-monitoring)
 - [Security](#-security)
 - [Testing](#-testing)
@@ -214,6 +216,102 @@ kubectl apply -f k8s/
 kubectl get pods
 kubectl get services
 ```
+
+## 🔄 Migration
+
+This section provides guidance for migrating your applications to Docker
+Hardened Images (DHI). Migrating to DHI enhances the security posture of your
+containerized applications by leveraging hardened base images with built-in
+security features.
+
+### Migration paths
+
+Choose the migration approach that best fits your needs:
+
+### Resources
+
+## 🤖 Ask Gordon Integration
+
+This project leverages **Ask Gordon**, Docker's AI assistant, to streamline Docker workflows and improve container management. Ask Gordon provides intelligent assistance for Docker-related tasks, making it easier to work with complex multi-service applications like this JPMorgan Financial APIs system.
+
+### What Ask Gordon Can Do for This Project
+
+Ask Gordon can help with:
+
+- **Dockerfile Optimization** - Analyze and improve Dockerfiles for better performance and security
+- **Container Troubleshooting** - Debug container startup issues, network problems, and service dependencies
+- **Docker Compose Optimization** - Optimize multi-service configurations and resource allocation
+- **Security Scanning** - Identify vulnerabilities in container images and configurations
+- **Performance Tuning** - Suggest improvements for container resource usage and build efficiency
+- **Migration to DHI** - Help migrate Dockerfiles to use Docker Hardened Images for enhanced security
+
+### Getting Started with Ask Gordon
+
+1. **Enable Ask Gordon** in Docker Desktop:
+   - Go to Settings → Beta features
+   - Check "Enable Docker AI"
+   - Accept the terms and enable the feature
+
+2. **Access Ask Gordon**:
+   - In Docker Desktop: Look for the **Ask Gordon** view
+   - In CLI: Use the `docker ai` command
+   - Look for ✨ icons throughout Docker Desktop for contextual help
+
+### Practical Examples for This Project
+
+#### Troubleshooting Container Issues
+```bash
+# Navigate to the project directory
+cd jpmorgan_financial_apis
+
+# Ask Gordon to help with container issues
+docker ai "My PostgreSQL container is failing to start. Can you help troubleshoot?"
+
+# Or use the interactive mode
+docker ai
+```
+
+#### Optimizing Docker Compose Performance
+```bash
+# Ask Gordon to analyze your Docker Compose setup
+docker ai "Analyze my docker-compose.kong.yml file and suggest performance improvements"
+```
+
+#### Improving Dockerfiles
+```bash
+# Have Gordon rate and improve your Dockerfiles
+docker ai rate my Dockerfile
+
+# Or get specific recommendations
+docker ai "How can I optimize my Flask API Dockerfile for production?"
+```
+
+#### Migrating to Docker Hardened Images
+```bash
+# Start interactive mode for complex tasks
+docker ai
+
+# Then type: "Migrate my dockerfile to DHI"
+```
+
+### Best Practices
+
+- **Always verify AI suggestions** - While Ask Gordon is helpful, always test changes in a development environment first
+- **Use contextual help** - When you see the ✨ icon in Docker Desktop, it provides project-specific assistance
+- **Combine with monitoring** - Use Ask Gordon alongside your Grafana/Prometheus setup for comprehensive container management
+- **Security first** - Ask Gordon can help identify security issues, but always review changes carefully
+
+### Integration with Project Workflow
+
+Ask Gordon works seamlessly with your existing development and deployment process:
+
+- **Development**: Get help setting up local development environments
+- **Testing**: Troubleshoot integration test failures
+- **Deployment**: Optimize production Docker Compose configurations
+- **Monitoring**: Analyze container performance and resource usage
+- **Security**: Scan for vulnerabilities and apply hardening techniques
+
+For complete Ask Gordon documentation, see the [Ask Gordon Guide](../ask-gordon.md).
 
 ## 📊 Monitoring
 

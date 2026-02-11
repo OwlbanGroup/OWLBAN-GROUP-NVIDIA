@@ -27,10 +27,6 @@ class TelemetryEventModel(Base):
     __tablename__ = 'telemetry_events'
     __table_args__ = {'extend_existing': True}
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.TelemetryEventModel'
-    }
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(String, nullable=False)
     operation = Column(String, nullable=False)
@@ -94,10 +90,6 @@ class DBBusinessModel(Base):
     __tablename__ = 'businesses'
     __table_args__ = {'extend_existing': True}
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.DBBusinessModel'
-    }
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)
@@ -107,17 +99,10 @@ class DBBusinessModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    assets = relationship("jpmorgan_financial_apis.src.database_fixed.DBAssetModel", back_populates="business", overlaps="business")
-
-
 class DBAssetModel(Base):
     """SQLAlchemy model for assets"""
     __tablename__ = 'assets'
     __table_args__ = {'extend_existing': True}
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.DBAssetModel'
-    }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
@@ -131,7 +116,10 @@ class DBAssetModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    business = relationship("jpmorgan_financial_apis.src.database_fixed.DBBusinessModel", back_populates="assets", overlaps="business")
+    business = relationship("DBBusinessModel", back_populates="assets", overlaps="business")
+
+# Define relationships after both classes are defined
+DBBusinessModel.assets = relationship("DBAssetModel", back_populates="business", overlaps="business")
 
 
 class DatabaseManager:
