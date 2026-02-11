@@ -28,7 +28,7 @@ class TelemetryEventModel(Base):
     __table_args__ = {'extend_existing': True}
 
     __mapper_args__ = {
-        'polymorphic_identity': 'src.database_fixed.TelemetryEventModel'
+        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.TelemetryEventModel'
     }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -94,9 +94,8 @@ class DBBusinessModel(Base):
     __tablename__ = 'businesses'
     __table_args__ = {'extend_existing': True}
 
-    # Use fully qualified name to avoid conflicts
     __mapper_args__ = {
-        'polymorphic_identity': 'src.database_fixed.DBBusinessModel'
+        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.DBBusinessModel'
     }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -108,7 +107,7 @@ class DBBusinessModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    assets = relationship("DBAssetModel", back_populates="business", overlaps="business")
+    assets = relationship("jpmorgan_financial_apis.src.database_fixed.DBAssetModel", back_populates="business", overlaps="business")
 
 
 class DBAssetModel(Base):
@@ -116,9 +115,8 @@ class DBAssetModel(Base):
     __tablename__ = 'assets'
     __table_args__ = {'extend_existing': True}
 
-    # Use fully qualified name to avoid conflicts
     __mapper_args__ = {
-        'polymorphic_identity': 'src.database_fixed.DBAssetModel'
+        'polymorphic_identity': 'jpmorgan_financial_apis.src.database_fixed.DBAssetModel'
     }
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -133,7 +131,7 @@ class DBAssetModel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    business = relationship("DBBusinessModel", back_populates="assets", overlaps="business")
+    business = relationship("jpmorgan_financial_apis.src.database_fixed.DBBusinessModel", back_populates="assets", overlaps="business")
 
 
 class DatabaseManager:
