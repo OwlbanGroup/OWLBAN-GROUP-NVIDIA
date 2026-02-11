@@ -1,20 +1,20 @@
-# TODO: Integrate Blackbox AI into JPMorgan Financial APIs
+# TODO: Fix FastAPI App Import and Runtime Errors
 
-## Current Status
-- [x] Add Blackbox AI configuration settings to config.py
-- [x] Update AI service initialization in src/ai_service.py to support Blackbox AI
-- [x] Test Blackbox AI integration with sample queries
-- [x] Update requirements.txt if needed for new dependencies
+## Step 1: Fix contextmanager import in database_fixed.py
+- Change @contextmanager to @asynccontextmanager in AsyncDatabaseManager.get_session method
 
-## Completed Tasks
-- [x] Analyze existing AI service using OpenAI and LangChain
-- [x] Confirm integration plan with user
-- [x] Fix import issues for PromptTemplate
-- [x] Test AI service initialization
-- [x] Run integration tests (tests pass when BLACKBOX_API_KEY is set)
+## Step 2: Fix Limiter initialization in app_async.py
+- Change limiter = Limiter(app, key_func=get_remote_address) to limiter = Limiter(key_func=get_remote_address)
 
-## Notes
-- Blackbox AI integration is complete and ready for use
-- Set BLACKBOX_API_KEY environment variable to enable Blackbox AI
-- Falls back to OpenAI if Blackbox is not configured
-- All existing OpenAI functionality remains backward compatible
+## Step 3: Check and fix telemetry_handler_new import
+- Ensure src/telemetry_handler_new.py exists or create it if missing
+- Verify imports in app_async.py
+
+## Step 4: Test app import
+- Run python -c "import app_async; print('FastAPI app imports successfully')"
+
+## Step 5: Test app startup
+- Run uvicorn app_async:app --host 0.0.0.0 --port 8000 and check for errors
+
+## Step 6: Test endpoints
+- Test /health, /, user/register, user/login endpoints
