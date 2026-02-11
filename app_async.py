@@ -294,8 +294,7 @@ async def logging_middleware(request: Request, call_next):
 
 # Routes
 @app.get("/health", response_model=HealthResponse)
-@limiter.limit("10/minute")
-async def health_check():
+async def health_check(request: Request):
     """Health check endpoint"""
     telemetry_logger.get_logger().info("Health check requested")
     return HealthResponse(
@@ -306,21 +305,21 @@ async def health_check():
 
 @app.post("/user/register", response_model=UserResponse)
 @limiter.limit("5/minute")
-async def register_user(request: UserRegisterRequest):
+async def register_user(request: Request, user_data: UserRegisterRequest):
     """
     Register a new user with username and password
     """
     try:
         from passlib.hash import bcrypt
 
-        if request.username in users:
+        if user_data.username in users:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User already exists"
             )
 
-        hashed_password = bcrypt.hash(request.password)
-        users[request.username] = {
+        hashed_password = bcrypt.hash(user_data.password)
+        users[user_data.username] = {
             'password': hashed_password,
             'created_at': datetime.now(timezone.utc).isoformat()
         }
@@ -338,15 +337,15 @@ async def register_user(request: UserRegisterRequest):
 
 @app.post("/user/login", response_model=UserResponse)
 @limiter.limit("10/minute")
-async def login_user(request: UserLoginRequest):
+async def login_user(request: Request, login_data: UserLoginRequest):
     """
     Login user and return a token
     """
     try:
         from passlib.hash import bcrypt
 
-        user = users.get(request.username)
-        if not user or not bcrypt.verify(request.password, user['password']):
+        user = users.get(login_data.username)
+        if not user or not bcrypt.verify(login_data.password, user['password']):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password"
@@ -354,8 +353,8 @@ async def login_user(request: UserLoginRequest):
 
         # Generate a simple token (in production use JWT or OAuth)
         token = secrets.token_hex(16)
-        users[request.username]['token'] = token
-        users[request.username]['token_created_at'] = datetime.now(timezone.utc).isoformat()
+        users[login_data.username]['token'] = token
+        users[login_data.username]['token_created_at'] = datetime.now(timezone.utc).isoformat()
 
         return UserResponse(
             status="success",
@@ -372,7 +371,7 @@ async def login_user(request: UserLoginRequest):
 
 @app.get("/user/profile", response_model=UserResponse)
 @limiter.limit("10/minute")
-async def user_profile(current_user: str = Depends(require_auth)):
+async def user_profile(request: Request, current_user: str = Depends(require_auth)):
     """
     Get user profile information (requires user token)
     """
@@ -403,6 +402,7 @@ async def user_profile(current_user: str = Depends(require_auth)):
 @limiter.limit("5/minute")
 async def receive_telemetry(
     telemetry_data: Dict[str, Any],
+    request: Request,
     current_user: str = Depends(require_auth)
 ):
     """
@@ -458,7 +458,8 @@ async def receive_telemetry(
 @app.post("/telemetry/batch", response_model=TelemetryResponse)
 @limiter.limit("3/minute")
 async def receive_telemetry_batch(
-    request: TelemetryBatchRequest,
+    batch_request: TelemetryBatchRequest,
+    request: Request,
     current_user: str = Depends(require_auth)
 ):
     """
@@ -501,7 +502,7 @@ async def receive_telemetry_batch(
 
 @app.get("/telemetry/metrics", response_model=MetricsResponse)
 @limiter.limit("5/minute")
-async def get_telemetry_metrics(hours: int = 24):
+async def get_telemetry_metrics(request: Request, hours: int = 24):
     """
     Get telemetry metrics and statistics
     """

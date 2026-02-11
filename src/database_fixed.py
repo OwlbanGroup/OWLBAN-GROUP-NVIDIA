@@ -7,8 +7,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Optional, Dict, Any
+from contextlib import asynccontextmanager, contextmanager
+from typing import AsyncGenerator, List, Optional, Dict, Any, Generator
 import os
 from datetime import datetime, timezone
 try:
@@ -517,6 +517,12 @@ class AsyncDatabaseManager:
 
         self.engine = None
         self.AsyncSessionLocal = None
+        self.is_sqlite = 'sqlite' in self.database_url
+
+        # Skip initialization for SQLite as it doesn't support async
+        if self.is_sqlite:
+            return
+
         self._initialize_engine()
 
     def _initialize_engine(self):
@@ -545,6 +551,9 @@ class AsyncDatabaseManager:
 
     async def health_check(self) -> bool:
         """Check database connectivity"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.health_check()
         try:
             async with self.get_session() as session:
                 await session.execute(text("SELECT 1"))
