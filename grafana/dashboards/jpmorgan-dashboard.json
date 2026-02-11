@@ -1,282 +1,280 @@
 {
-  "dashboard": {
-    "id": null,
-    "title": "JPMorgan Financial APIs - Live Transactional Dashboard",
-    "tags": ["jpmorgan", "financial", "live", "transactional", "monitoring"],
-    "timezone": "UTC",
-    "panels": [
-      {
-        "id": 1,
-        "title": "Live Transaction Volume",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "Requests/min"
+  "id": null,
+  "title": "JPMorgan Financial APIs - Live Transactional Dashboard",
+  "tags": ["jpmorgan", "financial", "live", "transactional", "monitoring"],
+  "timezone": "UTC",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Live Transaction Volume",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "Requests/min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 80 }
+            ]
           }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "green", "value": null },
-                { "color": "red", "value": 80 }
-              ]
-            }
-          }
-        },
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+        }
       },
-      {
-        "id": 2,
-        "title": "Active Connections",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "active_connections",
-            "legendFormat": "Active Connections"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
-      },
-      {
-        "id": 3,
-        "title": "HTTP Request Rate by Endpoint",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "{{endpoint}}"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
-      },
-      {
-        "id": 4,
-        "title": "Request Latency (95th percentile)",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "95th percentile"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 }
-      },
-      {
-        "id": 5,
-        "title": "Error Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(errors_total[5m])",
-            "legendFormat": "{{type}} errors"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
-      },
-      {
-        "id": 6,
-        "title": "Telemetry Events Processed",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(telemetry_events_processed_total[5m])",
-            "legendFormat": "{{status}}"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
-      },
-      {
-        "id": 7,
-        "title": "System Resources",
-        "type": "row",
-        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 }
-      },
-      {
-        "id": 8,
-        "title": "CPU Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-            "legendFormat": "CPU Usage %"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 }
-      },
-      {
-        "id": 9,
-        "title": "Memory Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "100 - ((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)",
-            "legendFormat": "Memory Usage %"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 }
-      },
-      {
-        "id": 10,
-        "title": "Disk I/O",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(node_disk_io_time_seconds_total[5m])",
-            "legendFormat": "{{device}} I/O time"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 }
-      },
-      {
-        "id": 11,
-        "title": "Network Traffic",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(node_network_receive_bytes_total[5m])",
-            "legendFormat": "{{device}} RX"
-          },
-          {
-            "expr": "rate(node_network_transmit_bytes_total[5m])",
-            "legendFormat": "{{device}} TX"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 }
-      },
-      {
-        "id": 12,
-        "title": "Container Resources",
-        "type": "row",
-        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 }
-      },
-      {
-        "id": 13,
-        "title": "Container CPU Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(container_cpu_usage_seconds_total[5m]) * 100",
-            "legendFormat": "{{name}} CPU %"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 }
-      },
-      {
-        "id": 14,
-        "title": "Container Memory Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "container_memory_usage_bytes",
-            "legendFormat": "{{name}} Memory"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 }
-      },
-      {
-        "id": 15,
-        "title": "Current Account Balance",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "balance_current",
-            "legendFormat": "Balance"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "green", "value": null },
-                { "color": "red", "value": 0 }
-              ]
-            }
-          }
-        },
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 }
-      },
-      {
-        "id": 16,
-        "title": "Balance Over Time",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "balance_over_time",
-            "legendFormat": "Balance"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 }
-      },
-      {
-        "id": 17,
-        "title": "Incoming / Outgoing Payments",
-        "type": "barchart",
-        "targets": [
-          {
-            "expr": "payments_incoming",
-            "legendFormat": "Incoming"
-          },
-          {
-            "expr": "payments_outgoing",
-            "legendFormat": "Outgoing"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 66 }
-      },
-      {
-        "id": 18,
-        "title": "API Health",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "api_health",
-            "legendFormat": "Health"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "green", "value": null },
-                { "color": "red", "value": 0 }
-              ]
-            }
-          }
-        },
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 74 }
-      },
-      {
-        "id": 19,
-        "title": "Last Token Refresh",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "token_refresh_last",
-            "legendFormat": "Last Refresh"
-          }
-        ],
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 74 }
-      }
-    ],
-    "time": { "from": "now-1h", "to": "now" },
-    "timepicker": {},
-    "templating": {
-      "list": []
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
     },
-    "annotations": {
-      "list": []
+    {
+      "id": 2,
+      "title": "Active Connections",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "active_connections",
+          "legendFormat": "Active Connections"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
     },
-    "refresh": "30s",
-    "schemaVersion": 27,
-    "version": 0,
-    "links": []
-  }
+    {
+      "id": 3,
+      "title": "HTTP Request Rate by Endpoint",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "{{endpoint}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Request Latency (95th percentile)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "95th percentile"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 }
+    },
+    {
+      "id": 5,
+      "title": "Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(errors_total[5m])",
+          "legendFormat": "{{type}} errors"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+    },
+    {
+      "id": 6,
+      "title": "Telemetry Events Processed",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(telemetry_events_processed_total[5m])",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+    },
+    {
+      "id": 7,
+      "title": "System Resources",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 }
+    },
+    {
+      "id": 8,
+      "title": "CPU Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU Usage %"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 }
+    },
+    {
+      "id": 9,
+      "title": "Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "100 - ((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)",
+          "legendFormat": "Memory Usage %"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 }
+    },
+    {
+      "id": 10,
+      "title": "Disk I/O",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(node_disk_io_time_seconds_total[5m])",
+          "legendFormat": "{{device}} I/O time"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 }
+    },
+    {
+      "id": 11,
+      "title": "Network Traffic",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total[5m])",
+          "legendFormat": "{{device}} RX"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total[5m])",
+          "legendFormat": "{{device}} TX"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 }
+    },
+    {
+      "id": 12,
+      "title": "Container Resources",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 }
+    },
+    {
+      "id": 13,
+      "title": "Container CPU Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total[5m]) * 100",
+          "legendFormat": "{{name}} CPU %"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 }
+    },
+    {
+      "id": 14,
+      "title": "Container Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes",
+          "legendFormat": "{{name}} Memory"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 }
+    },
+    {
+      "id": 15,
+      "title": "Current Account Balance",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "balance_current",
+          "legendFormat": "Balance"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 }
+    },
+    {
+      "id": 16,
+      "title": "Balance Over Time",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "balance_over_time",
+          "legendFormat": "Balance"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 }
+    },
+    {
+      "id": 17,
+      "title": "Incoming / Outgoing Payments",
+      "type": "barchart",
+      "targets": [
+        {
+          "expr": "payments_incoming",
+          "legendFormat": "Incoming"
+        },
+        {
+          "expr": "payments_outgoing",
+          "legendFormat": "Outgoing"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 66 }
+    },
+    {
+      "id": 18,
+      "title": "API Health",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "api_health",
+          "legendFormat": "Health"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 74 }
+    },
+    {
+      "id": 19,
+      "title": "Last Token Refresh",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "token_refresh_last",
+          "legendFormat": "Last Refresh"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 74 }
+    }
+  ],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "version": 0,
+  "links": []
 }

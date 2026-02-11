@@ -18,6 +18,14 @@ services:
     ports:
       - "127.0.0.1:5432:5432"  # Bind to localhost explicitly
     restart: unless-stopped
+    command: >
+      sh -c "
+        docker-entrypoint.sh postgres &
+        PID=$$!
+        sleep 5
+        psql -U postgres -c \"CREATE USER jpmorgan WITH PASSWORD '${DB_PASSWORD:-secure_password_123}';\" 2>/dev/null || psql -U postgres -c \"ALTER USER jpmorgan PASSWORD '${DB_PASSWORD:-secure_password_123}';\" 2>/dev/null || true
+        wait $$PID
+      "
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U jpmorgan -d jpmorgan_api"]
       interval: 30s
@@ -44,6 +52,7 @@ services:
     environment:
       - FLASK_ENV=production
       - TESTING=0
+      - FLASK_RUN_PORT=8000
       - DATABASE_URL=postgresql://jpmorgan:${DB_PASSWORD:-secure_password_123}@postgres:5432/jpmorgan_api
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY}

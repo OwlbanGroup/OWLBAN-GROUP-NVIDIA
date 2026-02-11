@@ -58,7 +58,6 @@ prometheus.yml
 .env.new
 
 # Other apps and scripts
-app_final.py
 app_fixed.py
 proxy_app.py
 integrate_all.py

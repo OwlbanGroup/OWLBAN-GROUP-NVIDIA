@@ -1,289 +1,287 @@
 {
-  "dashboard": {
-    "id": null,
-    "uid": "jpmorgan-api",
-    "title": "JPMorgan Financial APIs - Production Dashboard",
-    "tags": ["jpmorgan", "api", "production"],
-    "timezone": "browser",
-    "schemaVersion": 16,
-    "version": 1,
-    "refresh": "30s",
-    "panels": [
-      {
-        "id": 1,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-        "type": "graph",
-        "title": "API Request Rate",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "{{method}} {{endpoint}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "reqps", "label": "Requests/sec"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 2,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-        "type": "graph",
-        "title": "Response Time (p95)",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "{{endpoint}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "s", "label": "Duration"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 3,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-        "type": "graph",
-        "title": "Error Rate",
-        "targets": [
-          {
-            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
-            "legendFormat": "{{endpoint}} - {{status}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "percentunit", "label": "Error Rate"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 4,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-        "type": "graph",
-        "title": "Database Connections",
-        "targets": [
-          {
-            "expr": "database_connections_active",
-            "legendFormat": "Active",
-            "refId": "A"
-          },
-          {
-            "expr": "database_connections_idle",
-            "legendFormat": "Idle",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "short", "label": "Connections"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 5,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
-        "type": "graph",
-        "title": "Telemetry Events Processed",
-        "targets": [
-          {
-            "expr": "rate(telemetry_events_total[5m])",
-            "legendFormat": "Events/sec",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "ops", "label": "Events/sec"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 6,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
-        "type": "graph",
-        "title": "ML Model Performance",
-        "targets": [
-          {
-            "expr": "ml_anomaly_detection_duration_seconds",
-            "legendFormat": "Detection Time",
-            "refId": "A"
-          },
-          {
-            "expr": "ml_anomalies_detected_total",
-            "legendFormat": "Anomalies Detected",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "s", "label": "Duration"},
-          {"format": "short", "label": "Count"}
-        ]
-      },
-      {
-        "id": 7,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
-        "type": "graph",
-        "title": "Authentication Success Rate",
-        "targets": [
-          {
-            "expr": "rate(authentication_attempts_total{result=\"success\"}[5m]) / rate(authentication_attempts_total[5m])",
-            "legendFormat": "Success Rate",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "percentunit", "label": "Success Rate"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 8,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
-        "type": "graph",
-        "title": "Rate Limit Hits",
-        "targets": [
-          {
-            "expr": "rate(rate_limit_exceeded_total[5m])",
-            "legendFormat": "{{endpoint}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "ops", "label": "Hits/sec"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 9,
-        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 32},
-        "type": "singlestat",
-        "title": "Total Requests (24h)",
-        "targets": [
-          {
-            "expr": "sum(increase(http_requests_total[24h]))",
-            "refId": "A"
-          }
-        ],
-        "format": "short",
-        "valueName": "current"
-      },
-      {
-        "id": 10,
-        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 32},
-        "type": "singlestat",
-        "title": "Avg Response Time",
-        "targets": [
-          {
-            "expr": "avg(http_request_duration_seconds)",
-            "refId": "A"
-          }
-        ],
-        "format": "s",
-        "valueName": "current"
-      },
-      {
-        "id": 11,
-        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 32},
-        "type": "singlestat",
-        "title": "Error Rate (24h)",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[24h])) / sum(rate(http_requests_total[24h]))",
-            "refId": "A"
-          }
-        ],
-        "format": "percentunit",
-        "valueName": "current",
-        "thresholds": "0.01,0.05",
-        "colors": ["#299c46", "#e0b400", "#d44a3a"]
-      },
-      {
-        "id": 12,
-        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 32},
-        "type": "singlestat",
-        "title": "Active Users",
-        "targets": [
-          {
-            "expr": "count(count by (user_id) (http_requests_total))",
-            "refId": "A"
-          }
-        ],
-        "format": "short",
-        "valueName": "current"
-      },
-      {
-        "id": 13,
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 38},
-        "type": "table",
-        "title": "Top Endpoints by Request Count",
-        "targets": [
-          {
-            "expr": "topk(10, sum by (endpoint) (rate(http_requests_total[5m])))",
-            "format": "table",
-            "refId": "A"
-          }
-        ],
-        "styles": [
-          {
-            "pattern": "Value",
-            "type": "number",
-            "unit": "reqps",
-            "decimals": 2
-          }
-        ]
-      },
-      {
-        "id": 14,
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 46},
-        "type": "table",
-        "title": "Slowest Endpoints",
-        "targets": [
-          {
-            "expr": "topk(10, avg by (endpoint) (http_request_duration_seconds))",
-            "format": "table",
-            "refId": "A"
-          }
-        ],
-        "styles": [
-          {
-            "pattern": "Value",
-            "type": "number",
-            "unit": "s",
-            "decimals": 3
-          }
-        ]
-      }
-    ],
-    "templating": {
-      "list": [
+  "id": null,
+  "uid": "jpmorgan-api",
+  "title": "JPMorgan Financial APIs - Production Dashboard",
+  "tags": ["jpmorgan", "api", "production"],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "type": "graph",
+      "title": "API Request Rate",
+      "targets": [
         {
-          "name": "datasource",
-          "type": "datasource",
-          "query": "prometheus",
-          "current": {
-            "text": "Prometheus",
-            "value": "Prometheus"
-          }
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "{{method}} {{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "reqps", "label": "Requests/sec"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 2,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "type": "graph",
+      "title": "Response Time (p95)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "s", "label": "Duration"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 3,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "type": "graph",
+      "title": "Error Rate",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+          "legendFormat": "{{endpoint}} - {{status}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "percentunit", "label": "Error Rate"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 4,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "type": "graph",
+      "title": "Database Connections",
+      "targets": [
+        {
+          "expr": "database_connections_active",
+          "legendFormat": "Active",
+          "refId": "A"
         },
         {
-          "name": "environment",
-          "type": "custom",
-          "query": "production,staging,development",
-          "current": {
-            "text": "production",
-            "value": "production"
-          }
+          "expr": "database_connections_idle",
+          "legendFormat": "Idle",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "short", "label": "Connections"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 5,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "type": "graph",
+      "title": "Telemetry Events Processed",
+      "targets": [
+        {
+          "expr": "rate(telemetry_events_total[5m])",
+          "legendFormat": "Events/sec",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "ops", "label": "Events/sec"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 6,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "type": "graph",
+      "title": "ML Model Performance",
+      "targets": [
+        {
+          "expr": "ml_anomaly_detection_duration_seconds",
+          "legendFormat": "Detection Time",
+          "refId": "A"
+        },
+        {
+          "expr": "ml_anomalies_detected_total",
+          "legendFormat": "Anomalies Detected",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "s", "label": "Duration"},
+        {"format": "short", "label": "Count"}
+      ]
+    },
+    {
+      "id": 7,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "type": "graph",
+      "title": "Authentication Success Rate",
+      "targets": [
+        {
+          "expr": "rate(authentication_attempts_total{result=\"success\"}[5m]) / rate(authentication_attempts_total[5m])",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "percentunit", "label": "Success Rate"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 8,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "type": "graph",
+      "title": "Rate Limit Hits",
+      "targets": [
+        {
+          "expr": "rate(rate_limit_exceeded_total[5m])",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "ops", "label": "Hits/sec"},
+        {"format": "short"}
+      ]
+    },
+    {
+      "id": 9,
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 32},
+      "type": "singlestat",
+      "title": "Total Requests (24h)",
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total[24h]))",
+          "refId": "A"
+        }
+      ],
+      "format": "short",
+      "valueName": "current"
+    },
+    {
+      "id": 10,
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 32},
+      "type": "singlestat",
+      "title": "Avg Response Time",
+      "targets": [
+        {
+          "expr": "avg(http_request_duration_seconds)",
+          "refId": "A"
+        }
+      ],
+      "format": "s",
+      "valueName": "current"
+    },
+    {
+      "id": 11,
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 32},
+      "type": "singlestat",
+      "title": "Error Rate (24h)",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[24h])) / sum(rate(http_requests_total[24h]))",
+          "refId": "A"
+        }
+      ],
+      "format": "percentunit",
+      "valueName": "current",
+      "thresholds": "0.01,0.05",
+      "colors": ["#299c46", "#e0b400", "#d44a3a"]
+    },
+    {
+      "id": 12,
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 32},
+      "type": "singlestat",
+      "title": "Active Users",
+      "targets": [
+        {
+          "expr": "count(count by (user_id) (http_requests_total))",
+          "refId": "A"
+        }
+      ],
+      "format": "short",
+      "valueName": "current"
+    },
+    {
+      "id": 13,
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 38},
+      "type": "table",
+      "title": "Top Endpoints by Request Count",
+      "targets": [
+        {
+          "expr": "topk(10, sum by (endpoint) (rate(http_requests_total[5m])))",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "styles": [
+        {
+          "pattern": "Value",
+          "type": "number",
+          "unit": "reqps",
+          "decimals": 2
         }
       ]
     },
-    "time": {
-      "from": "now-6h",
-      "to": "now"
-    },
-    "timepicker": {
-      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    {
+      "id": 14,
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 46},
+      "type": "table",
+      "title": "Slowest Endpoints",
+      "targets": [
+        {
+          "expr": "topk(10, avg by (endpoint) (http_request_duration_seconds))",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "styles": [
+        {
+          "pattern": "Value",
+          "type": "number",
+          "unit": "s",
+          "decimals": 3
+        }
+      ]
     }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        }
+      },
+      {
+        "name": "environment",
+        "type": "custom",
+        "query": "production,staging,development",
+        "current": {
+          "text": "production",
+          "value": "production"
+        }
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
   }
 }
