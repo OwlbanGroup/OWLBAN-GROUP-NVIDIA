@@ -1,0 +1,115 @@
+{
+  "test_summary": {
+    "total_tests": 10,
+    "passed_tests": 4,
+    "failed_tests": 6,
+    "timestamp": "2026-02-11T01:05:21.724180+00:00"
+  },
+  "test_results": [
+    {
+      "test_name": "Blackbox AI Configuration",
+      "success": false,
+      "message": "Blackbox AI not configured",
+      "timestamp": "2026-02-11T01:05:03.494303+00:00",
+      "details": {
+        "config": {
+          "api_key_configured": false,
+          "base_url": "https://cloud.blackbox.ai/",
+          "model": "gpt-3.5-turbo",
+          "temperature": 0.1
+        },
+        "ai_service_status": {
+          "status": "unhealthy",
+          "provider": "none",
+          "model": "gpt-4",
+          "temperature": 0.1,
+          "langsmith_enabled": false,
+          "project": "jpmorgan-financial-apis",
+          "timestamp": "2026-02-11T01:05:03.494303+00:00"
+        }
+      }
+    },
+    {
+      "test_name": "AI Business Analysis",
+      "success": true,
+      "message": "Financial analysis completed",
+      "timestamp": "2026-02-11T01:05:04.496932+00:00",
+      "details": {
+        "model_used": "mock",
+        "analysis_length": 191
+      }
+    },
+    {
+      "test_name": "AI Risk Assessment",
+      "success": true,
+      "message": "Risk assessment completed",
+      "timestamp": "2026-02-11T01:05:05.499206+00:00",
+      "details": {
+        "model_used": "mock",
+        "assessment_length": 169
+      }
+    },
+    {
+      "test_name": "AI Natural Language Query",
+      "success": true,
+      "message": "Natural language query processed",
+      "timestamp": "2026-02-11T01:05:06.501832+00:00",
+      "details": {
+        "model_used": "mock",
+        "response_length": 264
+      }
+    },
+    {
+      "test_name": "Revenue-Payment Sync",
+      "success": false,
+      "message": "Sync test failed: 'transaction_data_json' is an invalid keyword argument for RevenueTransaction",
+      "timestamp": "2026-02-11T01:05:07.524770+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Stripe Payment Integration",
+      "success": false,
+      "message": "Stripe not configured",
+      "timestamp": "2026-02-11T01:05:08.527325+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Business Intelligence Endpoints",
+      "success": false,
+      "message": "API endpoint test failed: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /ai/analyze (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001FE9050FD10>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2026-02-11T01:05:13.612707+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "End-to-End Business Workflow",
+      "success": false,
+      "message": "E2E workflow test failed: 'transaction_data_json' is an invalid keyword argument for RevenueTransaction",
+      "timestamp": "2026-02-11T01:05:14.615849+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "GitHub Organizations Endpoint",
+      "success": false,
+      "message": "GitHub orgs endpoint test failed: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/github/orgs (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001FE90544680>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2026-02-11T01:05:19.719623+00:00",
+      "details": {}
+    },
+    {
+      "test_name": "Performance and Scalability",
+      "success": true,
+      "message": "Performance test passed",
+      "timestamp": "2026-02-11T01:05:20.720893+00:00",
+      "details": {
+        "total_time": 0.0,
+        "average_time": 0.0,
+        "queries_processed": 4,
+        "all_successful": true
+      }
+    }
+  ],
+  "system_info": {
+    "blackbox_ai_configured": false,
+    "stripe_configured": false,
+    "ai_service_provider": "none"
+  }
+}
