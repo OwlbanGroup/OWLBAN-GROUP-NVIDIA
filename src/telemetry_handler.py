@@ -1,12 +1,13 @@
 """
-Handler for processing and storing telemetry data with optimized database operations
+Async handler for processing and storing telemetry data with optimized database operations
 """
 import json
 import sqlite3
+import asyncio
 import threading
 import time
 from collections import defaultdict, deque
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, List, Optional, Union

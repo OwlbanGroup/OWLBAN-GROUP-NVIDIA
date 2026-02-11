@@ -1,12 +1,14 @@
 """
-Database connection and session management with SQLAlchemy
+Async database connection and session management with SQLAlchemy
 """
-from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, text
+import asyncio
+from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, text, select, update, delete, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
-from contextlib import contextmanager
-from typing import Generator, List, Optional
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, List, Optional, Dict, Any
 import os
 from datetime import datetime, timezone
 try:
@@ -500,3 +502,264 @@ class DummyQuery:
 
 # Global database manager instance
 db_manager = DatabaseManager()
+
+
+class AsyncDatabaseManager:
+    """Async database connection manager with connection pooling"""
+
+    def __init__(self, database_url: str = None):
+        self.database_url = database_url or getattr(config, 'DATABASE_URL', 'sqlite:///telemetry.db')
+        # Convert to async URL for PostgreSQL
+        if self.database_url.startswith('postgresql://'):
+            self.database_url = self.database_url.replace('postgresql://', 'postgresql+asyncpg://')
+        elif self.database_url.startswith('postgres://'):
+            self.database_url = self.database_url.replace('postgres://', 'postgresql+asyncpg://')
+
+        self.engine = None
+        self.AsyncSessionLocal = None
+        self._initialize_engine()
+
+    def _initialize_engine(self):
+        """Initialize async SQLAlchemy engine with connection pooling"""
+        self.engine = create_async_engine(
+            self.database_url,
+            pool_size=10,
+            max_overflow=20,
+            echo=False
+        )
+        self.AsyncSessionLocal = async_sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=self.engine,
+            class_=AsyncSession
+        )
+
+    @asynccontextmanager
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Get async database session with automatic cleanup"""
+        session = self.AsyncSessionLocal()
+        try:
+            yield session
+        finally:
+            await session.close()
+
+    async def health_check(self) -> bool:
+        """Check database connectivity"""
+        try:
+            async with self.get_session() as session:
+                await session.execute(text("SELECT 1"))
+            return True
+        except Exception:
+            return False
+
+    async def get_connection_stats(self) -> Dict[str, Any]:
+        """Get connection pool statistics"""
+        return {}
+
+    async def close(self):
+        """Close database connections"""
+        if self.engine:
+            await self.engine.dispose()
+
+    async def initialize_database(self):
+        """Initialize database tables in correct order"""
+        try:
+            # Create base tables first
+            async with self.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+
+            # Create businesses table explicitly first
+            async with self.engine.begin() as conn:
+                await conn.run_sync(DBBusinessModel.__table__.create, checkfirst=True)
+
+            # Create audit_logs table if available
+            if AuditLogModel is not None:
+                try:
+                    async with self.engine.begin() as conn:
+                        await conn.run_sync(AuditLogModel.__table__.create, checkfirst=True)
+                except Exception as e:
+                    print(f"Note: Audit log table creation skipped: {e}")
+
+            # Create revenue tables after businesses table
+            if RevenueTransaction is not None:
+                try:
+                    async with self.engine.begin() as conn:
+                        await conn.run_sync(RevenueTransaction.__table__.create, checkfirst=True)
+                        await conn.run_sync(RevenueMetrics.__table__.create, checkfirst=True)
+                except Exception as e:
+                    print(f"Note: Revenue table creation skipped: {e}")
+
+            print("Database initialized successfully")
+        except Exception as e:
+            print(f"Failed to initialize database: {e}")
+            raise
+
+    # Business Management Methods
+    async def create_business(self, business_data: Dict[str, Any]) -> DBBusinessModel:
+        """Create a new business"""
+        try:
+            async with self.get_session() as session:
+                # Convert contact_info to JSON string if it's a dict
+                if 'contact_info' in business_data and isinstance(business_data['contact_info'], dict):
+                    import json
+                    business_data['contact_info'] = json.dumps(business_data['contact_info'])
+
+                business = DBBusinessModel(**business_data)
+                session.add(business)
+                await session.commit()
+                await session.refresh(business)
+                return business
+        except Exception as e:
+            print(f"Failed to create business: {e}")
+            raise
+
+    async def get_business_by_id(self, business_id: int) -> Optional[DBBusinessModel]:
+        """Get business by ID"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
+        except Exception as e:
+            print(f"Failed to get business: {e}")
+            return None
+
+    async def get_all_businesses(self) -> List[DBBusinessModel]:
+        """Get all businesses"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBBusinessModel)
+                result = await session.execute(query)
+                return result.scalars().all()
+        except Exception as e:
+            print(f"Failed to get businesses: {e}")
+            return []
+
+    async def update_business(self, business_id: int, update_data: Dict[str, Any]) -> Optional[DBBusinessModel]:
+        """Update business details"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
+                result = await session.execute(query)
+                business = result.scalar_one_or_none()
+                if not business:
+                    return None
+                for key, value in update_data.items():
+                    if hasattr(business, key):
+                        setattr(business, key, value)
+                await session.commit()
+                await session.refresh(business)
+                return business
+        except Exception as e:
+            print(f"Failed to update business: {e}")
+            return None
+
+    async def delete_business(self, business_id: int) -> bool:
+        """Delete a business"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
+                result = await session.execute(query)
+                business = result.scalar_one_or_none()
+                if not business:
+                    return False
+                await session.delete(business)
+                await session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to delete business: {e}")
+            return False
+
+    # Asset Management Methods
+    async def create_asset(self, asset_data: Dict[str, Any]) -> DBAssetModel:
+        """Create a new asset"""
+        try:
+            async with self.get_session() as session:
+                # Convert acquisition_date from string to datetime if needed
+                if 'acquisition_date' in asset_data and isinstance(asset_data['acquisition_date'], str):
+                    try:
+                        asset_data['acquisition_date'] = datetime.fromisoformat(asset_data['acquisition_date'].replace('Z', '+00:00'))
+                    except ValueError:
+                        # If conversion fails, set to None
+                        asset_data['acquisition_date'] = None
+
+                asset = DBAssetModel(**asset_data)
+                session.add(asset)
+                await session.commit()
+                await session.refresh(asset)
+                return asset
+        except Exception as e:
+            print(f"Failed to create asset: {e}")
+            raise
+
+    async def get_asset_by_id(self, asset_id: int) -> Optional[DBAssetModel]:
+        """Get asset by ID"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBAssetModel).where(DBAssetModel.id == asset_id)
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
+        except Exception as e:
+            print(f"Failed to get asset: {e}")
+            return None
+
+    async def get_all_assets(self) -> List[DBAssetModel]:
+        """Get all assets"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBAssetModel)
+                result = await session.execute(query)
+                return result.scalars().all()
+        except Exception as e:
+            print(f"Failed to get assets: {e}")
+            return []
+
+    async def get_assets_by_business_id(self, business_id: int) -> List[DBAssetModel]:
+        """Get assets for a specific business"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBAssetModel).where(DBAssetModel.business_id == business_id)
+                result = await session.execute(query)
+                return result.scalars().all()
+        except Exception as e:
+            print(f"Failed to get assets for business: {e}")
+            return []
+
+    async def update_asset(self, asset_id: int, update_data: Dict[str, Any]) -> Optional[DBAssetModel]:
+        """Update asset details"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBAssetModel).where(DBAssetModel.id == asset_id)
+                result = await session.execute(query)
+                asset = result.scalar_one_or_none()
+                if not asset:
+                    return None
+                for key, value in update_data.items():
+                    if hasattr(asset, key):
+                        setattr(asset, key, value)
+                await session.commit()
+                await session.refresh(asset)
+                return asset
+        except Exception as e:
+            print(f"Failed to update asset: {e}")
+            return None
+
+    async def delete_asset(self, asset_id: int) -> bool:
+        """Delete an asset"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBAssetModel).where(DBAssetModel.id == asset_id)
+                result = await session.execute(query)
+                asset = result.scalar_one_or_none()
+                if not asset:
+                    return False
+                await session.delete(asset)
+                await session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to delete asset: {e}")
+            return False
+
+
+# Global database manager instances
+async_db_manager = AsyncDatabaseManager()  # New async version
