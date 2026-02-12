@@ -35,7 +35,11 @@ import requests
 from decimal import Decimal
 
 # Import sync scheduler for integrated data synchronization
-from sync_scheduler import JPMorganSyncScheduler, create_scheduler
+try:
+    from sync_scheduler import JPMorganSyncScheduler, create_scheduler
+except ImportError:
+    # Fallback if sync_scheduler is not available
+    create_scheduler = None
 
 # Load environment variables from .env file
 load_dotenv()
@@ -90,17 +94,38 @@ except ImportError as e:
 from src.logger import telemetry_logger  # type: ignore
 from src.token_manager import TokenManager  # type: ignore
 from src.validation import InputValidator, ValidationError  # type: ignore
-from src.cloud_storage import setup_cloud_storage  # type: ignore
+
+# Initialize cloud storage with error handling
+try:
+    from src.cloud_storage import setup_cloud_storage  # type: ignore
+    setup_cloud_storage(config.get_all_settings())
+except ImportError:
+    # Cloud storage not available, continue without it
+    pass
+
 from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import async_db_manager, AsyncDatabaseManager  # type: ignore
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse, OrganizationCreate, OrganizationUpdate, OrganizationResponse, OrganizationMemberCreate, OrganizationMemberUpdate, OrganizationMemberResponse, ConvertUserToOrganizationRequest  # type: ignore
-from src.ai_service import ai_service  # type: ignore
-from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
-from src.payments_service import payments_service  # type: ignore
 
-# Initialize cloud storage
-setup_cloud_storage(config.get_all_settings())
+# Initialize AI service with error handling
+try:
+    from src.ai_service import ai_service  # type: ignore
+except ImportError:
+    ai_service = None
+
+# Initialize auth0 with error handling
+try:
+    from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
+except ImportError:
+    setup_auth0_routes = None
+    auth0_required = None
+
+# Initialize payments service with error handling
+try:
+    from src.payments_service import payments_service  # type: ignore
+except ImportError:
+    payments_service = None
 
 # Initialize ML model
 anomaly_detector = AnomalyDetector()

@@ -68,6 +68,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"  # Bind to localhost explicitly
     restart: unless-stopped
+    command: "python app_async.py"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
