@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 import contextlib
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Dict, Any, Generator
 import os
 from datetime import datetime, timezone

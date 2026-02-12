@@ -87,9 +87,9 @@ if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
 try:
-    from src.telemetry_handler_new import telemetry_handler  # type: ignore
+    from src.telemetry_handler import telemetry_handler  # type: ignore
 except ImportError as e:
-    raise ImportError("Could not import 'src.telemetry_handler_new'. Make sure 'src/telemetry_handler_new.py' exists and is not empty.") from e
+    raise ImportError("Could not import 'src.telemetry_handler'. Make sure 'src/telemetry_handler.py' exists and is not empty.") from e
 
 from src.logger import telemetry_logger  # type: ignore
 from src.token_manager import TokenManager  # type: ignore
