@@ -428,7 +428,7 @@ async def user_profile(request: Request, current_user: str = Depends(require_aut
 async def receive_telemetry(
     telemetry_data: Dict[str, Any],
     request: Request,
-    current_user: str = Depends(require_auth)
+    current_user: Optional[str] = Depends(get_current_user)
 ):
     """
     Receive and process telemetry data
@@ -464,13 +464,25 @@ async def receive_telemetry(
         raise
     except json.JSONDecodeError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invalid JSON format"
         )
     except Exception as e:
         if 'JSON' in str(e) or 'json' in str(e).lower():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid JSON format"
+            )
+        else:
+            telemetry_logger.log_error(e, {'context': 'telemetry_endpoint'})
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error"
+            )
+    except Exception as e:
+        if 'JSON' in str(e) or 'json' in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid JSON format"
             )
         else:
@@ -485,7 +497,7 @@ async def receive_telemetry(
 async def receive_telemetry_batch(
     batch_request: TelemetryBatchRequest,
     request: Request,
-    current_user: str = Depends(require_auth)
+    current_user: Optional[str] = Depends(get_current_user)
 ):
     """
     Receive and process batch telemetry data
@@ -493,7 +505,7 @@ async def receive_telemetry_batch(
     try:
         # Validate batch data
         try:
-            InputValidator.validate_batch_data({"telemetry_data": request.telemetry_data})
+            InputValidator.validate_batch_data({"telemetry_data": batch_request.telemetry_data})
         except ValidationError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -501,9 +513,9 @@ async def receive_telemetry_batch(
             )
 
         # Process batch asynchronously
-        stats = await process_telemetry_batch_async(request.telemetry_data)
+        stats = await process_telemetry_batch_async(batch_request.telemetry_data)
 
-        BATCH_SIZE_ASYNC.observe(len(request.telemetry_data))
+        BATCH_SIZE_ASYNC.observe(len(batch_request.telemetry_data))
 
         return TelemetryResponse(
             status="success",
@@ -813,6 +825,292 @@ async def delete_asset(
         raise
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'delete_asset'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+# ML Endpoints
+@app.post("/ml/anomalies", response_model=Dict[str, Any])
+@limiter.limit("2 per minute")
+async def detect_anomalies(
+    request: Request,
+    current_user: Optional[str] = Depends(get_current_user)
+):
+    """
+    Detect anomalies in telemetry data using ML
+
+    Expected JSON payload:
+    {
+        "telemetry_data": [
+            { ... telemetry event 1 ... },
+            { ... telemetry event 2 ... },
+            ...
+        ]
+    }
+    """
+    try:
+        request_data = await request.json()
+
+        if not request_data or 'telemetry_data' not in request_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No telemetry data provided"
+            )
+
+        telemetry_data_list = request_data['telemetry_data']
+
+        if not isinstance(telemetry_data_list, list):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="telemetry_data must be a list"
+            )
+
+        # Detect anomalies using the anomaly detector
+        anomaly_results = anomaly_detector.detect_anomalies(telemetry_data_list)
+
+        return {
+            'status': 'success',
+            'anomaly_results': anomaly_results,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'anomalies_endpoint'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.post("/ml/train", response_model=Dict[str, Any])
+@limiter.limit("1 per minute")
+async def train_ml_model(
+    request: Request,
+    current_user: Optional[str] = Depends(get_current_user)
+):
+    """
+    Train the ML model with telemetry data
+
+    Expected JSON payload:
+    {
+        "training_data": [
+            [feature1, feature2, ...],
+            [feature1, feature2, ...],
+            ...
+        ]
+    }
+    """
+    try:
+        request_data = await request.json()
+
+        if not request_data or 'training_data' not in request_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No training data provided"
+            )
+
+        training_data = request_data['training_data']
+
+        if not isinstance(training_data, list):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="training_data must be a list"
+            )
+
+        # Train the model
+        success = anomaly_detector.train_model(training_data)
+
+        if success:
+            return {
+                'status': 'success',
+                'message': 'ML model trained successfully',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to train ML model"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'train_ml_endpoint'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+# Telemetry Export Endpoint
+@app.get("/telemetry/export", response_model=Dict[str, Any])
+@limiter.limit("2 per minute")
+async def export_telemetry(
+    request: Request,
+    operation: Optional[str] = None,
+    limit: int = 1000,
+    format: str = "json",
+    current_user: Optional[str] = Depends(get_current_user)
+):
+    """
+    Export telemetry events
+
+    Query parameters:
+    - operation: Filter by operation (optional)
+    - limit: Maximum number of events (default: 1000)
+    - format: Export format (json, csv) (default: json)
+    """
+    try:
+        if limit <= 0 or limit > 10000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Limit must be between 1 and 10000"
+            )
+
+        if format.lower() not in ['json', 'csv']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Format must be json or csv"
+            )
+
+        # Get events from telemetry handler (mock for now)
+        events = []  # This would integrate with actual telemetry handler
+
+        if format.lower() == 'csv':
+            # Convert to CSV format
+            if not events:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No events found"
+                )
+
+            import csv
+            import io
+
+            output = io.StringIO()
+            if events:
+                fieldnames = events[0].keys()
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(events)
+
+            return Response(
+                content=output.getvalue(),
+                media_type='text/csv',
+                headers={"Content-Disposition": "attachment; filename=telemetry_export.csv"}
+            )
+
+        return {
+            'status': 'success',
+            'events': events,
+            'count': len(events),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'export_endpoint'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+# Dashboard Endpoint
+@app.get("/dashboard")
+async def dashboard():
+    """Serve the web dashboard"""
+    try:
+        dashboard_path = os.path.join(os.path.dirname(__file__), 'dashboard.html')
+        with open(dashboard_path, 'r', encoding='utf-8') as f:
+            return Response(
+                content=f.read(),
+                media_type='text/html'
+            )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dashboard file not found"
+        )
+
+# Data Conversion Endpoint
+@app.post("/data/convert")
+@limiter.limit("5 per minute")
+async def convert_data_format(
+    request: Request
+):
+    """
+    Convert data between different formats
+
+    Expected JSON payload:
+    {
+        "data": [...],  // Data to convert
+        "from_format": "json",
+        "to_format": "csv",
+        "options": {...}  // Optional conversion options
+    }
+    """
+    try:
+        request_data = await request.json()
+
+        if not request_data or 'data' not in request_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No data provided for conversion"
+            )
+
+        data = request_data['data']
+        from_format = request_data.get('from_format', 'json').lower()
+        to_format = request_data.get('to_format', 'json').lower()
+        options = request_data.get('options', {})
+
+        if not isinstance(data, list):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Data must be a list of records"
+            )
+
+        # Basic format validation
+        supported_formats = ['json', 'csv', 'xml', 'yaml']
+        if from_format not in supported_formats:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported import format. Supported formats: {supported_formats}"
+            )
+
+        if to_format not in supported_formats:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported export format. Supported formats: {supported_formats}"
+            )
+
+        # For now, return the data as-is (would integrate with DataFormatConverter)
+        result = data
+        content_type = 'application/json'
+
+        if to_format == 'csv':
+            # Simple CSV conversion
+            if data:
+                import csv
+                import io
+                output = io.StringIO()
+                fieldnames = data[0].keys() if isinstance(data[0], dict) else ['value']
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+                result = output.getvalue()
+                content_type = 'text/csv'
+
+        return Response(
+            content=result if isinstance(result, str) else json.dumps(result),
+            media_type=content_type
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'data_conversion_endpoint'})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
@@ -1275,6 +1573,19 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={
             "error": exc.detail,
+            "status": "error",
+            "path": str(request.url),
+            "method": request.method
+        }
+    )
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Handle 404 errors"""
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "Not found",
             "status": "error",
             "path": str(request.url),
             "method": request.method

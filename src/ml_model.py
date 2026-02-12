@@ -245,3 +245,96 @@ class AnomalyDetector:
         except Exception as e:
             telemetry_logger.get_logger().error(f"Error getting anomaly scores: {e}")
             raise ValueError(f"Anomaly score calculation failed: {e}")
+
+    def detect_anomalies(self, telemetry_data_list):
+        """
+        Detect anomalies in telemetry data list (API wrapper method)
+        """
+        try:
+            if not telemetry_data_list:
+                return []
+
+            # Extract features from telemetry data
+            features = []
+            for telemetry in telemetry_data_list:
+                # Simple feature extraction - can be enhanced
+                feature_vector = [
+                    len(str(telemetry.get('name', ''))),
+                    len(str(telemetry.get('data', ''))),
+                    telemetry.get('ver', 1),
+                    len(str(telemetry.get('time', '')))
+                ]
+                features.append(feature_vector)
+
+            # Convert to numpy array
+            X = np.array(features)
+
+            # If we have fewer than 10 samples, use a simple heuristic
+            if len(X) < 10:
+                # For small datasets, mark all as normal (not anomalies)
+                results = []
+                for telemetry in telemetry_data_list:
+                    results.append({
+                        'telemetry_event': telemetry,
+                        'is_anomaly': False,
+                        'anomaly_score': 0.0
+                    })
+                return results
+
+            # Train model if not trained
+            if not self.is_trained:
+                self.train(X)
+
+            # Get predictions
+            predictions = self.predict(X)
+
+            # Return results
+            results = []
+            for i, telemetry in enumerate(telemetry_data_list):
+                results.append({
+                    'telemetry_event': telemetry,
+                    'is_anomaly': bool(predictions[i]),
+                    'anomaly_score': float(self.get_anomaly_score(X[i:i+1])[0]) if self.is_trained else 0.0
+                })
+
+            return results
+
+        except Exception as e:
+            telemetry_logger.get_logger().error(f"Error in detect_anomalies: {e}")
+            raise ValueError(f"Anomaly detection failed: {e}")
+
+    def train_model(self, training_data, contamination=0.1):
+        """
+        Train the model with telemetry data (API wrapper method)
+        """
+        try:
+            if not training_data:
+                raise ValueError("Training data cannot be empty")
+
+            # Extract features from training data
+            features = []
+            for data_point in training_data:
+                if isinstance(data_point, list):
+                    # Already feature vector
+                    features.append(data_point)
+                else:
+                    # Extract features from telemetry-like data
+                    feature_vector = [
+                        len(str(data_point.get('name', ''))) if isinstance(data_point, dict) else len(str(data_point)),
+                        len(str(data_point.get('data', ''))) if isinstance(data_point, dict) else len(str(data_point)),
+                        data_point.get('ver', 1) if isinstance(data_point, dict) else 1,
+                        len(str(data_point.get('time', ''))) if isinstance(data_point, dict) else len(str(data_point))
+                    ]
+                    features.append(feature_vector)
+
+            # Convert to numpy array
+            X = np.array(features)
+
+            # Train the model
+            self.train(X, contamination)
+
+            return True
+
+        except Exception as e:
+            telemetry_logger.get_logger().error(f"Error in train_model: {e}")
+            raise ValueError(f"Model training failed: {e}")

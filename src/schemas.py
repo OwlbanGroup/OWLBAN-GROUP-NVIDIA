@@ -154,8 +154,8 @@ class BusinessResponse(BaseModel):
     registration_number: Optional[str] = Field(None, description="Business registration number")
     address: Optional[str] = Field(None, description="Business address")
     contact_info: Optional[Dict[str, Any]] = Field(None, description="Contact information")
-    created_at: str = Field(..., description="Creation timestamp")
-    updated_at: str = Field(..., description="Last update timestamp")
+    created_at: Union[str, datetime] = Field(..., description="Creation timestamp")
+    updated_at: Union[str, datetime] = Field(..., description="Last update timestamp")
 
     class Config:
         from_attributes = True
@@ -235,15 +235,25 @@ class AssetResponse(BaseModel):
     name: str = Field(..., description="Asset name")
     type: AssetType = Field(..., description="Asset type")
     value: float = Field(..., description="Asset value")
-    acquisition_date: str = Field(..., description="Asset acquisition date")
+    acquisition_date: Optional[str] = Field(None, description="Asset acquisition date")
     current_value: Optional[float] = Field(None, description="Current asset value")
     ownership_percentage: float = Field(..., description="Ownership percentage")
     description: Optional[str] = Field(None, description="Asset description")
-    created_at: str = Field(..., description="Creation timestamp")
-    updated_at: str = Field(..., description="Last update timestamp")
+    created_at: Optional[str] = Field(None, description="Creation timestamp")
+    updated_at: Optional[str] = Field(None, description="Last update timestamp")
 
     class Config:
         from_attributes = True
+
+    @field_validator('acquisition_date', 'created_at', 'updated_at', mode='before')
+    @classmethod
+    def format_datetime(cls, v):
+        """Format datetime objects to ISO strings"""
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+
+
 
 
 class OrganizationType(str, Enum):

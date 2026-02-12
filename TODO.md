@@ -16,5 +16,5 @@
 ## Step 5: Test app startup ✅ COMPLETED
 - Run uvicorn app_async:app --host 0.0.0.0 --port 8000 and check for errors
 
-## Step 6: Test endpoints
+## Step 6: Test endpoints ✅ COMPLETED
 - Test /health, /, user/register, user/login endpoints

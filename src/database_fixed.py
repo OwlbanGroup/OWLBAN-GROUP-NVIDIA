@@ -660,6 +660,10 @@ class AsyncDatabaseManager:
     # Business Management Methods
     async def create_business(self, business_data: Dict[str, Any]) -> DBBusinessModel:
         """Create a new business"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.create_business(business_data)
+
         try:
             async with self.get_session() as session:
                 # Convert contact_info to JSON string if it's a dict
@@ -678,6 +682,10 @@ class AsyncDatabaseManager:
 
     async def get_business_by_id(self, business_id: int) -> Optional[DBBusinessModel]:
         """Get business by ID"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.get_business_by_id(business_id)
+
         try:
             async with self.get_session() as session:
                 query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
@@ -689,6 +697,10 @@ class AsyncDatabaseManager:
 
     async def get_all_businesses(self) -> List[DBBusinessModel]:
         """Get all businesses"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.get_all_businesses()
+
         try:
             async with self.get_session() as session:
                 query = select(DBBusinessModel)
@@ -700,6 +712,10 @@ class AsyncDatabaseManager:
 
     async def update_business(self, business_id: int, update_data: Dict[str, Any]) -> Optional[DBBusinessModel]:
         """Update business details"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.update_business(business_id, update_data)
+
         try:
             async with self.get_session() as session:
                 query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
@@ -719,6 +735,10 @@ class AsyncDatabaseManager:
 
     async def delete_business(self, business_id: int) -> bool:
         """Delete a business"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.delete_business(business_id)
+
         try:
             async with self.get_session() as session:
                 query = select(DBBusinessModel).where(DBBusinessModel.id == business_id)
@@ -736,6 +756,10 @@ class AsyncDatabaseManager:
     # Asset Management Methods
     async def create_asset(self, asset_data: Dict[str, Any]) -> DBAssetModel:
         """Create a new asset"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.create_asset(asset_data)
+
         try:
             async with self.get_session() as session:
                 # Convert acquisition_date from string to datetime if needed
@@ -757,6 +781,9 @@ class AsyncDatabaseManager:
 
     async def get_asset_by_id(self, asset_id: int) -> Optional[DBAssetModel]:
         """Get asset by ID"""
+        if self.is_sqlite:
+            return db_manager.get_asset_by_id(asset_id)
+
         try:
             async with self.get_session() as session:
                 query = select(DBAssetModel).where(DBAssetModel.id == asset_id)
@@ -790,6 +817,10 @@ class AsyncDatabaseManager:
 
     async def update_asset(self, asset_id: int, update_data: Dict[str, Any]) -> Optional[DBAssetModel]:
         """Update asset details"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.update_asset(asset_id, update_data)
+
         try:
             async with self.get_session() as session:
                 query = select(DBAssetModel).where(DBAssetModel.id == asset_id)
