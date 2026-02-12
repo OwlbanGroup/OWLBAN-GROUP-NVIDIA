@@ -104,7 +104,7 @@ except ImportError:
     pass
 
 from src.data_format_converter import DataFormatConverter  # type: ignore
-from src.ml_model import AnomalyDetector  # type: ignore
+from src.ml_model import ml_model  # type: ignore
 from src.database_fixed import async_db_manager, AsyncDatabaseManager  # type: ignore
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse, OrganizationCreate, OrganizationUpdate, OrganizationResponse, OrganizationMemberCreate, OrganizationMemberUpdate, OrganizationMemberResponse, ConvertUserToOrganizationRequest  # type: ignore
 
@@ -128,7 +128,7 @@ except ImportError:
     payments_service = None
 
 # Initialize ML model
-anomaly_detector = AnomalyDetector()
+anomaly_detector = ml_model()
 
 # Initialize sync scheduler
 sync_scheduler = None

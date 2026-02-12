@@ -338,3 +338,6 @@ class AnomalyDetector:
         except Exception as e:
             telemetry_logger.get_logger().error(f"Error in train_model: {e}")
             raise ValueError(f"Model training failed: {e}")
+
+# Export the class as ml_model for backward compatibility
+ml_model = AnomalyDetector
