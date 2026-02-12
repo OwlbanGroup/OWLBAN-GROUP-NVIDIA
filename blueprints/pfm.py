@@ -37,6 +37,29 @@ _mock_financial_health = {}
 _mock_transactions = {}
 _mock_balance_alerts = {}
 
+# Mock data for Earned Wage Access (EWA)
+_mock_ewa_eligibility = {}
+_mock_ewa_requests = {}
+_mock_ewa_history = {}
+_mock_payroll_data = {}
+
+# Sample payroll data for EWA calculations
+_mock_payroll_data = {
+    'user123': {
+        'employer': 'Tech Corp',
+        'pay_frequency': 'biweekly',  # weekly, biweekly, semimonthly, monthly
+        'last_pay_date': '2024-01-15',
+        'next_pay_date': '2024-01-29',
+        'gross_pay': 3200.00,
+        'net_pay': 2560.00,
+        'hours_worked': 80,
+        'hourly_rate': 40.00,
+        'ytd_earnings': 62400.00,
+        'employment_status': 'active',
+        'employment_start_date': '2023-03-01'
+    }
+}
+
 # Sample mock transactions for testing
 _mock_transactions = {
     'user123': [
