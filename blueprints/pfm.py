@@ -34,6 +34,57 @@ _mock_budgets = {}
 _mock_goals = {}
 _mock_notifications = {}
 _mock_financial_health = {}
+_mock_transactions = {}
+_mock_balance_alerts = {}
+
+# Sample mock transactions for testing
+_mock_transactions = {
+    'user123': [
+        {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': -45.67, 'description': 'Grocery Store Purchase', 'date': '2024-01-15', 'category': None},
+        {'transaction_id': 'txn2', 'account_id': 'acc1', 'amount': -25.00, 'description': 'Starbucks Coffee', 'date': '2024-01-16', 'category': None},
+        {'transaction_id': 'txn3', 'account_id': 'acc1', 'amount': -120.50, 'description': 'Gas Station Fill-up', 'date': '2024-01-17', 'category': None},
+        {'transaction_id': 'txn4', 'account_id': 'acc2', 'amount': -89.99, 'description': 'Amazon Purchase', 'date': '2024-01-18', 'category': None},
+        {'transaction_id': 'txn5', 'account_id': 'acc1', 'amount': 1500.00, 'description': 'Salary Deposit', 'date': '2024-01-01', 'category': 'income'}
+    ]
+}
+
+def categorize_transaction(description: str) -> str:
+    """
+    Simple transaction categorization based on keywords
+    """
+    description_lower = description.lower()
+
+    if any(word in description_lower for word in ['grocery', 'supermarket', 'food lion', 'walmart', 'target', 'safeway']):
+        return 'groceries'
+    if any(word in description_lower for word in ['restaurant', 'dining', 'mcdonald', 'starbucks', 'pizza', 'burger king']):
+        return 'dining'
+    if any(word in description_lower for word in ['gas', 'fuel', 'shell', 'bp', 'exxon', 'mobil']):
+        return 'transportation'
+    if any(word in description_lower for word in ['netflix', 'spotify', 'amazon prime', 'hulu', 'subscription', 'entertainment']):
+        return 'entertainment'
+    if any(word in description_lower for word in ['electric', 'water', 'gas bill', 'utility', 'comcast', 'verizon']):
+        return 'utilities'
+    if any(word in description_lower for word in ['amazon', 'best buy', 'shopping', 'mall', 'store']):
+        return 'shopping'
+    if any(word in description_lower for word in ['salary', 'deposit', 'income', 'payroll']):
+        return 'income'
+
+    return 'other'
+
+def calculate_budget_spent(user_id: str, budget_category: str, start_date: str = None) -> float:
+    """
+    Calculate total spent amount for a budget category from transactions
+    """
+    transactions = _mock_transactions.get(user_id, [])
+    total_spent = 0.0
+
+    for txn in transactions:
+        if txn.get('category') == budget_category:
+            amount = txn.get('amount', 0)
+            if amount < 0:  # Only count expenses (negative amounts)
+                total_spent += abs(amount)
+
+    return total_spent
 
 
 # =============================================================================
@@ -1002,4 +1053,432 @@ def trigger_alert():
 
         user_id = data.get('user_id')
         alert_type = data.get('alert_type', 'budget_warning')
-        message = data
+        message = data.get('message', f'Alert triggered: {alert_type}')
+
+        # Create alert notification
+        alert = {
+            'alert_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'type': alert_type,
+            'message': message,
+            'triggered_at': datetime.now(timezone.utc).isoformat(),
+            'status': 'sent'
+        }
+
+        if user_id not in _mock_notifications:
+            _mock_notifications[user_id] = []
+        _mock_notifications[user_id].append(alert)
+
+        telemetry_logger.log_info(f"Alert triggered for user {user_id}: {alert_type}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Alert triggered successfully',
+            'alert': alert,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'trigger_alert'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# PHASE 2: ACCOUNT MANAGEMENT FEATURES - TRANSACTION CATEGORIZATION
+# =============================================================================
+
+@pfm_bp.route('/pfm/transactions/categorize', methods=['POST'])
+@token_auth_required
+@conditional_limit("30 per minute")
+def categorize_transactions():
+    """
+    Categorize transactions based on description and merchant data
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No transaction data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        transactions = data.get('transactions', [])
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        if not transactions:
+            return jsonify({'error': 'No transactions provided for categorization', 'status': 'error'}), 400
+
+        categorized_transactions = []
+
+        for transaction in transactions:
+            description = transaction.get('description', '')
+            amount = transaction.get('amount', 0)
+            transaction_id = transaction.get('transaction_id', str(uuid.uuid4()))
+
+            # Categorize the transaction
+            category = categorize_transaction(description)
+
+            # Create categorized transaction record
+            categorized_txn = {
+                'transaction_id': transaction_id,
+                'user_id': user_id,
+                'description': description,
+                'amount': amount,
+                'category': category,
+                'categorized_at': datetime.now(timezone.utc).isoformat(),
+                'confidence': 0.85  # Mock confidence score
+            }
+
+            categorized_transactions.append(categorized_txn)
+
+            # Store in mock data
+            if user_id not in _mock_transactions:
+                _mock_transactions[user_id] = []
+            _mock_transactions[user_id].append(categorized_txn)
+
+        telemetry_logger.log_info(f"Categorized {len(categorized_transactions)} transactions for user {user_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Successfully categorized {len(categorized_transactions)} transactions',
+            'categorized_transactions': categorized_transactions,
+            'summary': {
+                'total_categorized': len(categorized_transactions),
+                'categories_used': list(set(txn['category'] for txn in categorized_transactions)),
+                'average_confidence': 0.85
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'categorize_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/transactions', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_transactions():
+    """
+    Get categorized transactions for a user
+    """
+    try:
+        user_id = request.args.get('user_id')
+        category = request.args.get('category')
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        transactions = _mock_transactions.get(user_id, [])
+
+        # Apply category filter
+        if category:
+            transactions = [t for t in transactions if t.get('category') == category]
+
+        # Apply pagination
+        total_count = len(transactions)
+        transactions = transactions[offset:offset + limit]
+
+        # Calculate category summary
+        category_summary = {}
+        for txn in _mock_transactions.get(user_id, []):
+            cat = txn.get('category', 'uncategorized')
+            if cat not in category_summary:
+                category_summary[cat] = {'count': 0, 'total_amount': 0}
+            category_summary[cat]['count'] += 1
+            category_summary[cat]['total_amount'] += txn.get('amount', 0)
+
+        return jsonify({
+            'status': 'success',
+            'transactions': transactions,
+            'pagination': {
+                'total_count': total_count,
+                'limit': limit,
+                'offset': offset,
+                'has_more': offset + limit < total_count
+            },
+            'summary': {
+                'total_transactions': total_count,
+                'category_breakdown': category_summary
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# PHASE 2: ACCOUNT BALANCE MONITORING WITH ALERTS
+# =============================================================================
+
+@pfm_bp.route('/pfm/accounts/monitor', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def setup_balance_monitoring():
+    """
+    Set up balance monitoring and alerts for accounts
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No monitoring data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        account_id = data.get('account_id')
+        alert_thresholds = data.get('alert_thresholds', {})
+        alert_channels = data.get('alert_channels', ['email'])
+
+        if not all([user_id, account_id]):
+            return jsonify({'error': 'User ID and account ID are required', 'status': 'error'}), 400
+
+        # Verify account exists
+        accounts = _mock_accounts.get(user_id, [])
+        account = next((acc for acc in accounts if acc['account_id'] == account_id), None)
+
+        if not account:
+            return jsonify({'error': 'Account not found', 'status': 'error'}), 404
+
+        # Create balance monitoring configuration
+        monitor_config = {
+            'monitor_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'account_id': account_id,
+            'alert_thresholds': {
+                'low_balance': alert_thresholds.get('low_balance', 100.00),
+                'high_balance': alert_thresholds.get('high_balance', 10000.00),
+                'unusual_spending': alert_thresholds.get('unusual_spending', 500.00)
+            },
+            'alert_channels': alert_channels,
+            'status': 'active',
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'last_checked': datetime.now(timezone.utc).isoformat()
+        }
+
+        if user_id not in _mock_balance_alerts:
+            _mock_balance_alerts[user_id] = []
+        _mock_balance_alerts[user_id].append(monitor_config)
+
+        telemetry_logger.log_info(f"Balance monitoring set up for account {account_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Balance monitoring configured successfully',
+            'monitor_config': monitor_config,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'setup_balance_monitoring'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/accounts/<account_id>/alerts', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_account_alerts(account_id):
+    """
+    Get balance alerts and monitoring status for an account
+    """
+    try:
+        user_id = request.args.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        # Get account details
+        accounts = _mock_accounts.get(user_id, [])
+        account = next((acc for acc in accounts if acc['account_id'] == account_id), None)
+
+        if not account:
+            return jsonify({'error': 'Account not found', 'status': 'error'}), 404
+
+        # Get monitoring configuration
+        monitors = _mock_balance_alerts.get(user_id, [])
+        monitor = next((m for m in monitors if m['account_id'] == account_id), None)
+
+        # Check for potential alerts
+        alerts = []
+        if monitor:
+            balance = account.get('balance', 0)
+            thresholds = monitor.get('alert_thresholds', {})
+
+            if balance <= thresholds.get('low_balance', 100):
+                alerts.append({
+                    'alert_id': str(uuid.uuid4()),
+                    'type': 'low_balance',
+                    'message': f'Account balance is low: ${balance:.2f}',
+                    'severity': 'warning',
+                    'triggered_at': datetime.now(timezone.utc).isoformat()
+                })
+
+            if balance >= thresholds.get('high_balance', 10000):
+                alerts.append({
+                    'alert_id': str(uuid.uuid4()),
+                    'type': 'high_balance',
+                    'message': f'Account balance is high: ${balance:.2f}',
+                    'severity': 'info',
+                    'triggered_at': datetime.now(timezone.utc).isoformat()
+                })
+
+        return jsonify({
+            'status': 'success',
+            'account_id': account_id,
+            'current_balance': account.get('balance', 0),
+            'monitoring_config': monitor,
+            'active_alerts': alerts,
+            'alert_count': len(alerts),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_account_alerts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# PHASE 2: MULTI-INSTITUTION ACCOUNT AGGREGATION
+# =============================================================================
+
+@pfm_bp.route('/pfm/accounts/aggregate', methods=['GET'])
+@token_auth_required
+@conditional_limit("15 per minute")
+def get_account_aggregation():
+    """
+    Get aggregated view of accounts across multiple institutions
+    """
+    try:
+        user_id = request.args.get('user_id')
+        institution_filter = request.args.get('institution')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        accounts = _mock_accounts.get(user_id, [])
+
+        # Filter by institution if specified
+        if institution_filter:
+            accounts = [acc for acc in accounts if acc.get('institution_id') == institution_filter]
+
+        # Aggregate by institution
+        institution_summary = {}
+        for account in accounts:
+            inst_id = account.get('institution_id', 'unknown')
+            if inst_id not in institution_summary:
+                institution_summary[inst_id] = {
+                    'institution_id': inst_id,
+                    'accounts': [],
+                    'total_balance': 0,
+                    'total_debt': 0,
+                    'net_worth': 0,
+                    'account_types': set()
+                }
+
+            institution_summary[inst_id]['accounts'].append(account)
+            institution_summary[inst_id]['account_types'].add(account.get('account_type', 'unknown'))
+
+            balance = account.get('balance', 0)
+            if account.get('account_type') == 'credit_card' and balance < 0:
+                institution_summary[inst_id]['total_debt'] += abs(balance)
+            else:
+                institution_summary[inst_id]['total_balance'] += balance
+
+        # Calculate net worth per institution
+        for inst in institution_summary.values():
+            inst['net_worth'] = inst['total_balance'] - inst['total_debt']
+            inst['account_types'] = list(inst['account_types'])
+
+        # Overall aggregation
+        total_balance = sum(inst['total_balance'] for inst in institution_summary.values())
+        total_debt = sum(inst['total_debt'] for inst in institution_summary.values())
+        total_net_worth = total_balance - total_debt
+
+        return jsonify({
+            'status': 'success',
+            'user_id': user_id,
+            'institution_breakdown': list(institution_summary.values()),
+            'overall_aggregation': {
+                'total_institutions': len(institution_summary),
+                'total_accounts': len(accounts),
+                'total_balance': total_balance,
+                'total_debt': total_debt,
+                'net_worth': total_net_worth,
+                'currency': 'USD'
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_account_aggregation'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/transactions/insights', methods=['GET'])
+@token_auth_required
+@conditional_limit("15 per minute")
+def get_transaction_insights():
+    """
+    Get insights based on categorized transactions
+    """
+    try:
+        user_id = request.args.get('user_id')
+        period = request.args.get('period', '30_days')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        transactions = _mock_transactions.get(user_id, [])
+
+        # Calculate insights
+        category_spending = {}
+        total_spending = 0
+        transaction_count = len(transactions)
+
+        for txn in transactions:
+            category = txn.get('category', 'uncategorized')
+            amount = txn.get('amount', 0)
+
+            if amount < 0:  # Only count expenses
+                if category not in category_spending:
+                    category_spending[category] = {'total': 0, 'count': 0, 'avg_transaction': 0}
+
+                category_spending[category]['total'] += abs(amount)
+                category_spending[category]['count'] += 1
+                total_spending += abs(amount)
+
+        # Calculate averages and percentages
+        for cat_data in category_spending.values():
+            cat_data['avg_transaction'] = cat_data['total'] / cat_data['count'] if cat_data['count'] > 0 else 0
+            cat_data['percentage'] = (cat_data['total'] / total_spending * 100) if total_spending > 0 else 0
+
+        # Generate insights
+        insights = []
+        if category_spending:
+            top_category = max(category_spending.items(), key=lambda x: x[1]['total'])
+            insights.append(f"Your highest spending category is {top_category[0]} with ${top_category[1]['total']:.2f}")
+
+            # Check for unusual spending patterns
+            avg_transaction = total_spending / transaction_count if transaction_count > 0 else 0
+            if avg_transaction > 100:
+                insights.append("Your average transaction amount is relatively high")
+
+        return jsonify({
+            'status': 'success',
+            'user_id': user_id,
+            'period': period,
+            'insights': insights,
+            'spending_analysis': {
+                'total_spending': total_spending,
+                'transaction_count': transaction_count,
+                'avg_transaction': total_spending / transaction_count if transaction_count > 0 else 0,
+                'category_breakdown': category_spending
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_transaction_insights'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

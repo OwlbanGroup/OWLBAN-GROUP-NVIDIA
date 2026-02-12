@@ -104,7 +104,7 @@
                             <th>Date</th>
                             <th>Description</th>
                             <th>Amount</th>
-                            <th>Type</th>
+                            <th>Category</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -113,6 +113,79 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- PFM Budgets Section -->
+        <section class="table-section">
+            <div class="card">
+                <h3>PFM Budgets</h3>
+                <table id="budgetsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Budgeted</th>
+                            <th>Spent</th>
+                            <th>Remaining</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PFM Goals Section -->
+        <section class="table-section">
+            <div class="card">
+                <h3>PFM Financial Goals</h3>
+                <table id="goalsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Target Amount</th>
+                            <th>Current Amount</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PFM Spending Insights -->
+        <section class="chart-section">
+            <div class="card">
+                <h3>Spending Insights</h3>
+                <div id="insightsContainer">
+                    <p id="insightsText">Loading insights...</p>
+                    <canvas id="spendingChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- PFM Financial Health Score -->
+        <section class="summary-section">
+            <div class="card">
+                <h3>Financial Health Score</h3>
+                <p id="healthScore" class="metric-value">0</p>
+                <span id="healthGrade" class="metric-label">Grade</span>
+            </div>
+            <div class="card">
+                <h3>Recommendations</h3>
+                <p id="recommendationsCount" class="metric-value">0</p>
+                <span class="metric-label">Active</span>
             </div>
         </section>
     </div>

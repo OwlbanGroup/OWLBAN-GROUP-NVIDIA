@@ -37,6 +37,14 @@ from decimal import Decimal
 # Import sync scheduler for integrated data synchronization
 from sync_scheduler import JPMorganSyncScheduler, create_scheduler
 
+# Import PFM blueprint (will be registered after app creation)
+try:
+    from blueprints.pfm import pfm_bp
+    PFM_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    pfm_bp = None
+    PFM_BLUEPRINT_AVAILABLE = False
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -1680,6 +1688,13 @@ def internal_error(error):  # pylint: disable=unused-argument
         'error': 'Internal server error',
         'status': 'error'
     }), 500
+
+# Register PFM blueprint after app creation
+if PFM_BLUEPRINT_AVAILABLE and pfm_bp:
+    app.register_blueprint(pfm_bp, url_prefix='/pfm')
+    telemetry_logger.get_logger().info("PFM blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("PFM blueprint not available")
 
 if __name__ == '__main__':
     # Log application startup
