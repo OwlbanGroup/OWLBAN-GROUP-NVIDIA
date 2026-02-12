@@ -94,7 +94,7 @@ from src.cloud_storage import setup_cloud_storage  # type: ignore
 from src.data_format_converter import DataFormatConverter  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import async_db_manager, AsyncDatabaseManager  # type: ignore
-from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
+from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse, OrganizationCreate, OrganizationUpdate, OrganizationResponse, OrganizationMemberCreate, OrganizationMemberUpdate, OrganizationMemberResponse, ConvertUserToOrganizationRequest  # type: ignore
 from src.ai_service import ai_service  # type: ignore
 from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
 from src.payments_service import payments_service  # type: ignore
@@ -788,6 +788,406 @@ async def delete_asset(
         raise
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'delete_asset'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+# Organization Management Endpoints
+@app.get("/organizations", response_model=Dict[str, Any])
+async def list_organizations(current_user: str = Depends(require_auth)):
+    """
+    List all organizations
+    """
+    try:
+        organizations = await async_db_manager.get_all_organizations()
+        return {
+            'status': 'success',
+            'organizations': [OrganizationResponse.from_orm(org).dict() for org in organizations],
+            'count': len(organizations),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'list_organizations'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.post("/organizations", response_model=Dict[str, Any])
+async def create_organization(
+    organization_data: OrganizationCreate,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Create a new organization
+    """
+    try:
+        # Check if user already owns an organization
+        existing_org = await async_db_manager.get_organization_by_owner_id(current_user)
+        if existing_org:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already owns an organization"
+            )
+
+        org_data = organization_data.dict()
+        org_data['owner_id'] = current_user
+
+        organization = await async_db_manager.create_organization(org_data)
+
+        # Add creator as owner member
+        await async_db_manager.add_organization_member({
+            'organization_id': organization.id,
+            'user_id': current_user,
+            'role': 'owner'
+        })
+
+        return {
+            'status': 'success',
+            'organization': OrganizationResponse.from_orm(organization).dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_organization'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.get("/organizations/{organization_id}", response_model=Dict[str, Any])
+async def get_organization(
+    organization_id: int,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Get organization details by ID
+    """
+    try:
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        # Check if user is a member or owner
+        user_role = await async_db_manager.get_member_role(organization_id, current_user)
+        if user_role is None and organization.owner_id != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+
+        return {
+            'status': 'success',
+            'organization': OrganizationResponse.from_orm(organization).dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_organization'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.put("/organizations/{organization_id}", response_model=Dict[str, Any])
+async def update_organization(
+    organization_id: int,
+    organization_data: OrganizationUpdate,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Update organization details
+    """
+    try:
+        # Check if user is owner
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        if organization.owner_id != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owner can update organization"
+            )
+
+        updated_org = await async_db_manager.update_organization(organization_id, organization_data.dict(exclude_unset=True))
+        if not updated_org:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        return {
+            'status': 'success',
+            'organization': OrganizationResponse.from_orm(updated_org).dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'update_organization'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.delete("/organizations/{organization_id}", response_model=Dict[str, Any])
+async def delete_organization(
+    organization_id: int,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Delete an organization
+    """
+    try:
+        # Check if user is owner
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        if organization.owner_id != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owner can delete organization"
+            )
+
+        success = await async_db_manager.delete_organization(organization_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        return {
+            'status': 'success',
+            'message': 'Organization deleted successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'delete_organization'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.get("/organizations/{organization_id}/members", response_model=Dict[str, Any])
+async def get_organization_members(
+    organization_id: int,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Get organization members
+    """
+    try:
+        # Check if user is a member
+        user_role = await async_db_manager.get_member_role(organization_id, current_user)
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if user_role is None and (not organization or organization.owner_id != current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+
+        members = await async_db_manager.get_organization_members(organization_id)
+        return {
+            'status': 'success',
+            'members': [OrganizationMemberResponse.from_orm(member).dict() for member in members],
+            'count': len(members),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_organization_members'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.post("/organizations/{organization_id}/members", response_model=Dict[str, Any])
+async def add_organization_member(
+    organization_id: int,
+    member_data: OrganizationMemberCreate,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Add a member to an organization
+    """
+    try:
+        # Check if user is owner or admin
+        user_role = await async_db_manager.get_member_role(organization_id, current_user)
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if (user_role not in ['owner', 'admin']) and (not organization or organization.owner_id != current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owner or admin can add members"
+            )
+
+        # Check if user is already a member
+        existing_role = await async_db_manager.get_member_role(organization_id, member_data.user_id)
+        if existing_role:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is already a member of this organization"
+            )
+
+        member = await async_db_manager.add_organization_member({
+            'organization_id': organization_id,
+            'user_id': member_data.user_id,
+            'role': member_data.role
+        })
+
+        return {
+            'status': 'success',
+            'member': OrganizationMemberResponse.from_orm(member).dict(),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'add_organization_member'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.put("/organizations/{organization_id}/members/{user_id}", response_model=Dict[str, Any])
+async def update_member_role(
+    organization_id: int,
+    user_id: str,
+    member_data: OrganizationMemberUpdate,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Update a member's role in an organization
+    """
+    try:
+        # Check if user is owner or admin
+        user_role = await async_db_manager.get_member_role(organization_id, current_user)
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if (user_role not in ['owner', 'admin']) and (not organization or organization.owner_id != current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owner or admin can update member roles"
+            )
+
+        success = await async_db_manager.update_member_role(organization_id, user_id, member_data.role)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Member not found"
+            )
+
+        return {
+            'status': 'success',
+            'message': 'Member role updated successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'update_member_role'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.delete("/organizations/{organization_id}/members/{user_id}", response_model=Dict[str, Any])
+async def remove_organization_member(
+    organization_id: int,
+    user_id: str,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Remove a member from an organization
+    """
+    try:
+        # Check if user is owner or admin, or removing themselves
+        user_role = await async_db_manager.get_member_role(organization_id, current_user)
+        organization = await async_db_manager.get_organization_by_id(organization_id)
+        if (user_role not in ['owner', 'admin']) and (not organization or organization.owner_id != current_user) and current_user != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only organization owner or admin can remove members"
+            )
+
+        # Cannot remove the owner
+        if organization and organization.owner_id == user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove organization owner"
+            )
+
+        success = await async_db_manager.remove_organization_member(organization_id, user_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Member not found"
+            )
+
+        return {
+            'status': 'success',
+            'message': 'Member removed successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'remove_organization_member'})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@app.post("/user/convert-to-organization", response_model=Dict[str, Any])
+async def convert_user_to_organization(
+    conversion_data: ConvertUserToOrganizationRequest,
+    current_user: str = Depends(require_auth)
+):
+    """
+    Convert a user account to an organization
+    """
+    try:
+        # Check if user already owns an organization
+        existing_org = await async_db_manager.get_organization_by_owner_id(current_user)
+        if existing_org:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already owns an organization"
+            )
+
+        organization = await async_db_manager.convert_user_to_organization(
+            current_user,
+            conversion_data.dict()
+        )
+
+        return {
+            'status': 'success',
+            'organization': OrganizationResponse.from_orm(organization).dict(),
+            'message': 'User account successfully converted to organization',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'convert_user_to_organization'})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"

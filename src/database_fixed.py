@@ -7,7 +7,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from contextlib import asynccontextmanager, contextmanager
+import contextlib
+from contextlib import contextmanager, asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Dict, Any, Generator
 import os
 from datetime import datetime, timezone
@@ -120,6 +121,39 @@ class DBAssetModel(Base):
 
     business = relationship("DBBusinessModel", back_populates="assets", overlaps="business")
 
+
+class DBOrganizationModel(Base):
+    """SQLAlchemy model for organizations"""
+    __tablename__ = 'organizations'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)
+    registration_number = Column(String)
+    address = Column(Text)
+    contact_info = Column(Text)  # JSON string
+    owner_id = Column(String, nullable=False)  # Docker ID of the owner
+    subscription_type = Column(String, default='team')  # team, business, etc.
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    members = relationship("DBOrganizationMemberModel", back_populates="organization", overlaps="organization")
+
+
+class DBOrganizationMemberModel(Base):
+    """SQLAlchemy model for organization members"""
+    __tablename__ = 'organization_members'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey('organizations.id'), nullable=False)
+    user_id = Column(String, nullable=False)  # Docker ID
+    role = Column(String, default='member')  # owner, admin, member
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("DBOrganizationModel", back_populates="members", overlaps="organization")
+
 # Define relationships after both classes are defined
 DBBusinessModel.assets = relationship("DBAssetModel", back_populates="business", overlaps="business")
 
@@ -163,7 +197,7 @@ class DatabaseManager:
             except Exception as e:
                 print(f"Note: Revenue table creation skipped: {e}")
 
-    @contextmanager
+    @contextlib.contextmanager
     def get_session(self) -> Generator[Session, None, None]:
         """Get database session with automatic cleanup"""
         session = self.SessionLocal()
@@ -572,6 +606,11 @@ class AsyncDatabaseManager:
 
     async def initialize_database(self):
         """Initialize database tables in correct order"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            db_manager.initialize_database()
+            return
+
         try:
             # Create base tables first
             async with self.engine.begin() as conn:
@@ -580,6 +619,11 @@ class AsyncDatabaseManager:
             # Create businesses table explicitly first
             async with self.engine.begin() as conn:
                 await conn.run_sync(DBBusinessModel.__table__.create, checkfirst=True)
+
+            # Create organizations table after businesses table
+            async with self.engine.begin() as conn:
+                await conn.run_sync(DBOrganizationModel.__table__.create, checkfirst=True)
+                await conn.run_sync(DBOrganizationMemberModel.__table__.create, checkfirst=True)
 
             # Create audit_logs table if available
             if AuditLogModel is not None:
@@ -768,6 +812,204 @@ class AsyncDatabaseManager:
         except Exception as e:
             print(f"Failed to delete asset: {e}")
             return False
+
+    # Organization Management Methods
+    async def create_organization(self, organization_data: Dict[str, Any]) -> DBOrganizationModel:
+        """Create a new organization"""
+        try:
+            async with self.get_session() as session:
+                # Convert contact_info to JSON string if it's a dict
+                if 'contact_info' in organization_data and isinstance(organization_data['contact_info'], dict):
+                    import json
+                    organization_data['contact_info'] = json.dumps(organization_data['contact_info'])
+
+                organization = DBOrganizationModel(**organization_data)
+                session.add(organization)
+                await session.commit()
+                await session.refresh(organization)
+                return organization
+        except Exception as e:
+            print(f"Failed to create organization: {e}")
+            raise
+
+    async def get_organization_by_id(self, organization_id: int) -> Optional[DBOrganizationModel]:
+        """Get organization by ID"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationModel).where(DBOrganizationModel.id == organization_id)
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
+        except Exception as e:
+            print(f"Failed to get organization: {e}")
+            return None
+
+    async def get_organization_by_owner_id(self, owner_id: str) -> Optional[DBOrganizationModel]:
+        """Get organization by owner ID"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationModel).where(DBOrganizationModel.owner_id == owner_id)
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
+        except Exception as e:
+            print(f"Failed to get organization by owner: {e}")
+            return None
+
+    async def get_all_organizations(self) -> List[DBOrganizationModel]:
+        """Get all organizations"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationModel)
+                result = await session.execute(query)
+                return result.scalars().all()
+        except Exception as e:
+            print(f"Failed to get organizations: {e}")
+            return []
+
+    async def update_organization(self, organization_id: int, update_data: Dict[str, Any]) -> Optional[DBOrganizationModel]:
+        """Update organization details"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationModel).where(DBOrganizationModel.id == organization_id)
+                result = await session.execute(query)
+                organization = result.scalar_one_or_none()
+                if not organization:
+                    return None
+                for key, value in update_data.items():
+                    if hasattr(organization, key):
+                        setattr(organization, key, value)
+                await session.commit()
+                await session.refresh(organization)
+                return organization
+        except Exception as e:
+            print(f"Failed to update organization: {e}")
+            return None
+
+    async def delete_organization(self, organization_id: int) -> bool:
+        """Delete an organization"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationModel).where(DBOrganizationModel.id == organization_id)
+                result = await session.execute(query)
+                organization = result.scalar_one_or_none()
+                if not organization:
+                    return False
+                await session.delete(organization)
+                await session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to delete organization: {e}")
+            return False
+
+    # Organization Member Management Methods
+    async def add_organization_member(self, member_data: Dict[str, Any]) -> DBOrganizationMemberModel:
+        """Add a member to an organization"""
+        try:
+            async with self.get_session() as session:
+                member = DBOrganizationMemberModel(**member_data)
+                session.add(member)
+                await session.commit()
+                await session.refresh(member)
+                return member
+        except Exception as e:
+            print(f"Failed to add organization member: {e}")
+            raise
+
+    async def get_organization_members(self, organization_id: int) -> List[DBOrganizationMemberModel]:
+        """Get all members of an organization"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationMemberModel).where(DBOrganizationMemberModel.organization_id == organization_id)
+                result = await session.execute(query)
+                return result.scalars().all()
+        except Exception as e:
+            print(f"Failed to get organization members: {e}")
+            return []
+
+    async def get_member_role(self, organization_id: int, user_id: str) -> Optional[str]:
+        """Get a member's role in an organization"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationMemberModel).where(
+                    DBOrganizationMemberModel.organization_id == organization_id,
+                    DBOrganizationMemberModel.user_id == user_id
+                )
+                result = await session.execute(query)
+                member = result.scalar_one_or_none()
+                return member.role if member else None
+        except Exception as e:
+            print(f"Failed to get member role: {e}")
+            return None
+
+    async def update_member_role(self, organization_id: int, user_id: str, new_role: str) -> bool:
+        """Update a member's role in an organization"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationMemberModel).where(
+                    DBOrganizationMemberModel.organization_id == organization_id,
+                    DBOrganizationMemberModel.user_id == user_id
+                )
+                result = await session.execute(query)
+                member = result.scalar_one_or_none()
+                if not member:
+                    return False
+                member.role = new_role
+                await session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to update member role: {e}")
+            return False
+
+    async def remove_organization_member(self, organization_id: int, user_id: str) -> bool:
+        """Remove a member from an organization"""
+        try:
+            async with self.get_session() as session:
+                query = select(DBOrganizationMemberModel).where(
+                    DBOrganizationMemberModel.organization_id == organization_id,
+                    DBOrganizationMemberModel.user_id == user_id
+                )
+                result = await session.execute(query)
+                member = result.scalar_one_or_none()
+                if not member:
+                    return False
+                await session.delete(member)
+                await session.commit()
+                return True
+        except Exception as e:
+            print(f"Failed to remove organization member: {e}")
+            return False
+
+    # User to Organization Conversion
+    async def convert_user_to_organization(self, user_id: str, organization_data: Dict[str, Any]) -> DBOrganizationModel:
+        """Convert a user account to an organization"""
+        try:
+            async with self.get_session() as session:
+                # Check if user already has an organization
+                existing_org = await self.get_organization_by_owner_id(user_id)
+                if existing_org:
+                    raise ValueError(f"User {user_id} already owns an organization")
+
+                # Create the organization
+                org_data = organization_data.copy()
+                org_data['owner_id'] = user_id
+
+                organization = DBOrganizationModel(**org_data)
+                session.add(organization)
+                await session.commit()
+                await session.refresh(organization)
+
+                # Add the owner as the first member with owner role
+                owner_member = DBOrganizationMemberModel(
+                    organization_id=organization.id,
+                    user_id=user_id,
+                    role='owner'
+                )
+                session.add(owner_member)
+                await session.commit()
+
+                return organization
+        except Exception as e:
+            print(f"Failed to convert user to organization: {e}")
+            raise
 
 
 # Global database manager instances

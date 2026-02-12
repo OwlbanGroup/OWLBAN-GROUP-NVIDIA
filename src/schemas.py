@@ -226,6 +226,86 @@ class AssetResponse(BaseModel):
         from_attributes = True
 
 
+class OrganizationType(str, Enum):
+    """Organization entity types"""
+    CORPORATION = "corporation"
+    LLC = "llc"
+    PARTNERSHIP = "partnership"
+    NONPROFIT = "nonprofit"
+    TEAM = "team"
+    OTHER = "other"
+
+
+class OrganizationCreate(BaseModel):
+    """Schema for creating a new organization"""
+    name: str = Field(..., min_length=1, max_length=255, description="Organization name")
+    type: OrganizationType = Field(..., description="Organization entity type")
+    registration_number: Optional[str] = Field(None, max_length=100, description="Organization registration number")
+    address: Optional[str] = Field(None, description="Organization address")
+    contact_info: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Contact information (email, phone, etc.)")
+    subscription_type: str = Field(default="team", description="Subscription type (team, business, etc.)")
+
+
+class OrganizationUpdate(BaseModel):
+    """Schema for updating an organization"""
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Organization name")
+    type: Optional[OrganizationType] = Field(None, description="Organization entity type")
+    registration_number: Optional[str] = Field(None, max_length=100, description="Organization registration number")
+    address: Optional[str] = Field(None, description="Organization address")
+    contact_info: Optional[Dict[str, Any]] = Field(None, description="Contact information (email, phone, etc.)")
+    subscription_type: Optional[str] = Field(None, description="Subscription type (team, business, etc.)")
+
+
+class OrganizationResponse(BaseModel):
+    """Schema for organization response"""
+    id: int = Field(..., description="Organization ID")
+    name: str = Field(..., description="Organization name")
+    type: OrganizationType = Field(..., description="Organization entity type")
+    registration_number: Optional[str] = Field(None, description="Organization registration number")
+    address: Optional[str] = Field(None, description="Organization address")
+    contact_info: Optional[Dict[str, Any]] = Field(None, description="Contact information")
+    owner_id: str = Field(..., description="Owner Docker ID")
+    subscription_type: str = Field(..., description="Subscription type")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+    class Config:
+        from_attributes = True
+
+
+class OrganizationMemberCreate(BaseModel):
+    """Schema for adding an organization member"""
+    user_id: str = Field(..., description="Docker ID of the user to add")
+    role: str = Field(default="member", description="Role of the member (owner, admin, member)")
+
+
+class OrganizationMemberUpdate(BaseModel):
+    """Schema for updating an organization member"""
+    role: str = Field(..., description="New role for the member (owner, admin, member)")
+
+
+class OrganizationMemberResponse(BaseModel):
+    """Schema for organization member response"""
+    id: int = Field(..., description="Member ID")
+    organization_id: int = Field(..., description="Organization ID")
+    user_id: str = Field(..., description="Docker ID")
+    role: str = Field(..., description="Member role")
+    joined_at: str = Field(..., description="Join timestamp")
+
+    class Config:
+        from_attributes = True
+
+
+class ConvertUserToOrganizationRequest(BaseModel):
+    """Schema for converting a user account to an organization"""
+    organization_name: str = Field(..., min_length=1, max_length=255, description="Name for the new organization")
+    organization_type: OrganizationType = Field(default=OrganizationType.TEAM, description="Type of organization")
+    registration_number: Optional[str] = Field(None, max_length=100, description="Organization registration number")
+    address: Optional[str] = Field(None, description="Organization address")
+    contact_info: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Contact information")
+    subscription_type: str = Field(default="team", description="Subscription type")
+
+
 class APIResponse(BaseModel):
     """Base API response schema"""
     status: str = Field(..., description="Response status")
