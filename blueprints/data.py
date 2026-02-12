@@ -567,3 +567,220 @@ def get_data_dashboard():
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'get_data_dashboard'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# FINANCIAL DATA ENDPOINTS
+# =============================================================================
+
+@data_bp.route('/data/financial/transactions', methods=['POST'])
+@token_auth_required
+@conditional_limit("15 per minute")
+def create_financial_transaction():
+    """
+    Create a new financial transaction record
+    """
+    try:
+        data = request.get_json()
+        if not data or 'transaction' not in data:
+            return jsonify({'error': 'No transaction data provided', 'status': 'error'}), 400
+
+        transaction = data['transaction']
+        user_id = data.get('user_id')
+        account_id = data.get('account_id')
+
+        # Validate required fields
+        required_fields = ['amount', 'type', 'description']
+        for field in required_fields:
+            if field not in transaction:
+                return jsonify({'error': f'Missing required field: {field}', 'status': 'error'}), 400
+
+        # Mock transaction creation
+        transaction_id = str(uuid.uuid4())
+        transaction_record = {
+            'id': transaction_id,
+            'user_id': user_id,
+            'account_id': account_id,
+            'amount': transaction['amount'],
+            'type': transaction['type'],
+            'description': transaction['description'],
+            'category': transaction.get('category', 'uncategorized'),
+            'date': transaction.get('date', datetime.now(timezone.utc).isoformat()),
+            'status': 'processed',
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        telemetry_logger.log_info(f"Financial transaction created: {transaction_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Transaction created successfully',
+            'transaction': transaction_record
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_financial_transaction'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@data_bp.route('/data/financial/transactions', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_financial_transactions():
+    """
+    Get financial transactions with optional filtering
+    """
+    try:
+        user_id = request.args.get('user_id')
+        account_id = request.args.get('account_id')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        limit = min(int(request.args.get('limit', 50)), 100)
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        # Mock transaction retrieval
+        transactions = [
+            {
+                'id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'account_id': account_id or 'acc_001',
+                'amount': -45.99,
+                'type': 'debit',
+                'description': 'Grocery Store Purchase',
+                'category': 'groceries',
+                'date': '2024-01-15T10:30:00Z',
+                'status': 'processed'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'account_id': account_id or 'acc_001',
+                'amount': 2500.00,
+                'type': 'credit',
+                'description': 'Salary Deposit',
+                'category': 'income',
+                'date': '2024-01-01T09:00:00Z',
+                'status': 'processed'
+            }
+        ]
+
+        # Apply filters (mock)
+        if account_id:
+            transactions = [t for t in transactions if t['account_id'] == account_id]
+
+        return jsonify({
+            'status': 'success',
+            'transactions': transactions[:limit],
+            'count': len(transactions[:limit]),
+            'total_count': len(transactions)
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_financial_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@data_bp.route('/data/financial/accounts', methods=['GET'])
+@token_auth_required
+@conditional_limit("15 per minute")
+def get_financial_accounts():
+    """
+    Get account balance information
+    """
+    try:
+        user_id = request.args.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        # Mock account data
+        accounts = [
+            {
+                'id': 'acc_001',
+                'user_id': user_id,
+                'type': 'checking',
+                'name': 'Primary Checking',
+                'balance': 5420.75,
+                'currency': 'USD',
+                'last_updated': datetime.now(timezone.utc).isoformat(),
+                'status': 'active'
+            },
+            {
+                'id': 'acc_002',
+                'user_id': user_id,
+                'type': 'savings',
+                'name': 'High Yield Savings',
+                'balance': 15750.00,
+                'currency': 'USD',
+                'last_updated': datetime.now(timezone.utc).isoformat(),
+                'status': 'active'
+            }
+        ]
+
+        total_balance = sum(acc['balance'] for acc in accounts)
+
+        return jsonify({
+            'status': 'success',
+            'accounts': accounts,
+            'total_balance': total_balance,
+            'currency': 'USD',
+            'count': len(accounts)
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_financial_accounts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@data_bp.route('/data/financial/user-data/<user_id>', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_user_financial_data(user_id):
+    """
+    Get user-permissioned financial data access
+    """
+    try:
+        # Mock permission check (in real implementation, check user permissions)
+        data_type = request.args.get('type', 'summary')
+
+        if data_type == 'summary':
+            user_data = {
+                'user_id': user_id,
+                'total_accounts': 2,
+                'total_balance': 21170.75,
+                'monthly_income': 3200.00,
+                'monthly_expenses': 2750.50,
+                'net_worth': 21170.75,
+                'credit_score': 785,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            }
+        elif data_type == 'transactions':
+            user_data = {
+                'user_id': user_id,
+                'recent_transactions': [
+                    {
+                        'id': str(uuid.uuid4()),
+                        'amount': -125.50,
+                        'description': 'Restaurant Payment',
+                        'date': '2024-01-20T19:30:00Z'
+                    }
+                ],
+                'total_transactions': 45,
+                'period': 'last_30_days'
+            }
+        else:
+            return jsonify({'error': 'Invalid data type requested', 'status': 'error'}), 400
+
+        telemetry_logger.log_info(f"User financial data accessed for user {user_id}")
+
+        return jsonify({
+            'status': 'success',
+            'data_type': data_type,
+            'data': user_data
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_user_financial_data'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

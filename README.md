@@ -166,6 +166,41 @@ open http://localhost:3000  # admin/admin
 - `GET /enrichment/search/contacts` - Search contacts
 - `GET /enrichment/search/companies` - Search companies
 
+#### AI-Powered Financial Analysis
+- `POST /ai/financial-context` - Analyze financial context from transaction data
+- `GET /ai/financial-context/<analysis_id>` - Retrieve stored financial context analysis
+- `POST /ai/verify-identity` - Verify user identity with document/liveness checks
+- `GET /ai/verify-identity/<verification_id>` - Retrieve identity verification results
+- `POST /ai/know-your-agent` - Implement Know Your Agent (KYA) workflow
+- `POST /ai/agentic-commerce/pay-by-bank` - Enable pay-by-bank functionality
+- `POST /ai/agentic-commerce/fund-wallet` - Fund digital wallet from bank account
+- `GET /ai/agentic-commerce/transactions/<transaction_id>` - Retrieve agentic commerce transaction
+- `POST /ai/query` - Process natural language queries about financial data
+- `POST /ai/risk-assess` - Assess risk for financial transactions
+- `GET /ai/status` - Get AI service status and health metrics
+- `GET /ai/dashboard` - Get AI dashboard overview with usage statistics
+
+#### Machine Learning Financial Analysis
+- `POST /ml/anomalies` - Detect anomalies in financial data
+- `POST /ml/train` - Train ML models with financial data
+- `GET /ml/models` - List available ML models
+- `GET /ml/models/<model_id>` - Get details of specific ML model
+- `POST /ml/predict/<model_id>` - Make predictions using trained model
+- `POST /ml/models/<model_id>/evaluate` - Evaluate model performance
+- `GET /ml/models/<model_id>/features` - Get feature importance for model
+- `GET /ml/monitoring` - Get ML system monitoring data
+- `GET /ml/dashboard` - Get ML dashboard overview
+- `POST /ml/financial-context` - Analyze financial context from transaction data
+- `POST /ml/transaction-patterns` - Analyze transaction patterns for behavioral insights
+- `GET /ml/spending-insights` - Get personalized spending insights and recommendations
+- `POST /ml/cash-flow-analysis` - Analyze cash flow patterns and projections
+
+#### Financial Data Management
+- `POST /data/financial/transactions` - Create financial transaction records
+- `GET /data/financial/transactions` - Get financial transactions with filtering
+- `GET /data/financial/accounts` - Get account balance information
+- `GET /data/financial/user-data/<user_id>` - Get user-permissioned financial data
+
 ### Authentication
 Most endpoints require JWT authentication. Include the token in headers:
 ```

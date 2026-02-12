@@ -42,6 +42,7 @@ from src.mcp_integration import mcp_client
 from src.security_middleware import security_middleware, sanitize_request_data, audit_request
 from src.user_manager import user_manager
 from blueprints.ai import ai_bp
+from blueprints.ml import ml_bp
 from functools import wraps
 
 # Initialize cloud storage
