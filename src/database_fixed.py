@@ -840,6 +840,10 @@ class AsyncDatabaseManager:
 
     async def delete_asset(self, asset_id: int) -> bool:
         """Delete an asset"""
+        if self.is_sqlite:
+            # For SQLite, use sync manager
+            return db_manager.delete_asset(asset_id)
+
         try:
             async with self.get_session() as session:
                 query = select(DBAssetModel).where(DBAssetModel.id == asset_id)

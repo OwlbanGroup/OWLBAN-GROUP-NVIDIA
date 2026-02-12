@@ -1663,3 +1663,64 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-02-12 01:21:20,979 - slowapi - WARNING - ratelimit 1 per 1 minute (testclient) exceeded at endpoint: /ml/train
 2026-02-12 01:21:20,985 - httpx - INFO - HTTP Request: POST http://testserver/ml/train "HTTP/1.1 429 Too Many Requests"
 2026-02-12 01:21:21,004 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/export?limit=10&format=json "HTTP/1.1 200 OK"
+2026-02-12 01:33:51,374 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 01:33:51,376 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 01:33:55,199 - jpmorgan_api - WARNING - {"timestamp": "2026-02-12T06:33:55.199482+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 01:33:55,201 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 01:33:55,201 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 01:33:55,202 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 01:33:55,362 - telemetry_logger - INFO - Health check requested
+2026-02-12 01:33:55,368 - httpx - INFO - HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+2026-02-12 01:33:55,379 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 200 OK"
+2026-02-12 01:33:55,395 - httpx - INFO - HTTP Request: POST http://testserver/telemetry/batch "HTTP/1.1 200 OK"
+2026-02-12 01:33:55,405 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/metrics?hours=24 "HTTP/1.1 200 OK"
+2026-02-12 01:33:55,415 - httpx - INFO - HTTP Request: POST http://testserver/ml/anomalies "HTTP/1.1 200 OK"
+2026-02-12 01:33:55,422 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-02-12 01:34:11,318 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-02-12 01:34:11,323 - httpx - INFO - HTTP Request: POST http://testserver/ml/train "HTTP/1.1 200 OK"
+2026-02-12 01:34:11,336 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/export?limit=10&format=json "HTTP/1.1 200 OK"
+2026-02-12 01:34:11,348 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 422 Unprocessable Entity"
+2026-02-12 01:34:11,370 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 400 Bad Request"
+2026-02-12 01:34:11,383 - httpx - INFO - HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+2026-02-12 01:34:11,487 - httpx - INFO - HTTP Request: GET http://testserver/dashboard "HTTP/1.1 200 OK"
+2026-02-12 01:34:11,500 - httpx - INFO - HTTP Request: GET http://testserver/nonexistent "HTTP/1.1 404 Not Found"
+2026-02-12 01:34:11,568 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\bizle\AppData\Local\Programs\Python\Python312\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-02-12 01:34:11,831 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-02-12 01:34:12,094 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-02-12 01:34:12,392 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-02-12 01:34:12,617 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-02-12 01:34:12,827 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-02-12 01:34:12,831 - httpx - INFO - HTTP Request: GET http://testserver/user/profile "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,063 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,370 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,442 - httpx - INFO - HTTP Request: POST http://testserver/businesses "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,451 - httpx - INFO - HTTP Request: GET http://testserver/businesses/63 "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,469 - httpx - INFO - HTTP Request: PUT http://testserver/businesses/63 "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,483 - httpx - INFO - HTTP Request: DELETE http://testserver/businesses/63 "HTTP/1.1 200 OK"
+2026-02-12 01:34:13,724 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,000 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,010 - httpx - INFO - HTTP Request: POST http://testserver/businesses "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,027 - httpx - INFO - HTTP Request: POST http://testserver/assets "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,033 - httpx - INFO - HTTP Request: GET http://testserver/assets/48 "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,065 - httpx - INFO - HTTP Request: PUT http://testserver/assets/48 "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,075 - httpx - INFO - HTTP Request: DELETE http://testserver/assets/48 "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,100 - httpx - INFO - HTTP Request: DELETE http://testserver/businesses/63 "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,111 - slowapi - WARNING - ratelimit 5 per 1 minute (testclient) exceeded at endpoint: /user/register
+2026-02-12 01:34:14,117 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 429 Too Many Requests"
+2026-02-12 01:34:14,134 - httpx - INFO - HTTP Request: POST http://testserver/data/convert "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,147 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,187 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,378 - telemetry_logger - INFO - Health check requested
+2026-02-12 01:34:14,378 - httpx - INFO - HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,387 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,396 - httpx - INFO - HTTP Request: POST http://testserver/telemetry/batch "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,402 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/metrics?hours=24 "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,409 - httpx - INFO - HTTP Request: POST http://testserver/ml/anomalies "HTTP/1.1 200 OK"
+2026-02-12 01:34:14,412 - slowapi - WARNING - ratelimit 1 per 1 minute (testclient) exceeded at endpoint: /ml/train
+2026-02-12 01:34:14,420 - httpx - INFO - HTTP Request: POST http://testserver/ml/train "HTTP/1.1 429 Too Many Requests"
+2026-02-12 01:34:14,427 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/export?limit=10&format=json "HTTP/1.1 200 OK"
