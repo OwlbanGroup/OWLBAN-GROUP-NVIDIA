@@ -3,34 +3,26 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "alerts.yml"
 
 scrape_configs:
-  # Kong Gateway metrics
-  - job_name: 'kong-gateway'
+  # JPMorgan API Application metrics
+  - job_name: 'jpmorgan-api'
     static_configs:
-      - targets: ['kong:8001']
+      - targets: ['jpmorgan-api:8000']
     metrics_path: '/metrics'
     scrape_interval: 15s
 
-  # Flask API metrics
-  - job_name: 'jpmorgan-flask-api'
-    static_configs:
-      - targets: ['flask-api:5000']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
-
-  # PostgreSQL metrics (if using postgres_exporter)
+  # PostgreSQL metrics
   - job_name: 'postgres'
     static_configs:
-      - targets: ['postgres:9187']
+      - targets: ['postgres:5432']
     scrape_interval: 15s
 
-  # Redis metrics (if using redis_exporter)
+  # Redis metrics
   - job_name: 'redis'
     static_configs:
-      - targets: ['redis:9121']
+      - targets: ['redis:6379']
     scrape_interval: 15s
 
   # Node Exporter for system metrics
@@ -39,9 +31,8 @@ scrape_configs:
       - targets: ['node-exporter:9100']
     scrape_interval: 15s
 
-  # Kong Dev Portal metrics (if enabled)
-  - job_name: 'kong-portal'
+  # Prometheus itself
+  - job_name: 'prometheus'
     static_configs:
-      - targets: ['kong-portal:8004']
-    metrics_path: '/metrics'
+      - targets: ['localhost:9090']
     scrape_interval: 15s

@@ -1,32 +1,31 @@
 ﻿global:
   smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'alerts@jpmorgan-api.com'
-  smtp_auth_username: 'your-email@gmail.com'
-  smtp_auth_password: 'your-app-password'
+  smtp_from: 'alerts@jpmorgan.com'
+  smtp_auth_username: 'alerts@jpmorgan.com'
+  smtp_auth_password: 'your-smtp-password'
 
 route:
   group_by: ['alertname']
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 1h
-  receiver: 'email-alerts'
+  receiver: 'jpmorgan-team'
   routes:
   - match:
-      alertname: JPMorganAPIHighErrorRate
-    receiver: 'email-alerts'
-  - match:
-      alertname: JPMorganAPIDown
-    receiver: 'email-alerts'
+      severity: critical
+    receiver: 'jpmorgan-critical'
 
 receivers:
-- name: 'email-alerts'
+- name: 'jpmorgan-team'
   email_configs:
-  - to: 'admin@equityshieldadvocates.com'
+  - to: 'team@jpmorgan.com'
     send_resolved: true
 
-inhibit_rules:
-  - source_match:
-      severity: 'critical'
-    target_match:
-      severity: 'warning'
-    equal: ['alertname', 'instance']
+- name: 'jpmorgan-critical'
+  email_configs:
+  - to: 'critical@jpmorgan.com'
+    send_resolved: true
+  slack_configs:
+  - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    channel: '#alerts-critical'
+    send_resolved: true
