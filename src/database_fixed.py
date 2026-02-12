@@ -21,9 +21,19 @@ except ImportError:
     config = Config()
 
 # Import shared Base and models
-from src.models.base import Base
-from src.models.audit_log import AuditLogModel
-from src.models.revenue import RevenueTransaction, RevenueMetrics
+from src.models.base import Base  # Use shared Base to avoid registry conflicts
+
+# Try to import audit and revenue models, but don't fail if not available
+try:
+    from src.models.audit_log import AuditLogModel
+except ImportError:
+    AuditLogModel = None
+
+try:
+    from src.models.revenue import RevenueTransaction, RevenueMetrics
+except ImportError:
+    RevenueTransaction = None
+    RevenueMetrics = None
 
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""

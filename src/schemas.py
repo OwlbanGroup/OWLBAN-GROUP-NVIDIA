@@ -160,6 +160,26 @@ class BusinessResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_validator('contact_info', mode='before')
+    @classmethod
+    def parse_contact_info(cls, v):
+        """Parse contact_info from JSON string to dict"""
+        if isinstance(v, str):
+            import json
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return v
+
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def format_datetime(cls, v):
+        """Format datetime objects to ISO strings"""
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+
 
 class AssetCreate(BaseModel):
     """Schema for creating a new asset"""

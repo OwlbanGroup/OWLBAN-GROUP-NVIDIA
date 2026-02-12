@@ -9,7 +9,8 @@ from typing import Dict, Any, Optional
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+# Use shared Base to avoid registry conflicts
+from .base import Base
 
 
 class BatchStatus(str, Enum):

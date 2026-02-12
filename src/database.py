@@ -11,7 +11,8 @@ import os
 from datetime import datetime, timezone
 from config import config
 
-Base = declarative_base()
+# Use shared Base to avoid registry conflicts
+from .models.base import Base
 
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
