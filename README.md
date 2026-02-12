@@ -180,6 +180,28 @@ open http://localhost:3000  # admin/admin
 - `GET /ai/status` - Get AI service status and health metrics
 - `GET /ai/dashboard` - Get AI dashboard overview with usage statistics
 
+#### Personal Finance Management (PFM)
+- `POST /pfm/accounts/link` - Link financial accounts (Plaid-like functionality)
+- `GET /pfm/accounts` - Get all linked accounts with balances
+- `GET /pfm/accounts/<account_id>` - Get detailed account information
+- `POST /pfm/accounts/sync` - Sync account balances and transactions
+- `POST /pfm/budgets` - Create spending budgets
+- `GET /pfm/budgets` - List all budgets with progress
+- `PUT /pfm/budgets/<budget_id>` - Update budget settings
+- `GET /pfm/budgets/<budget_id>/progress` - Get detailed budget progress
+- `POST /pfm/goals` - Create financial goals
+- `GET /pfm/goals` - List all financial goals
+- `POST /pfm/goals/<goal_id>/contribute` - Add contributions to goals
+- `GET /pfm/insights/spending` - Get personalized spending insights
+- `GET /pfm/insights/trends` - Get spending trends over time
+- `GET /pfm/health/score` - Calculate financial health score
+- `GET /pfm/recommendations` - Get personalized financial recommendations
+- `POST /pfm/notifications` - Create custom financial notifications
+- `GET /pfm/notifications` - List all notifications
+- `POST /pfm/alerts/trigger` - Trigger financial alerts
+- `GET /pfm/dashboard` - Get comprehensive PFM dashboard
+- `GET /pfm/summary` - Get quick financial summary
+
 #### Machine Learning Financial Analysis
 - `POST /ml/anomalies` - Detect anomalies in financial data
 - `POST /ml/train` - Train ML models with financial data

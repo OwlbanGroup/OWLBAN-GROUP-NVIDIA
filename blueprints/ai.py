@@ -675,6 +675,132 @@ def assess_transaction_risk():
 
 
 # =============================================================================
+# MCP INTEGRATION ENDPOINTS
+# =============================================================================
+
+@ai_bp.route('/ai/analyze-repo/<owner>/<repo>', methods=['POST'])
+@token_auth_required
+@conditional_limit("5 per minute")
+def analyze_repository(owner, repo):
+    """
+    Analyze GitHub repository using MCP integration and AI insights
+    Provides repository health analysis, issue trends, and development insights
+    """
+    try:
+        data = request.get_json() or {}
+        analysis_type = data.get('analysis_type', 'comprehensive')  # comprehensive, issues, activity
+        time_period_days = data.get('time_period_days', 30)
+
+        if not owner or not repo:
+            return jsonify({'error': 'Owner and repository name are required', 'status': 'error'}), 400
+
+        analysis_id = str(uuid.uuid4())
+
+        # Import MCP client
+        try:
+            from src.mcp_integration import mcp_client
+        except ImportError:
+            return jsonify({'error': 'MCP integration not available', 'status': 'error'}), 503
+
+        # Fetch repository data via MCP
+        try:
+            issues = mcp_client.list_issues(owner, repo, state='all', per_page=100)
+            repos = mcp_client.list_repositories(f"{owner}/{repo}", per_page=1)
+            repo_data = repos[0] if repos else {}
+        except Exception as e:
+            telemetry_logger.log_error(e, {'context': 'mcp_data_fetch'})
+            return jsonify({'error': 'Failed to fetch repository data from MCP', 'status': 'error'}), 502
+
+        # AI Analysis
+        analysis_result = {
+            'analysis_id': analysis_id,
+            'repository': f"{owner}/{repo}",
+            'analysis_type': analysis_type,
+            'time_period_days': time_period_days,
+            'repository_info': {
+                'name': repo_data.get('name', repo),
+                'full_name': repo_data.get('full_name', f"{owner}/{repo}"),
+                'description': repo_data.get('description', 'No description available'),
+                'stars': repo_data.get('stargazers_count', 0),
+                'forks': repo_data.get('forks_count', 0),
+                'language': repo_data.get('language', 'Unknown')
+            }
+        }
+
+        if analysis_type in ['comprehensive', 'issues']:
+            # Issue analysis
+            total_issues = len(issues)
+            open_issues = len([i for i in issues if i.get('state') == 'open'])
+            closed_issues = total_issues - open_issues
+
+            # Categorize issues by keywords
+            bug_issues = len([i for i in issues if 'bug' in i.get('title', '').lower() or 'fix' in i.get('title', '').lower()])
+            feature_issues = len([i for i in issues if 'feature' in i.get('title', '').lower() or 'enhancement' in i.get('title', '').lower()])
+
+            # Sentiment analysis (simple keyword-based)
+            positive_keywords = ['good', 'great', 'excellent', 'awesome', 'love']
+            negative_keywords = ['bad', 'broken', 'error', 'fail', 'hate']
+
+            positive_mentions = sum(1 for i in issues if any(kw in i.get('title', '').lower() for kw in positive_keywords))
+            negative_mentions = sum(1 for i in issues if any(kw in i.get('title', '').lower() for kw in negative_keywords))
+
+            analysis_result['issues_analysis'] = {
+                'total_issues': total_issues,
+                'open_issues': open_issues,
+                'closed_issues': closed_issues,
+                'issue_categories': {
+                    'bugs': bug_issues,
+                    'features': feature_issues,
+                    'other': total_issues - bug_issues - feature_issues
+                },
+                'sentiment': {
+                    'positive_mentions': positive_mentions,
+                    'negative_mentions': negative_mentions,
+                    'neutral': total_issues - positive_mentions - negative_mentions
+                },
+                'health_score': min(100, max(0, 100 - (open_issues * 2) + (closed_issues * 0.5)))
+            }
+
+        if analysis_type in ['comprehensive', 'activity']:
+            # Activity analysis (mock for now - would analyze commit history, PRs, etc.)
+            analysis_result['activity_analysis'] = {
+                'recent_commits': 'Data not available via MCP',
+                'pull_requests': 'Data not available via MCP',
+                'contributors': repo_data.get('contributors_count', 'Unknown'),
+                'last_updated': repo_data.get('updated_at', 'Unknown'),
+                'activity_score': 75  # Mock score
+            }
+
+        # Overall insights
+        analysis_result['insights'] = [
+            f"Repository has {analysis_result.get('issues_analysis', {}).get('total_issues', 0)} total issues with {analysis_result.get('issues_analysis', {}).get('open_issues', 0)} currently open",
+            f"Issue health score: {analysis_result.get('issues_analysis', {}).get('health_score', 0)}/100",
+            f"Primary issue types: {max(analysis_result.get('issues_analysis', {}).get('issue_categories', {}), key=analysis_result.get('issues_analysis', {}).get('issue_categories', {}).get)}",
+            "Repository appears active with regular updates" if repo_data.get('updated_at') else "Repository activity data limited"
+        ]
+
+        analysis_result['recommendations'] = [
+            "Consider addressing high-priority bugs" if analysis_result.get('issues_analysis', {}).get('health_score', 100) < 70 else "Issue management is healthy",
+            "Increase community engagement" if repo_data.get('forks_count', 0) < 10 else "Good community engagement",
+            "Review negative feedback in issues" if analysis_result.get('issues_analysis', {}).get('sentiment', {}).get('negative_mentions', 0) > 5 else "Sentiment analysis shows positive trends"
+        ]
+
+        analysis_result['analyzed_at'] = datetime.now(timezone.utc).isoformat()
+
+        telemetry_logger.log_info(f"Repository analysis completed: {analysis_id}")
+
+        return jsonify({
+            'status': 'success',
+            'repository_analysis': analysis_result,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'analyze_repository'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
 # AI STATUS AND MONITORING ENDPOINTS
 # =============================================================================
 
