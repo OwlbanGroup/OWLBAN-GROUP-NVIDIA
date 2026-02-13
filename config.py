@@ -166,6 +166,27 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', '30'))
     JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', '7'))
 
+    # Rate Limiting Settings
+    RATE_LIMIT_ENABLED = os.getenv('RATE_LIMIT_ENABLED', 'true').lower() == 'true'
+    RATE_LIMIT_DEFAULT = os.getenv('RATE_LIMIT_DEFAULT', '100 per minute')
+    RATE_LIMIT_STORAGE_URL = os.getenv('RATE_LIMIT_STORAGE_URL', 'memory://')
+    RATE_LIMIT_STRATEGY = os.getenv('RATE_LIMIT_STRATEGY', 'fixed-window')  # fixed-window, moving-window, leaky-bucket
+    RATE_LIMIT_HEADERS_ENABLED = os.getenv('RATE_LIMIT_HEADERS_ENABLED', 'true').lower() == 'true'
+    # Per-endpoint rate limits
+    RATE_LIMIT_AUTH = os.getenv('RATE_LIMIT_AUTH', '5 per minute')
+    RATE_LIMIT_API = os.getenv('RATE_LIMIT_API', '100 per minute')
+    RATE_LIMIT_PAYMENTS = os.getenv('RATE_LIMIT_PAYMENTS', '50 per minute')
+    RATE_LIMIT_TELEMETRY = os.getenv('RATE_LIMIT_TELEMETRY', '200 per minute')
+    RATE_LIMIT_ADMIN = os.getenv('RATE_LIMIT_ADMIN', '20 per minute')
+
+    # Caching Settings
+    CACHE_ENABLED = os.getenv('CACHE_ENABLED', 'true').lower() == 'true'
+    CACHE_TYPE = os.getenv('CACHE_TYPE', 'simple')  # simple, redis, memcached
+    CACHE_DEFAULT_TIMEOUT = int(os.getenv('CACHE_DEFAULT_TIMEOUT', '300'))
+    CACHE_THRESHOLD = int(os.getenv('CACHE_THRESHOLD', '500'))
+    CACHE_REDIS_URL = os.getenv('CACHE_REDIS_URL', os.getenv('REDIS_URL'))
+    CACHE_KEY_PREFIX = os.getenv('CACHE_KEY_PREFIX', 'jpmorgan_api_')
+
     # CORS Settings - Restrict origins for security (no localhost in production)
     ALLOWED_ORIGINS_STR = os.getenv('ALLOWED_ORIGINS')
     if not ALLOWED_ORIGINS_STR:
