@@ -7,7 +7,6 @@
     "timezone": "UTC",
     "schemaVersion": 16,
     "version": 1,
-    "refresh": "30s",
     "templating": {
       "list": [
         {
