@@ -1,11 +1,10 @@
 [MASTER]
-init-hook='import sys; sys.path.insert(0, ".")'
+# Ensure pylint can import local `src` package by adding project root to sys.path.
+init-hook='import sys; sys.path.insert(0, r"C:\\Users\\bizle\\Desktop\\jpmorgan_financial_apis")'
 
 [MESSAGES CONTROL]
-disable=
-    import-error,
-    no-name-in-module,
-    wrong-import-position
+# Temporarily relax only the import-position warning while we refactor imports
+disable=wrong-import-position
 
 [TYPECHECK]
-ignored-modules=src
+ignored-modules=

@@ -1,36 +1,42 @@
+"""Main Flask application for handling telemetry data
+
+This module is intentionally large while features are consolidated here.
+Some top-level `except Exception` handlers are used to return 500 responses
+from Flask endpoints; they are intentional and documented below.
 """
-Main Flask application for handling telemetry data
-"""
-from flask import Flask, request, jsonify, render_template
+
+# pylint: disable=broad-exception-caught,line-too-long,too-many-lines
+
+# Standard library
+import json
+from datetime import datetime, timezone
+import os
+import asyncio
+import random
+import csv
+import io
+from functools import wraps
+import sys
+
+# Ensure project root is on sys.path so local `src` package resolves for linters and runtime
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Third-party
+from flask import Flask, request, jsonify
 from werkzeug.exceptions import BadRequest
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from flask_restx import Api
-import json
-from datetime import datetime, timezone
-from functools import lru_cache
 import redis
-import time
-import asyncio
 from prometheus_client import Counter, Histogram, generate_latest, Gauge
-import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Load version information
-def get_version():
-    """Get the current version from VERSION file"""
-    try:
-        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r') as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return '1.0.0'
-
-from config import config
+# Local application imports (after environment loaded)
+from config import config  # pylint: disable=wrong-import-position
 from src.telemetry_handler import telemetry_handler
 from src.logger import telemetry_logger
 from src.token_manager import TokenManager
@@ -39,15 +45,39 @@ from src.websocket_manager import websocket_manager
 from src.cloud_storage import cloud_storage_manager, setup_cloud_storage
 from src.data_format_converter import DataFormatConverter
 from src.mcp_integration import mcp_client
-from src.security_middleware import security_middleware, sanitize_request_data, audit_request
+from src.security_middleware import sanitize_request_data, audit_request
 from src.user_manager import user_manager
-from blueprints.ai import ai_bp
-from blueprints.ml import ml_bp
-from blueprints.payroll import payroll_bp
-from functools import wraps
+from src.data_conversion_handler import convert_data_format_logic
 
-# Initialize cloud storage
-setup_cloud_storage(config.get_all_settings())
+# Module-level Redis client placeholder (set later if configured)
+REDIS_CLIENT = None
+
+# Load version information
+def get_version():
+    """Get the current version from VERSION file"""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'VERSION'), 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return '1.0.0'
+
+
+# Build a safe configuration dictionary from `config` for libraries that expect a mapping
+def _config_to_dict(cfg):
+    try:
+        if hasattr(cfg, 'get_all_settings') and callable(cfg.get_all_settings):
+            return cfg.get_all_settings()
+    except Exception:
+        pass
+    keys = [
+        'SECRET_KEY', 'TOKEN_CLIENT_ID', 'TOKEN_CLIENT_SECRET', 'TOKEN_URL',
+        'TOKEN_SCOPE', 'REDIS_URL', 'LOG_LEVEL'
+    ]
+    return {k: getattr(cfg, k, None) for k in keys}
+
+# Initialize cloud storage with a safe settings dict
+_settings = _config_to_dict(config)
+setup_cloud_storage(_settings)
 
 # Prometheus metrics
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status_code'])
@@ -60,7 +90,7 @@ ANOMALY_DETECTIONS = Counter('anomaly_detections_total', 'Total anomaly detectio
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = config.SECRET_KEY
+app.secret_key = _settings.get('SECRET_KEY')
 CORS(app)
 
 # Register security middleware
@@ -114,28 +144,28 @@ TIER_LIMITS = {
 
 # Initialize token manager
 token_manager = TokenManager(
-    client_id=config.TOKEN_CLIENT_ID,
-    client_secret=config.TOKEN_CLIENT_SECRET,
-    token_url=config.TOKEN_URL,
-    scope=config.TOKEN_SCOPE
+    client_id=_settings.get('TOKEN_CLIENT_ID'),
+    client_secret=_settings.get('TOKEN_CLIENT_SECRET'),
+    token_url=_settings.get('TOKEN_URL'),
+    scope=_settings.get('TOKEN_SCOPE')
 )
 
 # Initialize Redis cache
-if config.REDIS_URL:
+if _settings.get('REDIS_URL'):
     try:
-        redis_client = redis.from_url(config.REDIS_URL, decode_responses=True)
+        REDIS_CLIENT = redis.from_url(_settings.get('REDIS_URL'), decode_responses=True)
     except Exception as e:
-        telemetry_logger.get_logger().warning(f"Failed to connect to Redis at {config.REDIS_URL}: {str(e)}. Using in-memory cache.")
-        redis_client = None
+        telemetry_logger.get_logger().warning("Failed to connect to Redis at %s: %s. Using in-memory cache.", _settings.get('REDIS_URL'), str(e))
+        REDIS_CLIENT = None
 else:
-    redis_client = None
+    REDIS_CLIENT = None
 
 def cache_result(key_prefix, expiration=300):
     """Decorator to cache function results in Redis with enhanced features"""
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            if redis_client is None:
+            if REDIS_CLIENT is None:
                 return f(*args, **kwargs)
 
             # Create a more robust cache key
@@ -144,20 +174,20 @@ def cache_result(key_prefix, expiration=300):
             cache_key = f"{key_prefix}:{hash(args_str + kwargs_str)}"
 
             try:
-                cached_result = redis_client.get(cache_key)
+                cached_result = REDIS_CLIENT.get(cache_key)
                 if cached_result:
                     # Update access time for LRU-style cache management
-                    redis_client.expire(cache_key, expiration)
+                    REDIS_CLIENT.expire(cache_key, expiration)
                     return json.loads(cached_result)
             except Exception as e:
-                telemetry_logger.get_logger().warning(f"Redis cache read error: {e}")
+                telemetry_logger.get_logger().warning("Redis cache read error: %s", str(e))
 
             result = f(*args, **kwargs)
 
             try:
-                redis_client.setex(cache_key, expiration, json.dumps(result, default=str))
+                REDIS_CLIENT.setex(cache_key, expiration, json.dumps(result, default=str))
             except Exception as e:
-                telemetry_logger.get_logger().warning(f"Redis cache write error: {e}")
+                telemetry_logger.get_logger().warning("Redis cache write error: %s", str(e))
 
             return result
         return wrapper
@@ -169,7 +199,7 @@ def cache_database_query(expiration=600):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            if redis_client is None:
+            if REDIS_CLIENT is None:
                 return f(*args, **kwargs)
 
             # Create cache key based on function name and parameters
@@ -179,9 +209,9 @@ def cache_database_query(expiration=600):
             cache_key = f"db_query:{func_name}:{args_hash}"
 
             try:
-                cached_result = redis_client.get(cache_key)
+                cached_result = REDIS_CLIENT.get(cache_key)
                 if cached_result:
-                    redis_client.expire(cache_key, expiration)
+                    REDIS_CLIENT.expire(cache_key, expiration)
                     return json.loads(cached_result)
             except Exception as e:
                 telemetry_logger.get_logger().warning(f"Database cache read error: {e}")
@@ -189,9 +219,9 @@ def cache_database_query(expiration=600):
             result = f(*args, **kwargs)
 
             try:
-                redis_client.setex(cache_key, expiration, json.dumps(result, default=str))
+                REDIS_CLIENT.setex(cache_key, expiration, json.dumps(result, default=str))
             except Exception as e:
-                telemetry_logger.get_logger().warning(f"Database cache write error: {e}")
+                telemetry_logger.get_logger().warning("Database cache write error: %s", str(e))
 
             return result
         return wrapper
@@ -200,16 +230,16 @@ def cache_database_query(expiration=600):
 
 def invalidate_cache_pattern(pattern):
     """Invalidate cache keys matching a pattern"""
-    if redis_client is None:
+    if REDIS_CLIENT is None:
         return
 
     try:
-        keys = redis_client.keys(pattern)
+        keys = REDIS_CLIENT.keys(pattern)
         if keys:
-            redis_client.delete(*keys)
-            telemetry_logger.get_logger().info(f"Invalidated {len(keys)} cache keys matching {pattern}")
+            REDIS_CLIENT.delete(*keys)
+            telemetry_logger.get_logger().info("Invalidated %d cache keys matching %s", len(keys), pattern)
     except Exception as e:
-        telemetry_logger.get_logger().warning(f"Cache invalidation error: {e}")
+        telemetry_logger.get_logger().warning("Cache invalidation error: %s", str(e))
 
 def require_auth(f):
     @wraps(f)
@@ -560,9 +590,6 @@ def export_telemetry():
                     'status': 'error'
                 }), 404
 
-            import csv
-            import io
-
             output = io.StringIO()
             fieldnames = events[0].keys()
             writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -706,92 +733,20 @@ def export_to_cloud_storage():
 @app.route('/data/convert', methods=['POST'])
 @limiter.limit("5 per minute")
 def convert_data_format():
-    """
-    Convert data between different formats
-
-    Expected JSON payload:
-    {
-        "data": [...],  // Data to convert
-        "from_format": "json",
-        "to_format": "csv",
-        "options": {...}  // Optional conversion options
-    }
-    """
     try:
-        request_data = request.get_json()
+        from src.data_conversion_handler import convert_data_format_logic
 
-        if not request_data or 'data' not in request_data:
-            return jsonify({
-                'error': 'No data provided for conversion',
-                'status': 'error'
-            }), 400
-
-        data = request_data['data']
-        from_format = request_data.get('from_format', 'json').lower()
-        to_format = request_data.get('to_format', 'json').lower()
-        options = request_data.get('options', {})
-
-        if not isinstance(data, list):
-            return jsonify({
-                'error': 'Data must be a list of records',
-                'status': 'error'
-            }), 400
-
-        if from_format not in DataFormatConverter.get_supported_import_formats():
-            return jsonify({
-                'error': f'Unsupported import format. Supported formats: {DataFormatConverter.get_supported_import_formats()}',
-                'status': 'error'
-            }), 400
-
-        if to_format not in DataFormatConverter.get_supported_formats():
-            return jsonify({
-                'error': f'Unsupported export format. Supported formats: {DataFormatConverter.get_supported_formats()}',
-                'status': 'error'
-            }), 400
-
-        # Convert from source format to internal representation
-        if from_format == 'json':
-            internal_data = data  # Already in correct format
-        elif from_format == 'csv':
-            internal_data = DataFormatConverter.convert_from_csv('\n'.join([','.join([str(v) for v in record.values()]) for record in data]))
-        elif from_format == 'xml':
-            xml_data = request_data.get('xml_data', '')
-            internal_data = DataFormatConverter.convert_from_xml(xml_data)
-        elif from_format == 'yaml':
-            yaml_data = request_data.get('yaml_data', '')
-            internal_data = DataFormatConverter.convert_from_yaml(yaml_data)
-        else:
-            return jsonify({
-                'error': f'Unsupported conversion from {from_format}',
-                'status': 'error'
-            }), 400
-
-        # Convert to target format
-        if to_format == 'json':
-            result = DataFormatConverter.convert_to_json(internal_data, pretty=options.get('pretty', True))
-            content_type = 'application/json'
-        elif to_format == 'csv':
-            result = DataFormatConverter.convert_to_csv(internal_data)
-            content_type = 'text/csv'
-        elif to_format == 'xml':
-            result = DataFormatConverter.convert_to_xml(internal_data)
-            content_type = 'application/xml'
-        elif to_format == 'yaml':
-            result = DataFormatConverter.convert_to_yaml(internal_data)
-            content_type = 'application/x-yaml'
-        elif to_format == 'excel':
-            result_bytes = DataFormatConverter.convert_to_excel(internal_data)
-            return result_bytes, 200, {'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
-        elif to_format == 'parquet':
-            result_bytes = DataFormatConverter.convert_to_parquet(internal_data)
-            return result_bytes, 200, {'Content-Type': 'application/octet-stream'}
-        else:
-            return jsonify({
-                'error': f'Unsupported conversion to {to_format}',
-                'status': 'error'
-            }), 400
-
-        return result, 200, {'Content-Type': content_type}
+        response = convert_data_format_logic(request.get_json())
+        # The helper returns either a Flask Response object or a tuple
+        if isinstance(response, tuple):
+            return response
+        return response
+    except Exception as exc:  # keep narrow refactorable in next pass
+        telemetry_logger.log_error(exc, {'context': 'convert_data_format'})
+        return jsonify({
+            'error': 'Internal server error',
+            'status': 'error'
+        }), 500
 
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'data_conversion_endpoint'})
@@ -1075,7 +1030,7 @@ def public_register():
         role = 'user'  # Default role for public registration
 
         # Create user
-        success, message = user_manager.create_user(username, password, email, role)
+        success, message = user_manager.create_user(username=username, password=password, email=email, role=role)
 
         if success:
             return jsonify({
@@ -1151,7 +1106,7 @@ def register():
         role = request_data.get('role', 'user')
 
         # Create user
-        success, message = user_manager.create_user(username, password, email, role)
+        success, message = user_manager.create_user(username=username, password=password, email=email, role=role)
 
         if success:
             return jsonify({
@@ -1318,9 +1273,6 @@ def get_jpmorgan_data():
     Requires Authorization header with Bearer token
     """
     try:
-        import random
-        from datetime import datetime
-
         # Generate mock live financial data
         # In production, this would fetch real data from JPMorgan APIs
         data = {
@@ -1422,11 +1374,11 @@ if __name__ == '__main__':
     telemetry_logger.get_logger().info("Starting Telemetry API Server")
 
     # Print configuration
-    telemetry_logger.get_logger().info(f"Configuration: {config.get_all_settings()}")
+    telemetry_logger.get_logger().info("Configuration: %s", _settings)
 
     # Run the application
     app.run(
         host='0.0.0.0',
         port=int(os.environ.get('FLASK_RUN_PORT', 5000)),
-        debug=config.LOG_LEVEL == 'DEBUG'
+        debug=_settings.get('LOG_LEVEL') == 'DEBUG'
     )
