@@ -1,8 +1,13 @@
 {
   "dashboard": {
+    "id": null,
+    "uid": "jpmorgan-financial-apis",
     "title": "JPMorgan Financial APIs - Production Monitoring",
     "tags": ["jpmorgan", "financial", "api", "monitoring", "production"],
     "timezone": "UTC",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
     "templating": {
       "list": [
         {
