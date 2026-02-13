@@ -484,18 +484,6 @@ async def receive_telemetry(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal server error"
             )
-    except Exception as e:
-        if 'JSON' in str(e) or 'json' in str(e).lower():
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid JSON format"
-            )
-        else:
-            telemetry_logger.log_error(e, {'context': 'telemetry_endpoint'})
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
-            )
 
 @app.post("/telemetry/batch", response_model=TelemetryResponse)
 @limiter.limit("3/minute")
