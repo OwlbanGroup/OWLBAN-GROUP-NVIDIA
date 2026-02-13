@@ -43,6 +43,7 @@ from src.security_middleware import security_middleware, sanitize_request_data, 
 from src.user_manager import user_manager
 from blueprints.ai import ai_bp
 from blueprints.ml import ml_bp
+from blueprints.payroll import payroll_bp
 from functools import wraps
 
 # Initialize cloud storage

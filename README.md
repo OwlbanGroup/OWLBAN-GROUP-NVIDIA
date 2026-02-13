@@ -1,3 +1,45 @@
+# JPMorgan Financial APIs - Grafana Dashboard
+
+This folder contains `grafana_dashboard.json` — a Grafana dashboard JSON export for monitoring the JPMorgan Financial APIs.
+
+Status (automated checks):
+- JSON: validated
+- Basic lint: panels present, panel types present, no duplicate titles detected
+
+Quick actions
+
+- To import via Grafana UI: open Grafana → Dashboards → Manage → Import → upload `grafana_dashboard.json` or paste the JSON.
+
+- To import via Grafana HTTP API (requires an API key with `Admin` or `Editor` rights):
+
+  - Example curl (replace variables):
+
+```bash
+GRAFANA_URL="https://grafana.example.com"
+API_KEY="YOUR_GRAFANA_API_KEY"
+
+curl -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${API_KEY}" \
+     -X POST ${GRAFANA_URL}/api/dashboards/db \
+     -d '{"dashboard":'$(cat grafana_dashboard.json | jq -c .) ', "overwrite": true }'
+```
+
+  - PowerShell (Windows) example:
+
+```powershell
+$GrafanaUrl = 'https://grafana.example.com'
+$ApiKey = 'YOUR_GRAFANA_API_KEY'
+$body = @{ dashboard = (Get-Content -Raw grafana_dashboard.json | ConvertFrom-Json); overwrite = $true } | ConvertTo-Json -Depth 50
+Invoke-RestMethod -Method Post -Uri "$GrafanaUrl/api/dashboards/db" -Headers @{ Authorization = "Bearer $ApiKey"; "Content-Type" = "application/json" } -Body $body
+```
+
+Notes & next steps
+- If you want me to deploy this to a Grafana instance, provide the Grafana URL and an API key (or give me a temporary session to use). I will import and verify panels.
+- If you want panel edits or new queries, tell me which panels to change or provide updated Prometheus/metric names.
+
+Files:
+- `grafana_dashboard.json` — dashboard JSON
+- `README.md` — this file
 # JPMorgan Financial APIs - Enterprise-Grade API System
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
