@@ -1,23 +1,25 @@
 """
 FastAPI application for JPMorgan Financial APIs - Async Edition
 """
-import asyncio
 import json
 import os
 import secrets
 import sys
+import time
 from datetime import datetime, timezone
-from functools import wraps
+import csv
+import io
+from decimal import Decimal
 from typing import Optional, Dict, Any, List
 
-import numpy as np
 import redis.asyncio as redis
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from passlib.hash import bcrypt
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -25,18 +27,9 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-# JP Morgan Financial Dashboard Extensions
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import schedule
-import time
-from threading import Thread
-import requests
-from decimal import Decimal
-
 # Import sync scheduler for integrated data synchronization
 try:
-    from sync_scheduler import JPMorganSyncScheduler, create_scheduler
+    from sync_scheduler import create_scheduler
 except ImportError:
     # Fallback if sync_scheduler is not available
     create_scheduler = None
@@ -340,8 +333,6 @@ async def register_user(request: Request, user_data: UserRegisterRequest):
     Register a new user with username and password
     """
     try:
-        from passlib.hash import bcrypt
-
         if user_data.username in users:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -372,8 +363,6 @@ async def login_user(request: Request, login_data: UserLoginRequest):
     Login user and return a token
     """
     try:
-        from passlib.hash import bcrypt
-
         user = users.get(login_data.username)
         if not user or not bcrypt.verify(login_data.password, user['password']):
             raise HTTPException(
