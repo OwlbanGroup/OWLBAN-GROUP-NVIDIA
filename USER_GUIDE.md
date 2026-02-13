@@ -433,6 +433,178 @@ curl -X POST https://api.yourcompany.com/ml/train \
   }'
 ```
 
+## Personal Finance Management (PFM) - Phase 8 Advanced Features
+
+Phase 8 introduces advanced Personal Finance Management features including bill tracking, recurring transaction detection, investment tracking, and financial planning tools.
+
+### Bill Tracking and Payment Scheduling
+
+Track and schedule your bills for better financial management:
+
+```bash
+# Create a bill
+curl -X POST https://api.yourcompany.com/pfm/bills \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "name": "Internet Bill",
+    "amount": 80.00,
+    "due_date": "2024-12-31",
+    "category": "utilities",
+    "frequency": "monthly"
+  }'
+
+# Schedule automatic bill payment
+curl -X POST https://api.yourcompany.com/pfm/bills/schedule \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "bill_id": "bill_123",
+    "payment_date": "2024-12-25",
+    "payment_method": "bank_transfer",
+    "is_recurring": true
+  }'
+
+# Get all scheduled payments
+curl -X GET "https://api.yourcompany.com/pfm/bills/scheduled?user_id=user123" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Features:**
+- Track multiple bills with different frequencies (monthly, weekly, yearly)
+- Set up automatic payment scheduling
+- Get reminders before due dates
+- Categorize bills (utilities, rent, subscriptions, etc.)
+
+### Recurring Transaction Detection
+
+Automatically detect recurring transactions like subscriptions:
+
+```bash
+# Detect recurring transactions
+curl -X POST https://api.yourcompany.com/pfm/transactions/recurring/detect \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "min_occurrences": 2
+  }'
+
+# Get all recurring transactions
+curl -X GET "https://api.yourcompany.com/pfm/transactions/recurring?user_id=user123" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Features:**
+- Automatically detect subscription services
+- Identify regular payments (rent, insurance, etc.)
+- Calculate monthly and annual recurring expenses
+- Get insights into spending patterns
+
+### Investment Tracking
+
+Track your investment portfolio:
+
+```bash
+# Add an investment
+curl -X POST https://api.yourcompany.com/pfm/investments \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "name": "Apple Stock",
+    "type": "stock",
+    "symbol": "AAPL",
+    "shares": 10,
+    "purchase_price": 150.00,
+    "current_price": 175.50,
+    "purchase_date": "2024-01-15"
+  }'
+
+# Get all investments
+curl -X GET "https://api.yourcompany.com/pfm/investments?user_id=user123" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Features:**
+- Track multiple investment types (stocks, bonds, ETFs, crypto)
+- Calculate gains/losses automatically
+- View portfolio summary and allocation
+- Track performance over time
+
+### Financial Planning Tools
+
+#### Retirement Planning
+
+```bash
+# Calculate retirement savings plan
+curl -X POST https://api.yourcompany.com/pfm/planning/retirement \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "current_age": 30,
+    "retirement_age": 65,
+    "current_savings": 50000,
+    "monthly_contribution": 1000,
+    "expected_return": 0.07,
+    "desired_income_annual": 60000
+  }'
+```
+
+#### Debt Payoff Planning
+
+```bash
+# Calculate debt payoff strategy
+curl -X POST https://api.yourcompany.com/pfm/planning/debt-payoff \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "debts": [
+      {"name": "Credit Card", "balance": 5000, "interest_rate": 19.99, "minimum_payment": 100},
+      {"name": "Car Loan", "balance": 15000, "interest_rate": 6.5, "minimum_payment": 350}
+    ],
+    "monthly_budget": 600,
+    "strategy": "avalanche"
+  }'
+```
+
+#### Savings Goal Planning
+
+```bash
+# Calculate savings goal timeline
+curl -X POST https://api.yourcompany.com/pfm/planning/savings-goal \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "goal_name": "Emergency Fund",
+    "target_amount": 10000,
+    "current_savings": 2500,
+    "monthly_contribution": 500,
+    "expected_return": 0.04
+  }'
+```
+
+### PFM API Endpoints Summary
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/pfm/bills` | Create a bill | Yes |
+| GET | `/pfm/bills` | Get all bills | Yes |
+| POST | `/pfm/bills/schedule` | Schedule payment | Yes |
+| GET | `/pfm/bills/scheduled` | Get scheduled payments | Yes |
+| POST | `/pfm/transactions/recurring/detect` | Detect recurring | Yes |
+| GET | `/pfm/transactions/recurring` | Get recurring transactions | Yes |
+| POST | `/pfm/investments` | Add investment | Yes |
+| GET | `/pfm/investments` | Get investments | Yes |
+| POST | `/pfm/planning/retirement` | Retirement plan | Yes |
+| POST | `/pfm/planning/debt-payoff` | Debt payoff plan | Yes |
+| POST | `/pfm/planning/savings-goal` | Savings goal plan | Yes |
+
 ## Monitoring & Metrics
 
 ### Health Checks

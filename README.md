@@ -202,6 +202,29 @@ open http://localhost:3000  # admin/admin
 - `GET /pfm/dashboard` - Get comprehensive PFM dashboard
 - `GET /pfm/summary` - Get quick financial summary
 
+#### Phase 8: Advanced Features (PFM)
+##### Bill Tracking and Payment Scheduling
+- `POST /pfm/bills` - Create a bill for tracking
+- `GET /pfm/bills` - Get all bills for a user
+- `POST /pfm/bills/<bill_id>/pay` - Mark a bill as paid
+- `POST /pfm/bills/schedule` - Schedule automatic bill payments
+- `GET /pfm/bills/scheduled` - Get all scheduled bill payments
+
+##### Recurring Transaction Detection
+- `POST /pfm/transactions/categorize` - Categorize transactions
+- `GET /pfm/transactions` - Get categorized transactions
+- `POST /pfm/transactions/recurring/detect` - Detect recurring transactions
+- `GET /pfm/transactions/recurring` - Get detected recurring transactions
+
+##### Investment Tracking
+- `POST /pfm/investments` - Add an investment to track
+- `GET /pfm/investments` - Get all investments for a user
+
+##### Financial Planning Tools
+- `POST /pfm/planning/retirement` - Calculate retirement savings plan
+- `POST /pfm/planning/debt-payoff` - Calculate debt payoff strategy
+- `POST /pfm/planning/savings-goal` - Calculate savings goal timeline
+
 #### Machine Learning Financial Analysis
 - `POST /ml/anomalies` - Detect anomalies in financial data
 - `POST /ml/train` - Train ML models with financial data
