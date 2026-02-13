@@ -150,7 +150,7 @@ def calculate_budget_spent(user_id: str, budget_category: str, start_date: str =
 # ACCOUNT LINKING AND AGGREGATION ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/accounts/link', methods=['POST'])
+@pfm_bp.route('/accounts/link', methods=['POST'])
 @token_auth_required
 @conditional_limit("5 per minute")
 def link_financial_account():
@@ -231,7 +231,7 @@ def link_financial_account():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/accounts', methods=['GET'])
+@pfm_bp.route('/accounts', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_linked_accounts():
@@ -269,7 +269,7 @@ def get_linked_accounts():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/accounts/<account_id>', methods=['GET'])
+@pfm_bp.route('/accounts/<account_id>', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_account_details(account_id):
@@ -299,7 +299,7 @@ def get_account_details(account_id):
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/accounts/sync', methods=['POST'])
+@pfm_bp.route('/accounts/sync', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def sync_accounts():
@@ -344,7 +344,7 @@ def sync_accounts():
 # BUDGETING ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/budgets', methods=['POST'])
+@pfm_bp.route('/budgets', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def create_budget():
@@ -404,7 +404,7 @@ def create_budget():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/budgets', methods=['GET'])
+@pfm_bp.route('/budgets', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_budgets():
@@ -450,7 +450,7 @@ def get_budgets():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/budgets/<budget_id>', methods=['PUT'])
+@pfm_bp.route('/budgets/<budget_id>', methods=['PUT'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def update_budget(budget_id):
@@ -499,7 +499,7 @@ def update_budget(budget_id):
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/budgets/<budget_id>/progress', methods=['GET'])
+@pfm_bp.route('/budgets/<budget_id>/progress', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_budget_progress(budget_id):
@@ -560,7 +560,7 @@ def get_budget_progress(budget_id):
 # FINANCIAL GOALS ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/goals', methods=['POST'])
+@pfm_bp.route('/goals', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def create_financial_goal():
@@ -623,7 +623,7 @@ def create_financial_goal():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/goals', methods=['GET'])
+@pfm_bp.route('/goals', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_financial_goals():
@@ -668,7 +668,7 @@ def get_financial_goals():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/goals/<goal_id>/contribute', methods=['POST'])
+@pfm_bp.route('/goals/<goal_id>/contribute', methods=['POST'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def contribute_to_goal(goal_id):
@@ -732,7 +732,7 @@ def contribute_to_goal(goal_id):
 # SPENDING INSIGHTS AND ANALYTICS ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/insights/spending', methods=['GET'])
+@pfm_bp.route('/insights/spending', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_spending_insights():
@@ -790,7 +790,7 @@ def get_spending_insights():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/insights/trends', methods=['GET'])
+@pfm_bp.route('/insights/trends', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_spending_trends():
@@ -851,7 +851,7 @@ def get_spending_trends():
 # FINANCIAL HEALTH AND RECOMMENDATIONS ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/health/score', methods=['GET'])
+@pfm_bp.route('/health/score', methods=['GET'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def get_financial_health_score():
@@ -910,7 +910,7 @@ def get_financial_health_score():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/recommendations', methods=['GET'])
+@pfm_bp.route('/recommendations', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_personalized_recommendations():
@@ -1011,7 +1011,7 @@ def get_personalized_recommendations():
 # NOTIFICATIONS AND ALERTS ENDPOINTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/notifications', methods=['POST'])
+@pfm_bp.route('/notifications', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def create_notification():
@@ -1066,7 +1066,7 @@ def create_notification():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/notifications', methods=['GET'])
+@pfm_bp.route('/notifications', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_notifications():
@@ -1098,7 +1098,7 @@ def get_notifications():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/alerts/trigger', methods=['POST'])
+@pfm_bp.route('/alerts/trigger', methods=['POST'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def trigger_alert():
@@ -1146,7 +1146,7 @@ def trigger_alert():
 # PHASE 2: ACCOUNT MANAGEMENT FEATURES - TRANSACTION CATEGORIZATION
 # =============================================================================
 
-@pfm_bp.route('/pfm/transactions/categorize', methods=['POST'])
+@pfm_bp.route('/transactions/categorize', methods=['POST'])
 @token_auth_required
 @conditional_limit("30 per minute")
 def categorize_transactions():
@@ -1214,7 +1214,7 @@ def categorize_transactions():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/transactions', methods=['GET'])
+@pfm_bp.route('/transactions', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_transactions():
@@ -1274,7 +1274,7 @@ def get_transactions():
 # PHASE 2: ACCOUNT BALANCE MONITORING WITH ALERTS
 # =============================================================================
 
-@pfm_bp.route('/pfm/accounts/monitor', methods=['POST'])
+@pfm_bp.route('/accounts/monitor', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def setup_balance_monitoring():
@@ -1335,7 +1335,7 @@ def setup_balance_monitoring():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/accounts/<account_id>/alerts', methods=['GET'])
+@pfm_bp.route('/accounts/<account_id>/alerts', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_account_alerts(account_id):
@@ -1402,7 +1402,7 @@ def get_account_alerts(account_id):
 # PHASE 2: MULTI-INSTITUTION ACCOUNT AGGREGATION
 # =============================================================================
 
-@pfm_bp.route('/pfm/accounts/aggregate', methods=['GET'])
+@pfm_bp.route('/accounts/aggregate', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_account_aggregation():
@@ -1475,7 +1475,7 @@ def get_account_aggregation():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/transactions/insights', methods=['GET'])
+@pfm_bp.route('/transactions/insights', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_transaction_insights():
@@ -1547,7 +1547,7 @@ def get_transaction_insights():
 # PHASE 5: BILL TRACKING AND PAYMENT REMINDERS
 # =============================================================================
 
-@pfm_bp.route('/pfm/bills', methods=['POST'])
+@pfm_bp.route('/bills', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def create_bill():
@@ -1611,7 +1611,7 @@ def create_bill():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/bills', methods=['GET'])
+@pfm_bp.route('/bills', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_bills():
@@ -1675,7 +1675,7 @@ def get_bills():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/bills/<bill_id>/pay', methods=['POST'])
+@pfm_bp.route('/bills/<bill_id>/pay', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def mark_bill_paid(bill_id):
@@ -1733,7 +1733,7 @@ def mark_bill_paid(bill_id):
 # PHASE 5: AUTOMATIC ALERTS AND NOTIFICATIONS
 # =============================================================================
 
-@pfm_bp.route('/pfm/alerts/check', methods=['GET'])
+@pfm_bp.route('/alerts/check', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def check_all_alerts():
@@ -1947,7 +1947,7 @@ def check_account_balance_alerts(user_id: str) -> list:
 
 # --- Bill Tracking and Payment Scheduling ---
 
-@pfm_bp.route('/pfm/bills/schedule', methods=['POST'])
+@pfm_bp.route('/bills/schedule', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def schedule_bill_payment():
@@ -2008,7 +2008,7 @@ def schedule_bill_payment():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/bills/scheduled', methods=['GET'])
+@pfm_bp.route('/bills/scheduled', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_scheduled_payments():
@@ -2041,7 +2041,7 @@ def get_scheduled_payments():
 
 # --- Recurring Transaction Detection ---
 
-@pfm_bp.route('/pfm/transactions/recurring/detect', methods=['POST'])
+@pfm_bp.route('/transactions/recurring/detect', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def detect_recurring_transactions():
@@ -2112,7 +2112,7 @@ def detect_recurring_transactions():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/transactions/recurring', methods=['GET'])
+@pfm_bp.route('/transactions/recurring', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_recurring_transactions():
@@ -2149,7 +2149,7 @@ def get_recurring_transactions():
 
 # --- Investment Tracking ---
 
-@pfm_bp.route('/pfm/investments', methods=['POST'])
+@pfm_bp.route('/investments', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def add_investment():
@@ -2210,7 +2210,7 @@ def add_investment():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/investments', methods=['GET'])
+@pfm_bp.route('/investments', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_investments():
@@ -2265,7 +2265,7 @@ def get_investments():
 
 # --- Financial Planning Tools ---
 
-@pfm_bp.route('/pfm/planning/retirement', methods=['POST'])
+@pfm_bp.route('/planning/retirement', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def plan_retirement():
@@ -2355,7 +2355,7 @@ def plan_retirement():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/planning/debt-payoff', methods=['POST'])
+@pfm_bp.route('/planning/debt-payoff', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def plan_debt_payoff():
@@ -2467,7 +2467,7 @@ def plan_debt_payoff():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@pfm_bp.route('/pfm/planning/savings-goal', methods=['POST'])
+@pfm_bp.route('/planning/savings-goal', methods=['POST'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def plan_savings_goal():

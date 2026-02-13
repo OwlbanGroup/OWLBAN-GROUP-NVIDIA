@@ -60,7 +60,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "active_connections_final",
+            "expr": "active_connections_async",
             "legendFormat": "Active Connections"
           }
         ],
@@ -108,7 +108,7 @@
         "type": "timeseries",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total_final[5m])) by (method, endpoint)",
+            "expr": "sum(rate(http_requests_total_async[5m])) by (method, endpoint)",
             "legendFormat": "{{method}} {{endpoint}}"
           }
         ],
@@ -129,11 +129,11 @@
         "type": "timeseries",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_final_bucket[5m])) * 1000",
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_async_bucket[5m])) * 1000",
             "legendFormat": "95th percentile (ms)"
           },
           {
-            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_final_bucket[5m])) * 1000",
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_async_bucket[5m])) * 1000",
             "legendFormat": "50th percentile (ms)"
           }
         ],
@@ -154,7 +154,7 @@
         "type": "timeseries",
         "targets": [
           {
-            "expr": "sum(rate(errors_total_final[5m])) by (type, endpoint)",
+            "expr": "sum(rate(errors_total_async[5m])) by (type, endpoint)",
             "legendFormat": "{{type}} - {{endpoint}}"
           }
         ],
@@ -179,7 +179,7 @@
         "type": "timeseries",
         "targets": [
           {
-            "expr": "rate(telemetry_events_processed_total_final[5m])",
+            "expr": "rate(telemetry_events_processed_total_async[5m])",
             "legendFormat": "Events/sec"
           }
         ],
@@ -321,7 +321,7 @@
         "type": "heatmap",
         "targets": [
           {
-            "expr": "rate(telemetry_batch_size_final_bucket[5m])",
+            "expr": "rate(telemetry_batch_size_async_bucket[5m])",
             "legendFormat": "Batch size distribution"
           }
         ],
@@ -337,7 +337,7 @@
         "type": "piechart",
         "targets": [
           {
-            "expr": "sum(increase(http_requests_total_final[1h])) by (status_code)",
+            "expr": "sum(increase(http_requests_total_async[1h])) by (status_code)",
             "legendFormat": "{{status_code}}"
           }
         ],
@@ -353,7 +353,7 @@
         "type": "table",
         "targets": [
           {
-            "expr": "topk(10, sum(rate(http_requests_total_final[5m])) by (endpoint))",
+            "expr": "topk(10, sum(rate(http_requests_total_async[5m])) by (endpoint))",
             "legendFormat": "{{endpoint}}"
           }
         ],
@@ -374,7 +374,7 @@
         "type": "table",
         "targets": [
           {
-            "expr": "topk(10, sum(rate(errors_total_final[5m])) by (endpoint))",
+            "expr": "topk(10, sum(rate(errors_total_async[5m])) by (endpoint))",
             "legendFormat": "{{endpoint}}"
           }
         ],

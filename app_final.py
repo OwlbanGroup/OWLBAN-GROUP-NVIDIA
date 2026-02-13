@@ -37,13 +37,20 @@ from decimal import Decimal
 # Import sync scheduler for integrated data synchronization
 from sync_scheduler import JPMorganSyncScheduler, create_scheduler
 
+# Ensure project root is in sys.path before importing blueprints
+# This allows importing from blueprints.* modules both when run directly and via app_final.py
+_project_root = os.path.dirname(os.path.abspath(__file__))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 # Import PFM blueprint (will be registered after app creation)
 try:
     from blueprints.pfm import pfm_bp
     PFM_BLUEPRINT_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     pfm_bp = None
     PFM_BLUEPRINT_AVAILABLE = False
+    print(f"Warning: Could not import PFM blueprint: {e}")
 
 # Import Payments Blueprint
 try:
