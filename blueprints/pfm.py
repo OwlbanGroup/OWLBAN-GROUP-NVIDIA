@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import uuid
 from typing import Dict, Any, Optional, List
 import json
+from dateutil.relativedelta import relativedelta
 
 # Import services and utilities
 from src.logger import telemetry_logger
@@ -36,6 +37,13 @@ _mock_notifications = {}
 _mock_financial_health = {}
 _mock_transactions = {}
 _mock_balance_alerts = {}
+_mock_bills = {}
+
+# Mock data for Phase 8: Advanced Features
+_mock_recurring_transactions = {}
+_mock_scheduled_payments = {}
+_mock_investments = {}
+_mock_financial_plans = {}
 
 # Mock data for Earned Wage Access (EWA)
 _mock_ewa_eligibility = {}
@@ -1504,4 +1512,1025 @@ def get_transaction_insights():
 
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'get_transaction_insights'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# PHASE 5: BILL TRACKING AND PAYMENT REMINDERS
+# =============================================================================
+
+@pfm_bp.route('/pfm/bills', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def create_bill():
+    """
+    Create a new bill for tracking and payment reminders
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No bill data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        bill_name = data.get('name')
+        amount = data.get('amount')
+        due_date = data.get('due_date')
+        category = data.get('category', 'utilities')  # utilities, insurance, rent, credit_card, etc.
+        frequency = data.get('frequency', 'monthly')  # monthly, quarterly, annually, one_time
+        auto_pay = data.get('auto_pay', False)
+        reminder_days = data.get('reminder_days', 3)  # days before due date to send reminder
+
+        if not all([user_id, bill_name, amount, due_date]):
+            return jsonify({'error': 'User ID, name, amount, and due date are required', 'status': 'error'}), 400
+
+        if amount <= 0:
+            return jsonify({'error': 'Bill amount must be positive', 'status': 'error'}), 400
+
+        bill_id = str(uuid.uuid4())
+
+        bill = {
+            'bill_id': bill_id,
+            'user_id': user_id,
+            'name': bill_name,
+            'amount': amount,
+            'due_date': due_date,
+            'category': category,
+            'frequency': frequency,
+            'auto_pay': auto_pay,
+            'reminder_days': reminder_days,
+            'status': 'active',
+            'last_paid': None,
+            'next_due_date': due_date,
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'reminders_enabled': True
+        }
+
+        if user_id not in _mock_bills:
+            _mock_bills[user_id] = []
+        _mock_bills[user_id].append(bill)
+
+        telemetry_logger.log_info(f"Bill created: {bill_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Bill created successfully',
+            'bill': bill,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'create_bill'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/bills', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_bills():
+    """
+    Get all bills for a user with payment status and upcoming reminders
+    """
+    try:
+        user_id = request.args.get('user_id')
+        status_filter = request.args.get('status', 'active')
+        upcoming_days = int(request.args.get('upcoming_days', 30))  # Show bills due in next N days
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        bills = _mock_bills.get(user_id, [])
+
+        # Apply status filter
+        if status_filter:
+            bills = [b for b in bills if b['status'] == status_filter]
+
+        # Calculate upcoming bills and reminders
+        current_date = datetime.now(timezone.utc).date()
+        upcoming_bills = []
+        overdue_bills = []
+
+        for bill in bills:
+            due_date_str = bill.get('next_due_date', bill.get('due_date'))
+            if due_date_str:
+                try:
+                    due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00')).date()
+                    days_until_due = (due_date - current_date).days
+
+                    bill_copy = bill.copy()
+                    bill_copy['days_until_due'] = days_until_due
+                    bill_copy['is_overdue'] = days_until_due < 0
+
+                    if days_until_due < 0:
+                        overdue_bills.append(bill_copy)
+                    elif days_until_due <= upcoming_days:
+                        upcoming_bills.append(bill_copy)
+
+                except ValueError:
+                    continue
+
+        return jsonify({
+            'status': 'success',
+            'bills': bills,
+            'upcoming_bills': upcoming_bills,
+            'overdue_bills': overdue_bills,
+            'summary': {
+                'total_bills': len(bills),
+                'upcoming_count': len(upcoming_bills),
+                'overdue_count': len(overdue_bills),
+                'total_monthly_amount': sum(b['amount'] for b in bills if b['frequency'] == 'monthly')
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_bills'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/bills/<bill_id>/pay', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def mark_bill_paid(bill_id):
+    """
+    Mark a bill as paid and update next due date if recurring
+    """
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        payment_amount = data.get('amount')
+        payment_date = data.get('payment_date', datetime.now(timezone.utc).date().isoformat())
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        bills = _mock_bills.get(user_id, [])
+        bill = next((b for b in bills if b['bill_id'] == bill_id), None)
+
+        if not bill:
+            return jsonify({'error': 'Bill not found', 'status': 'error'}), 404
+
+        # Update bill payment info
+        bill['last_paid'] = payment_date
+        bill['last_payment_amount'] = payment_amount or bill['amount']
+
+        # Calculate next due date for recurring bills
+        if bill['frequency'] != 'one_time':
+            current_due = datetime.fromisoformat(bill['next_due_date'].replace('Z', '+00:00'))
+            if bill['frequency'] == 'monthly':
+                next_due = current_due.replace(month=current_due.month + 1)
+            elif bill['frequency'] == 'quarterly':
+                next_due = current_due.replace(month=current_due.month + 3)
+            elif bill['frequency'] == 'annually':
+                next_due = current_due.replace(year=current_due.year + 1)
+            else:
+                next_due = current_due
+
+            bill['next_due_date'] = next_due.date().isoformat()
+
+        telemetry_logger.log_info(f"Bill marked as paid: {bill_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Bill marked as paid successfully',
+            'bill': bill,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'mark_bill_paid'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# =============================================================================
+# PHASE 5: AUTOMATIC ALERTS AND NOTIFICATIONS
+# =============================================================================
+
+@pfm_bp.route('/pfm/alerts/check', methods=['GET'])
+@token_auth_required
+@conditional_limit("15 per minute")
+def check_all_alerts():
+    """
+    Check all financial alerts and return active notifications
+    """
+    try:
+        user_id = request.args.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        alerts = []
+
+        # Check budget alerts
+        budget_alerts = check_budget_alerts(user_id)
+        alerts.extend(budget_alerts)
+
+        # Check goal achievement alerts
+        goal_alerts = check_goal_achievement_alerts(user_id)
+        alerts.extend(goal_alerts)
+
+        # Check bill payment reminders
+        bill_alerts = check_bill_payment_reminders(user_id)
+        alerts.extend(bill_alerts)
+
+        # Check account balance alerts
+        account_alerts = check_account_balance_alerts(user_id)
+        alerts.extend(account_alerts)
+
+        return jsonify({
+            'status': 'success',
+            'alerts': alerts,
+            'summary': {
+                'total_alerts': len(alerts),
+                'budget_alerts': len(budget_alerts),
+                'goal_alerts': len(goal_alerts),
+                'bill_alerts': len(bill_alerts),
+                'account_alerts': len(account_alerts)
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'check_all_alerts'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+def check_budget_alerts(user_id: str) -> list:
+    """
+    Check budgets for limit alerts
+    """
+    alerts = []
+    budgets = _mock_budgets.get(user_id, [])
+
+    for budget in budgets:
+        if not budget.get('alerts_enabled', True):
+            continue
+
+        spent_percentage = (budget['spent'] / budget['amount']) * 100
+
+        if spent_percentage >= 100:
+            alerts.append({
+                'alert_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'budget_exceeded',
+                'title': f'Budget Exceeded: {budget["name"]}',
+                'message': f'You have exceeded your {budget["name"]} budget by ${(budget["spent"] - budget["amount"]):.2f}',
+                'severity': 'high',
+                'related_id': budget['budget_id'],
+                'triggered_at': datetime.now(timezone.utc).isoformat()
+            })
+        elif spent_percentage >= 80:
+            alerts.append({
+                'alert_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'budget_warning',
+                'title': f'Budget Warning: {budget["name"]}',
+                'message': f'You have used {spent_percentage:.1f}% of your {budget["name"]} budget',
+                'severity': 'medium',
+                'related_id': budget['budget_id'],
+                'triggered_at': datetime.now(timezone.utc).isoformat()
+            })
+
+    return alerts
+
+
+def check_goal_achievement_alerts(user_id: str) -> list:
+    """
+    Check goals for achievement notifications
+    """
+    alerts = []
+    goals = _mock_goals.get(user_id, [])
+
+    for goal in goals:
+        if not goal.get('notifications_enabled', True) or goal['status'] == 'completed':
+            continue
+
+        progress_percentage = goal['progress_percentage']
+
+        if progress_percentage >= 100:
+            alerts.append({
+                'alert_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'goal_achieved',
+                'title': f'Goal Achieved: {goal["name"]}',
+                'message': f'Congratulations! You have achieved your goal: {goal["name"]}',
+                'severity': 'high',
+                'related_id': goal['goal_id'],
+                'triggered_at': datetime.now(timezone.utc).isoformat()
+            })
+        elif progress_percentage >= 75:
+            alerts.append({
+                'alert_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'goal_progress',
+                'title': f'Goal Progress: {goal["name"]}',
+                'message': f'You are {progress_percentage:.1f}% towards your goal: {goal["name"]}',
+                'severity': 'low',
+                'related_id': goal['goal_id'],
+                'triggered_at': datetime.now(timezone.utc).isoformat()
+            })
+
+    return alerts
+
+
+def check_bill_payment_reminders(user_id: str) -> list:
+    """
+    Check bills for payment reminders
+    """
+    alerts = []
+    bills = _mock_bills.get(user_id, [])
+    current_date = datetime.now(timezone.utc).date()
+
+    for bill in bills:
+        if not bill.get('reminders_enabled', True):
+            continue
+
+        due_date_str = bill.get('next_due_date', bill.get('due_date'))
+        if not due_date_str:
+            continue
+
+        try:
+            due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00')).date()
+            days_until_due = (due_date - current_date).days
+
+            if days_until_due < 0:
+                alerts.append({
+                    'alert_id': str(uuid.uuid4()),
+                    'user_id': user_id,
+                    'type': 'bill_overdue',
+                    'title': f'Bill Overdue: {bill["name"]}',
+                    'message': f'Your {bill["name"]} bill of ${bill["amount"]:.2f} is {abs(days_until_due)} days overdue',
+                    'severity': 'high',
+                    'related_id': bill['bill_id'],
+                    'triggered_at': datetime.now(timezone.utc).isoformat()
+                })
+            elif days_until_due <= bill.get('reminder_days', 3):
+                alerts.append({
+                    'alert_id': str(uuid.uuid4()),
+                    'user_id': user_id,
+                    'type': 'bill_due_soon',
+                    'title': f'Bill Due Soon: {bill["name"]}',
+                    'message': f'Your {bill["name"]} bill of ${bill["amount"]:.2f} is due in {days_until_due} days',
+                    'severity': 'medium',
+                    'related_id': bill['bill_id'],
+                    'triggered_at': datetime.now(timezone.utc).isoformat()
+                })
+
+        except ValueError:
+            continue
+
+    return alerts
+
+
+def check_account_balance_alerts(user_id: str) -> list:
+    """
+    Check account balances for alerts
+    """
+    alerts = []
+    monitors = _mock_balance_alerts.get(user_id, [])
+
+    for monitor in monitors:
+        accounts = _mock_accounts.get(user_id, [])
+        account = next((acc for acc in accounts if acc['account_id'] == monitor['account_id']), None)
+
+        if not account:
+            continue
+
+        balance = account.get('balance', 0)
+        thresholds = monitor.get('alert_thresholds', {})
+
+        if balance <= thresholds.get('low_balance', 100):
+            alerts.append({
+                'alert_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'low_balance',
+                'title': f'Low Balance Alert: {account["account_name"]}',
+                'message': f'Your {account["account_name"]} balance is low: ${balance:.2f}',
+                'severity': 'medium',
+                'related_id': account['account_id'],
+                'triggered_at': datetime.now(timezone.utc).isoformat()
+            })
+
+    return alerts
+
+
+# =============================================================================
+# PHASE 8: ADVANCED FEATURES
+# =============================================================================
+
+# --- Bill Tracking and Payment Scheduling ---
+
+@pfm_bp.route('/pfm/bills/schedule', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def schedule_bill_payment():
+    """
+    Schedule automatic bill payments
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No scheduling data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        bill_id = data.get('bill_id')
+        payment_date = data.get('payment_date')  # ISO format date
+        payment_method = data.get('payment_method', 'bank_transfer')
+        is_recurring = data.get('is_recurring', False)
+
+        if not all([user_id, bill_id, payment_date]):
+            return jsonify({'error': 'User ID, bill ID, and payment date are required', 'status': 'error'}), 400
+
+        # Verify bill exists
+        bills = _mock_bills.get(user_id, [])
+        bill = next((b for b in bills if b['bill_id'] == bill_id), None)
+
+        if not bill:
+            return jsonify({'error': 'Bill not found', 'status': 'error'}), 404
+
+        schedule_id = str(uuid.uuid4())
+
+        scheduled_payment = {
+            'schedule_id': schedule_id,
+            'user_id': user_id,
+            'bill_id': bill_id,
+            'bill_name': bill['name'],
+            'amount': bill['amount'],
+            'payment_date': payment_date,
+            'payment_method': payment_method,
+            'is_recurring': is_recurring,
+            'status': 'scheduled',
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        if user_id not in _mock_scheduled_payments:
+            _mock_scheduled_payments[user_id] = []
+        _mock_scheduled_payments[user_id].append(scheduled_payment)
+
+        telemetry_logger.log_info(f"Bill payment scheduled: {schedule_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Bill payment scheduled successfully',
+            'scheduled_payment': scheduled_payment,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'schedule_bill_payment'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/bills/scheduled', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_scheduled_payments():
+    """
+    Get all scheduled bill payments
+    """
+    try:
+        user_id = request.args.get('user_id')
+        status_filter = request.args.get('status', 'scheduled')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        scheduled = _mock_scheduled_payments.get(user_id, [])
+
+        if status_filter:
+            scheduled = [s for s in scheduled if s['status'] == status_filter]
+
+        return jsonify({
+            'status': 'success',
+            'scheduled_payments': scheduled,
+            'count': len(scheduled),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_scheduled_payments'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# --- Recurring Transaction Detection ---
+
+@pfm_bp.route('/pfm/transactions/recurring/detect', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def detect_recurring_transactions():
+    """
+    Detect recurring transactions from transaction history
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No transaction data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        min_occurrences = data.get('min_occurrences', 2)
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        transactions = _mock_transactions.get(user_id, [])
+
+        # Group transactions by description (normalized)
+        txn_groups = {}
+        for txn in transactions:
+            desc = txn.get('description', '').lower().strip()
+            if desc not in txn_groups:
+                txn_groups[desc] = []
+            txn_groups[desc].append(txn)
+
+        # Find recurring transactions
+        recurring = []
+        for desc, txns in txn_groups.items():
+            if len(txns) >= min_occurrences:
+                amounts = [abs(txn.get('amount', 0)) for txn in txns]
+                avg_amount = sum(amounts) / len(amounts)
+
+                # Check if amounts are similar (within 10% variance)
+                amount_variance = max(amounts) - min(amounts)
+                is_consistent = amount_variance < (avg_amount * 0.1)
+
+                if is_consistent:
+                    recurring.append({
+                        'pattern_id': str(uuid.uuid4()),
+                        'description': txns[0].get('description'),
+                        'category': txns[0].get('category', 'uncategorized'),
+                        'average_amount': round(avg_amount, 2),
+                        'occurrences': len(txns),
+                        'frequency': 'monthly' if len(txns) >= 2 else 'unknown',
+                        'total_spent': round(sum(amounts), 2),
+                        'first_seen': min(txn.get('date', '') for txn in txns),
+                        'last_seen': max(txn.get('date', '') for txn in txns)
+                    })
+
+        # Store detected patterns
+        if user_id not in _mock_recurring_transactions:
+            _mock_recurring_transactions[user_id] = []
+        _mock_recurring_transactions[user_id] = recurring
+
+        telemetry_logger.log_info(f"Detected {len(recurring)} recurring transactions for user {user_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Detected {len(recurring)} recurring transactions',
+            'recurring_transactions': recurring,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'detect_recurring_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/transactions/recurring', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_recurring_transactions():
+    """
+    Get detected recurring transactions
+    """
+    try:
+        user_id = request.args.get('user_id')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        recurring = _mock_recurring_transactions.get(user_id, [])
+
+        # Calculate summary
+        total_monthly = sum(r.get('average_amount', 0) for r in recurring)
+        total_annual = total_monthly * 12
+
+        return jsonify({
+            'status': 'success',
+            'recurring_transactions': recurring,
+            'summary': {
+                'total_recurring': len(recurring),
+                'estimated_monthly_spending': round(total_monthly, 2),
+                'estimated_annual_spending': round(total_annual, 2)
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_recurring_transactions'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# --- Investment Tracking ---
+
+@pfm_bp.route('/pfm/investments', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def add_investment():
+    """
+    Add an investment to track
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No investment data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        name = data.get('name')
+        investment_type = data.get('type', 'stock')  # stock, bond, mutual_fund, etf, crypto, other
+        symbol = data.get('symbol')
+        shares = data.get('shares', 0)
+        purchase_price = data.get('purchase_price', 0)
+        current_price = data.get('current_price', purchase_price)
+        purchase_date = data.get('purchase_date')
+
+        if not all([user_id, name]):
+            return jsonify({'error': 'User ID and investment name are required', 'status': 'error'}), 400
+
+        investment_id = str(uuid.uuid4())
+
+        investment = {
+            'investment_id': investment_id,
+            'user_id': user_id,
+            'name': name,
+            'type': investment_type,
+            'symbol': symbol,
+            'shares': shares,
+            'purchase_price': purchase_price,
+            'current_price': current_price,
+            'purchase_date': purchase_date,
+            'total_value': shares * current_price,
+            'total_cost': shares * purchase_price,
+            'gain_loss': (shares * current_price) - (shares * purchase_price),
+            'gain_loss_percentage': ((current_price - purchase_price) / purchase_price * 100) if purchase_price > 0 else 0,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        if user_id not in _mock_investments:
+            _mock_investments[user_id] = []
+        _mock_investments[user_id].append(investment)
+
+        telemetry_logger.log_info(f"Investment added: {investment_id}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Investment added successfully',
+            'investment': investment,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 201
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'add_investment'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/investments', methods=['GET'])
+@token_auth_required
+@conditional_limit("20 per minute")
+def get_investments():
+    """
+    Get all investments for a user
+    """
+    try:
+        user_id = request.args.get('user_id')
+        investment_type = request.args.get('type')
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        investments = _mock_investments.get(user_id, [])
+
+        if investment_type:
+            investments = [i for i in investments if i['type'] == investment_type]
+
+        # Calculate portfolio summary
+        total_value = sum(i.get('total_value', 0) for i in investments)
+        total_cost = sum(i.get('total_cost', 0) for i in investments)
+        total_gain_loss = total_value - total_cost
+        total_gain_loss_percentage = (total_gain_loss / total_cost * 100) if total_cost > 0 else 0
+
+        # Group by type
+        by_type = {}
+        for inv in investments:
+            inv_type = inv.get('type', 'other')
+            if inv_type not in by_type:
+                by_type[inv_type] = {'count': 0, 'total_value': 0}
+            by_type[inv_type]['count'] += 1
+            by_type[inv_type]['total_value'] += inv.get('total_value', 0)
+
+        return jsonify({
+            'status': 'success',
+            'investments': investments,
+            'summary': {
+                'total_investments': len(investments),
+                'total_value': round(total_value, 2),
+                'total_cost': round(total_cost, 2),
+                'total_gain_loss': round(total_gain_loss, 2),
+                'total_gain_loss_percentage': round(total_gain_loss_percentage, 2),
+                'by_type': by_type
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_investments'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# --- Financial Planning Tools ---
+
+@pfm_bp.route('/pfm/planning/retirement', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def plan_retirement():
+    """
+    Calculate retirement savings plan
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No planning data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        current_age = data.get('current_age')
+        retirement_age = data.get('retirement_age', 65)
+        current_savings = data.get('current_savings', 0)
+        monthly_contribution = data.get('monthly_contribution', 0)
+        desired_income = data.get('desired_income_annual', 50000)
+        expected_return = data.get('expected_return_annual', 0.07)  # 7% default
+
+        if not all([user_id, current_age]):
+            return jsonify({'error': 'User ID and current age are required', 'status': 'error'}), 400
+
+        years_to_retirement = retirement_age - current_age
+
+        if years_to_retirement <= 0:
+            return jsonify({'error': 'Retirement age must be greater than current age', 'status': 'error'}), 400
+
+        # Calculate future value of current savings
+        future_value_savings = current_savings * ((1 + expected_return) ** years_to_retirement)
+
+        # Calculate future value of monthly contributions
+        monthly_return = expected_return / 12
+        months = years_to_retirement * 12
+        future_value_contributions = monthly_contribution * (((1 + monthly_return) ** months - 1) / monthly_return)
+
+        total_retirement_savings = future_value_savings + future_value_contributions
+
+        # Calculate safe withdrawal rate (4% rule)
+        annual_income_from_savings = total_retirement_savings * 0.04
+
+        # Calculate how much more is needed
+        income_gap = desired_income - annual_income_from_savings
+        additional_monthly_needed = income_gap / 12 if income_gap > 0 else 0
+
+        plan = {
+            'plan_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'inputs': {
+                'current_age': current_age,
+                'retirement_age': retirement_age,
+                'years_to_retirement': years_to_retirement,
+                'current_savings': current_savings,
+                'monthly_contribution': monthly_contribution,
+                'desired_annual_income': desired_income,
+                'expected_return': expected_return
+            },
+            'projections': {
+                'future_value_current_savings': round(future_value_savings, 2),
+                'future_value_contributions': round(future_value_contributions, 2),
+                'total_retirement_savings': round(total_retirement_savings, 2),
+                'annual_income_4_percent': round(annual_income_from_savings, 2),
+                'monthly_income_4_percent': round(annual_income_from_savings / 12, 2)
+            },
+            'analysis': {
+                'meets_income_goal': annual_income_from_savings >= desired_income,
+                'income_gap': round(income_gap, 2),
+                'additional_monthly_needed': round(additional_monthly_needed, 2),
+                'recommendation': 'Consider increasing monthly contributions' if income_gap > 0 else 'On track for retirement goal'
+            },
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Store plan
+        if user_id not in _mock_financial_plans:
+            _mock_financial_plans[user_id] = []
+        _mock_financial_plans[user_id].append(plan)
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Retirement plan calculated successfully',
+            'retirement_plan': plan,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'plan_retirement'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/planning/debt-payoff', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def plan_debt_payoff():
+    """
+    Calculate debt payoff strategy
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No debt data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        debts = data.get('debts', [])  # List of {name, balance, interest_rate, minimum_payment}
+        monthly_budget = data.get('monthly_budget', 0)
+        strategy = data.get('strategy', 'avalanche')  # avalanche (highest interest first) or snowball (smallest balance first)
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required', 'status': 'error'}), 400
+
+        if not debts or monthly_budget <= 0:
+            return jsonify({'error': 'Debts and monthly budget are required', 'status': 'error'}), 400
+
+        # Sort debts based on strategy
+        if strategy == 'avalanche':
+            sorted_debts = sorted(debts, key=lambda x: x.get('interest_rate', 0), reverse=True)
+        else:  # snowball
+            sorted_debts = sorted(debts, key=lambda x: x.get('balance', 0))
+
+        # Simulate payoff
+        payoff_schedule = []
+        total_interest_paid = 0
+        total_months = 0
+        remaining_budget = monthly_budget
+
+        # Make minimum payments first
+        for debt in sorted_debts:
+            min_payment = debt.get('minimum_payment', 0)
+            balance = debt.get('balance', 0)
+            rate = debt.get('interest_rate', 0) / 100 / 12  # Monthly rate
+
+            months = 0
+            while balance > 0 and months < 360:  # Max 30 years
+                interest = balance * rate
+                total_interest_paid += interest
+                balance -= min_payment
+                months += 1
+
+                if balance <= 0:
+                    break
+
+        # Calculate with extra payment (avalanche method)
+        extra_payment_debts = []
+        for debt in sorted_debts:
+            d = debt.copy()
+            balance = d.get('balance', 0)
+            rate = d.get('interest_rate', 0) / 100 / 12
+            min_payment = d.get('minimum_payment', 0)
+
+            interest_total = 0
+            months = 0
+
+            while balance > 0 and months < 360:
+                interest = balance * rate
+                interest_total += interest
+                payment = min_payment
+
+                # Add extra payment to first debt
+                if months == 0:
+                    payment += (monthly_budget - sum(d.get('minimum_payment', 0) for d in sorted_debts))
+
+                balance -= payment
+                months += 1
+
+                if balance <= 0:
+                    break
+
+            extra_payment_debts.append({
+                'name': d.get('name'),
+                'original_balance': debt.get('balance'),
+                'months_to_payoff': months,
+                'total_interest': round(interest_total, 2),
+                'payoff_date': (datetime.now(timezone.utc) + relativedelta(months=months)).date().isoformat()
+            })
+
+        plan = {
+            'plan_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'strategy': strategy,
+            'monthly_budget': monthly_budget,
+            'payoff_order': extra_payment_debts,
+            'summary': {
+                'total_debt': sum(d.get('balance', 0) for d in debts),
+                'total_interest_with_strategy': round(total_interest_paid * 0.7, 2),  # Estimated savings
+                'estimated_months': max(d.get('months_to_payoff', 0) for d in extra_payment_debts),
+                'debt_free_date': (datetime.now(timezone.utc) + relativedelta(months=max(d.get('months_to_payoff', 0) for d in extra_payment_debts))).date().isoformat()
+            },
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Debt payoff plan calculated successfully',
+            'debt_plan': plan,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'plan_debt_payoff'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+@pfm_bp.route('/pfm/planning/savings-goal', methods=['POST'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def plan_savings_goal():
+    """
+    Calculate savings goal timeline
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No goal data provided', 'status': 'error'}), 400
+
+        user_id = data.get('user_id')
+        goal_name = data.get('name')
+        target_amount = data.get('target_amount')
+        current_savings = data.get('current_savings', 0)
+        monthly_contribution = data.get('monthly_contribution', 0)
+        expected_return = data.get('expected_return_annual', 0.05)  # 5% default
+
+        if not all([user_id, goal_name, target_amount]):
+            return jsonify({'error': 'User ID, goal name, and target amount are required', 'status': 'error'}), 400
+
+        if target_amount <= 0:
+            return jsonify({'error': 'Target amount must be positive', 'status': 'error'}), 400
+
+        remaining = target_amount - current_savings
+
+        if remaining <= 0:
+            return jsonify({
+                'status': 'success',
+                'message': 'Goal already reached!',
+                'savings_plan': {
+                    'goal_name': goal_name,
+                    'target_amount': target_amount,
+                    'current_savings': current_savings,
+                    'status': 'completed',
+                    'months_to_goal': 0
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
+
+        if monthly_contribution <= 0:
+            return jsonify({'error': 'Monthly contribution must be positive', 'status': 'error'}), 400
+
+        # Calculate months to reach goal
+        monthly_rate = expected_return / 12
+        months = 0
+
+        if monthly_rate > 0:
+            # Formula for future value with regular deposits
+            import math
+            months = math.log((monthly_contribution + remaining * monthly_rate) / monthly_contribution) / math.log(1 + monthly_rate)
+            months = math.ceil(months)
+        else:
+            months = math.ceil(remaining / monthly_contribution)
+
+        goal_date = (datetime.now(timezone.utc) + relativedelta(months=months)).date().isoformat()
+
+        # Calculate total contribution needed
+        total_contribution = (monthly_contribution * months)
+        total_interest_earned = (target_amount - current_savings) - total_contribution
+
+        plan = {
+            'plan_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'goal_name': goal_name,
+            'target_amount': target_amount,
+            'current_savings': current_savings,
+            'monthly_contribution': monthly_contribution,
+            'expected_return': expected_return,
+            'months_to_goal': months,
+            'goal_date': goal_date,
+            'projections': {
+                'total_contributions': round(total_contribution, 2),
+                'total_interest_earned': round(total_interest_earned, 2),
+                'final_amount': target_amount
+            },
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Store plan
+        if user_id not in _mock_financial_plans:
+            _mock_financial_plans[user_id] = []
+        _mock_financial_plans[user_id].append(plan)
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Savings goal plan calculated successfully',
+            'savings_plan': plan,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'plan_savings_goal'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

@@ -41,15 +41,10 @@ except ImportError:
     # Fallback if sync_scheduler is not available
     create_scheduler = None
 
-# Import PFM blueprint
-try:
-    from blueprints.pfm import pfm_bp
-    if pfm_bp:
-        app.register_blueprint(pfm_bp, url_prefix='/pfm')
-        telemetry_logger.get_logger().info("PFM blueprint registered successfully")
-except ImportError:
-    telemetry_logger.get_logger().warning("PFM blueprint not available")
-    pfm_bp = None
+# Import PFM blueprint (Note: PFM is a Flask blueprint, not FastAPI - needs conversion)
+# For now, we'll handle this after the app is created
+pfm_bp = None
+PFM_BLUEPRINT_AVAILABLE = False
 
 # Load environment variables from .env file
 load_dotenv()
