@@ -1924,3 +1924,28 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-02-12 18:43:59,715 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
 2026-02-12 18:43:59,716 - telemetry_logger - INFO - No GPU found, using CPU
 2026-02-12 18:43:59,716 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:00:00,501 - jpmorgan_api - WARNING - {"timestamp": "2026-02-13T01:00:00.501613+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 20:00:06,389 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 20:00:06,398 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 20:00:06,404 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:00:06,618 - telemetry_logger - WARNING - PFM blueprint not available
+2026-02-12 20:00:29,510 - jpmorgan_api - WARNING - {"timestamp": "2026-02-13T01:00:29.510292+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 20:00:30,542 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 20:00:30,544 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 20:00:30,546 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:00:30,600 - telemetry_logger - WARNING - PFM blueprint not available
+2026-02-12 20:07:05,827 - jpmorgan_api - WARNING - {"timestamp": "2026-02-13T01:07:05.827097+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 20:07:06,851 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 20:07:06,853 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 20:07:06,855 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:07:06,875 - telemetry_logger - WARNING - PFM blueprint not available
+2026-02-12 20:12:28,224 - jpmorgan_api - WARNING - {"timestamp": "2026-02-13T01:12:28.224334+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 20:12:30,564 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 20:12:30,565 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 20:12:30,566 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:12:30,601 - telemetry_logger - INFO - PFM blueprint registered successfully
+2026-02-12 20:22:09,352 - jpmorgan_api - WARNING - {"timestamp": "2026-02-13T01:22:09.352087+00:00", "level": "WARNING", "message": "Stripe secret key not configured - Stripe payments disabled", "logger": "jpmorgan_api"}
+2026-02-12 20:22:10,626 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-02-12 20:22:10,628 - telemetry_logger - INFO - No GPU found, using CPU
+2026-02-12 20:22:10,630 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-02-12 20:22:10,711 - telemetry_logger - INFO - PFM blueprint registered successfully

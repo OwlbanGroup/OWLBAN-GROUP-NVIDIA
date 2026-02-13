@@ -60,9 +60,6 @@ try:
 except ImportError:
     payroll_bp = None
     PAYROLL_BLUEPRINT_AVAILABLE = False
-except ImportError:
-    pfm_bp = None
-    PFM_BLUEPRINT_AVAILABLE = False
 
 # Load environment variables from .env file
 load_dotenv()
