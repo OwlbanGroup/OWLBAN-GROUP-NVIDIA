@@ -15,17 +15,8 @@ from dateutil.relativedelta import relativedelta
 from src.logger import telemetry_logger
 
 # Import authentication and rate limiting decorators
-try:
-    from src.auth import token_auth_required
-    from src.rate_limiting import conditional_limit
-except ImportError:
-    # Fallback if not found - these would need to be implemented
-    def token_auth_required(f):
-        return f
-    def conditional_limit(rate):
-        def decorator(f):
-            return f
-        return decorator
+from src.auth import token_auth_required
+from src.rate_limiting import conditional_limit
 
 pfm_bp = Blueprint('pfm', __name__)
 

@@ -45,6 +45,25 @@ except ImportError:
     pfm_bp = None
     PFM_BLUEPRINT_AVAILABLE = False
 
+# Import Payments Blueprint
+try:
+    from blueprints.payments import payments_bp
+    PAYMENTS_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    payments_bp = None
+    PAYMENTS_BLUEPRINT_AVAILABLE = False
+
+# Import Payroll Blueprint
+try:
+    from blueprints.payroll import payroll_bp
+    PAYROLL_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    payroll_bp = None
+    PAYROLL_BLUEPRINT_AVAILABLE = False
+except ImportError:
+    pfm_bp = None
+    PFM_BLUEPRINT_AVAILABLE = False
+
 # Load environment variables from .env file
 load_dotenv()
 

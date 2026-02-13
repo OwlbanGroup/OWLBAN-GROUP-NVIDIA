@@ -14,18 +14,8 @@ from src.logger import telemetry_logger
 from src.models.payments import PaymentType, PaymentStatus, PaymentMethod
 
 # Import authentication and rate limiting decorators
-# These need to be imported from wherever they are defined in the project
-try:
-    from src.auth import token_auth_required
-    from src.rate_limiting import conditional_limit
-except ImportError:
-    # Fallback if not found - these would need to be implemented
-    def token_auth_required(f):
-        return f
-    def conditional_limit(rate):
-        def decorator(f):
-            return f
-        return decorator
+from src.auth import token_auth_required
+from src.rate_limiting import conditional_limit
 
 payments_bp = Blueprint('payments', __name__)
 
