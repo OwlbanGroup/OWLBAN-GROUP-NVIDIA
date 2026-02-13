@@ -68,6 +68,54 @@ except ImportError:
     payroll_bp = None
     PAYROLL_BLUEPRINT_AVAILABLE = False
 
+# Import User Blueprint
+try:
+    from blueprints.user import user_bp
+    USER_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    user_bp = None
+    USER_BLUEPRINT_AVAILABLE = False
+
+# Import Asset Blueprint
+try:
+    from blueprints.asset import asset_bp
+    ASSET_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    asset_bp = None
+    ASSET_BLUEPRINT_AVAILABLE = False
+
+# Import Business Blueprint
+try:
+    from blueprints.business import business_bp
+    BUSINESS_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    business_bp = None
+    BUSINESS_BLUEPRINT_AVAILABLE = False
+
+# Import ML Blueprint
+try:
+    from blueprints.ml import ml_bp
+    ML_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    ml_bp = None
+    ML_BLUEPRINT_AVAILABLE = False
+
+# Import Data Blueprint
+try:
+    from blueprints.data import data_bp
+    DATA_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    data_bp = None
+    DATA_BLUEPRINT_AVAILABLE = False
+
+# Import AI Blueprint
+try:
+    from blueprints.ai import ai_bp
+    AI_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    ai_bp = None
+    AI_BLUEPRINT_AVAILABLE = False
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -1718,6 +1766,62 @@ if PFM_BLUEPRINT_AVAILABLE and pfm_bp:
     telemetry_logger.get_logger().info("PFM blueprint registered successfully")
 else:
     telemetry_logger.get_logger().warning("PFM blueprint not available")
+
+# Register Payments blueprint
+if PAYMENTS_BLUEPRINT_AVAILABLE and payments_bp:
+    app.register_blueprint(payments_bp, url_prefix='/payments')
+    telemetry_logger.get_logger().info("Payments blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Payments blueprint not available")
+
+# Register Payroll blueprint
+if PAYROLL_BLUEPRINT_AVAILABLE and payroll_bp:
+    app.register_blueprint(payroll_bp, url_prefix='/payroll')
+    telemetry_logger.get_logger().info("Payroll blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Payroll blueprint not available")
+
+# Register User blueprint
+if USER_BLUEPRINT_AVAILABLE and user_bp:
+    app.register_blueprint(user_bp, url_prefix='/user')
+    telemetry_logger.get_logger().info("User blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("User blueprint not available")
+
+# Register Asset blueprint
+if ASSET_BLUEPRINT_AVAILABLE and asset_bp:
+    app.register_blueprint(asset_bp, url_prefix='/asset')
+    telemetry_logger.get_logger().info("Asset blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Asset blueprint not available")
+
+# Register Business blueprint
+if BUSINESS_BLUEPRINT_AVAILABLE and business_bp:
+    app.register_blueprint(business_bp, url_prefix='/business')
+    telemetry_logger.get_logger().info("Business blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Business blueprint not available")
+
+# Register ML blueprint
+if ML_BLUEPRINT_AVAILABLE and ml_bp:
+    app.register_blueprint(ml_bp, url_prefix='/ml')
+    telemetry_logger.get_logger().info("ML blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("ML blueprint not available")
+
+# Register Data blueprint
+if DATA_BLUEPRINT_AVAILABLE and data_bp:
+    app.register_blueprint(data_bp, url_prefix='/data')
+    telemetry_logger.get_logger().info("Data blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Data blueprint not available")
+
+# Register AI blueprint
+if AI_BLUEPRINT_AVAILABLE and ai_bp:
+    app.register_blueprint(ai_bp, url_prefix='/ai')
+    telemetry_logger.get_logger().info("AI blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("AI blueprint not available")
 
 if __name__ == '__main__':
     # Log application startup
