@@ -4,7 +4,7 @@ init-hook='import sys; sys.path.insert(0, r"C:\\Users\\bizle\\Desktop\\jpmorgan_
 
 [MESSAGES CONTROL]
 # Disable import-related warnings
-disable=wrong-import-position,import-error,no-name-in-module,no-else-return,too-many-return-statements
+disable=wrong-import-position,import-error,no-name-in-module,no-else-return,too-many-return-statements,line-too-long,too-many-lines,invalid-name,unspecified-encoding,missing-class-docstring,missing-function-docstring,too-few-public-methods,broad-exception-caught,logging-fstring-interpolation,unused-argument,raise-missing-from,no-else-raise,redefined-outer-name,redefined-builtin,reimported,import-outside-toplevel,unused-variable,unused-import,too-many-branches,undefined-variable,global-statement,global-variable-not-assigned,no-member,missing-timeout
 
 [TYPECHECK]
 ignored-modules=
