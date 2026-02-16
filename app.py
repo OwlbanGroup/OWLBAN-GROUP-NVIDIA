@@ -48,7 +48,6 @@ from src.mcp_integration import mcp_client
 from src.security_middleware import sanitize_request_data, audit_request
 from src.user_manager import UserManager
 user_manager = UserManager()
-from src.data_conversion_handler import convert_data_format_logic
 
 # Module-level Redis client placeholder (set later if configured)
 REDIS_CLIENT = None
@@ -239,7 +238,7 @@ def cache_database_query(expiration=600):
                     REDIS_CLIENT.expire(cache_key, expiration)
                     return json.loads(cached_result)
             except Exception as e:
-                telemetry_logger.get_logger().warning(f"Database cache read error: {e}")
+                telemetry_logger.get_logger().warning("Database cache read error: %s", str(e))
 
             result = f(*args, **kwargs)
 
@@ -447,11 +446,11 @@ def get_telemetry_metrics():
                 'status': 'error'
             }), 400
 
-        metrics = telemetry_handler.get_metrics(hours)
+        telemetry_metrics_data = telemetry_handler.get_metrics(hours)
 
         return jsonify({
             'status': 'success',
-            'metrics': metrics,
+            'metrics': telemetry_metrics_data,
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
 
@@ -643,7 +642,7 @@ def metrics():
     return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found(_error):
     """Handle 404 errors"""
     return jsonify({
         'error': 'Endpoint not found',
@@ -651,9 +650,9 @@ def not_found(error):
     }), 404
 
 @app.errorhandler(500)
-def internal_error(error):
+def internal_error(_error):
     """Handle 500 errors"""
-    telemetry_logger.log_error(error, {'context': 'flask_error_handler'})
+    telemetry_logger.log_error(_error, {'context': 'flask_error_handler'})
     return jsonify({
         'error': 'Internal server error',
         'status': 'error'
@@ -758,6 +757,16 @@ def export_to_cloud_storage():
 @app.route('/data/convert', methods=['POST'])
 @limiter.limit("5 per minute")
 def convert_data_format():
+    """
+    Convert data between different formats
+    
+    Expected JSON payload:
+    {
+        "data": {...},
+        "input_format": "json",
+        "output_format": "csv"
+    }
+    """
     try:
         from src.data_conversion_handler import convert_data_format_logic
 
@@ -766,15 +775,8 @@ def convert_data_format():
         if isinstance(response, tuple):
             return response
         return response
-    except Exception as exc:  # keep narrow refactorable in next pass
-        telemetry_logger.log_error(exc, {'context': 'convert_data_format'})
-        return jsonify({
-            'error': 'Internal server error',
-            'status': 'error'
-        }), 500
-
     except Exception as e:
-        telemetry_logger.log_error(e, {'context': 'data_conversion_endpoint'})
+        telemetry_logger.log_error(e, {'context': 'convert_data_format'})
         return jsonify({
             'error': 'Internal server error',
             'status': 'error'
@@ -1280,11 +1282,29 @@ def index():
 def dashboard():
     """Serve the web dashboard"""
     try:
-        with open('dashboard.html', 'r', encoding='utf-8') as f:
+        with open('dashboard/index.html', 'r', encoding='utf-8') as f:
             return f.read(), 200, {'Content-Type': 'text/html'}
     except FileNotFoundError:
         return jsonify({
             'error': 'Dashboard file not found',
+            'status': 'error'
+        }), 404
+
+
+@app.route('/dashboard/<path:filename>', methods=['GET'])
+def dashboard_static(filename):
+    """Serve static files for the dashboard"""
+    import os
+    allowed_extensions = {'js': 'application/javascript', 'css': 'text/css', 'html': 'text/html', 'map': 'application/json'}
+    ext = os.path.splitext(filename)[1].lstrip('.')
+    content_type = allowed_extensions.get(ext, 'text/plain')
+    try:
+        filepath = os.path.join('dashboard', filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': content_type}
+    except FileNotFoundError:
+        return jsonify({
+            'error': 'File not found',
             'status': 'error'
         }), 404
 
