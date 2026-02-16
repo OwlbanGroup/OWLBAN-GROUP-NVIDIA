@@ -128,12 +128,36 @@ Talisman(app,
         referrer_policy='strict-origin-when-cross-origin'
 )
 
-# Initialize rate limiter with tiered access
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
-)
+# Initialize rate limiter with Redis-based distributed limiting for production
+# Use Redis storage for distributed rate limiting across multiple instances
+redis_url = _settings.get('REDIS_URL')
+if redis_url:
+    try:
+        # Test Redis connection for rate limiting
+        test_redis = redis.from_url(redis_url)
+        test_redis.ping()
+        limiter = Limiter(
+            app=app,
+            key_func=get_remote_address,
+            storage_uri=redis_url,
+            default_limits=["200 per day", "50 per hour"]
+        )
+        telemetry_logger.get_logger().info("Rate limiter initialized with Redis storage: %s", redis_url)
+    except Exception as e:
+        telemetry_logger.get_logger().warning("Failed to initialize Redis rate limiter: %s. Using in-memory storage.", str(e))
+        limiter = Limiter(
+            app=app,
+            key_func=get_remote_address,
+            default_limits=["200 per day", "50 per hour"]
+        )
+else:
+    # Fallback to in-memory storage if Redis not available
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"]
+    )
+    telemetry_logger.get_logger().warning("No REDIS_URL configured. Using in-memory rate limiting (not recommended for production).")
 
 # Rate limit tiers
 TIER_LIMITS = {

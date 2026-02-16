@@ -19,6 +19,18 @@ class Logger:
     def info(self, msg):
         self.logger.info(msg)
 
+    def log_info(self, msg, context=None):
+        """
+        Log an info message with optional context
+        
+        Args:
+            msg: The message to log
+            context: Optional dictionary with additional context
+        """
+        if context:
+            msg = f"{msg} | Context: {context}"
+        self.logger.info(msg)
+
     def error(self, msg):
         self.logger.error(msg)
 

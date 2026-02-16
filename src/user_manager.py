@@ -77,5 +77,75 @@ class UserManager:
             return user
 
 
-user_manager = UserManager()
+    @staticmethod
+    def authenticate_user(username: str, password: str):
+        """Authenticate user with username and password"""
+        success, user = UserManager.verify_user(username, password)
+        if success:
+            return True, None
+        return False, "Invalid username or password"
+
+    @staticmethod
+    def create_session_token(username: str):
+        """Create a new session token for user"""
+        token = secrets.token_urlsafe(32)
+        UserManager.update_token(username, token)
+        return token
+
+    @staticmethod
+    def get_user_info(username: str):
+        """Get user information"""
+        user = UserManager.get_user_by_username(username)
+        if user:
+            return {
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            }
+        return None
+
+    @staticmethod
+    def logout_user(token: str):
+        """Logout user by invalidating token"""
+        try:
+            with db_manager.get_session() as session:
+                user = session.query(User).filter_by(token=token).first()
+                if user:
+                    user.token = None
+                    user.token_created_at = None
+                    session.commit()
+                    return True
+                return False
+        except SQLAlchemyError:
+            return False
+
+    @staticmethod
+    def validate_session_token(token: str):
+        """Validate session token and return user info"""
+        user = UserManager.get_user_by_token(token)
+        if user:
+            return (True, {
+                'username': user.username,
+                'email': user.email,
+                'role': user.role
+            })
+        return (False, None)
+
+    @staticmethod
+    def list_users():
+        """List all users"""
+        with db_manager.get_session() as session:
+            users = session.query(User).all()
+            return [
+                {
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role,
+                    'created_at': user.created_at.isoformat() if user.created_at else None
+                }
+                for user in users
+            ]
+
+
 
