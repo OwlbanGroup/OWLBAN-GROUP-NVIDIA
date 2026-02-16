@@ -46,7 +46,8 @@ from src.cloud_storage import cloud_storage_manager, setup_cloud_storage
 from src.data_format_converter import DataFormatConverter
 from src.mcp_integration import mcp_client
 from src.security_middleware import sanitize_request_data, audit_request
-from src.user_manager import user_manager
+from src.user_manager import UserManager
+user_manager = UserManager()
 from src.data_conversion_handler import convert_data_format_logic
 
 # Module-level Redis client placeholder (set later if configured)

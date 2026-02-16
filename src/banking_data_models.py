@@ -3,7 +3,7 @@ Banking Data Models for JPMorgan Financial APIs
 Provides SQLAlchemy models for banking entities.
 """
 
-from sqlalchemy import Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -715,16 +715,6 @@ class PayrollRunModel(Base):
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
-
-
-# Add index imports at the end
-from sqlalchemy import Index
-
-# Create indexes for performance
-__table_args__ = (
-    Index('idx_transaction_account_date', 'account_id', 'created_at'),
-    Index('idx_transaction_user_date', 'user_id', 'created_at'),
-)
 
 
 # =============================================================================

@@ -89,7 +89,7 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.mypy]
-mypy_path = "$MYPY_CONFIG_FILE_DIR"
+mypy_path = "$MYPY_CONFIG_FILE_DIR:.."
 python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
