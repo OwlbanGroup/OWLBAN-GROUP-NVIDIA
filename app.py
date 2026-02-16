@@ -8,45 +8,49 @@ from Flask endpoints; they are intentional and documented below.
 # pylint: disable=broad-exception-caught,line-too-long,too-many-lines
 
 # Standard library
-import json
-from datetime import datetime, timezone
-import os
 import asyncio
-import random
 import csv
 import io
-from functools import wraps
+import json
+import os
+import random
 import sys
+from datetime import datetime, timezone
+from functools import wraps
 
 # Ensure project root is on sys.path so local `src` package resolves for linters and runtime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Third-party
-from flask import Flask, request, jsonify
-from werkzeug.exceptions import BadRequest
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_talisman import Talisman
 from flask_restx import Api
+from flask_talisman import Talisman
+from prometheus_client import Counter, Gauge, Histogram, generate_latest
+from werkzeug.exceptions import BadRequest
+
 import redis
-from prometheus_client import Counter, Histogram, generate_latest, Gauge
-from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
 # Local application imports (after environment loaded)
 from config import config  # pylint: disable=wrong-import-position
-from src.telemetry_handler import telemetry_handler
+
+from src.cloud_storage import cloud_storage_manager, setup_cloud_storage
+from src.data_conversion_handler import convert_data_format_logic
+from src.data_format_converter import DataFormatConverter
 from src.logger import telemetry_logger
+from src.mcp_integration import mcp_client
+from src.security_middleware import audit_request, sanitize_request_data
+from src.telemetry_handler import telemetry_handler
 from src.token_manager import TokenManager
+from src.user_manager import UserManager
 from src.validation import InputValidator, ValidationError
 from src.websocket_manager import websocket_manager
-from src.cloud_storage import cloud_storage_manager, setup_cloud_storage
-from src.data_format_converter import DataFormatConverter
-from src.mcp_integration import mcp_client
-from src.security_middleware import sanitize_request_data, audit_request
-from src.user_manager import UserManager
 user_manager = UserManager()
 
 # Module-level Redis client placeholder (set later if configured)
@@ -64,6 +68,14 @@ def get_version():
 
 # Build a safe configuration dictionary from `config` for libraries that expect a mapping
 def _config_to_dict(cfg):
+    """Convert config object to a dictionary for libraries that expect a mapping.
+    
+    Args:
+        cfg: The configuration object to convert.
+        
+    Returns:
+        A dictionary containing the configuration settings.
+    """
     try:
         if hasattr(cfg, 'get_all_settings') and callable(cfg.get_all_settings):
             return cfg.get_all_settings()
@@ -266,6 +278,14 @@ def invalidate_cache_pattern(pattern):
         telemetry_logger.get_logger().warning("Cache invalidation error: %s", str(e))
 
 def require_auth(f):
+    """Decorator to require authentication for endpoints.
+    
+    Args:
+        f: The function to be decorated.
+        
+    Returns:
+        The decorated function that checks for valid Bearer token.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Skip authentication in testing mode
@@ -768,8 +788,6 @@ def convert_data_format():
     }
     """
     try:
-        from src.data_conversion_handler import convert_data_format_logic
-
         response = convert_data_format_logic(request.get_json())
         # The helper returns either a Flask Response object or a tuple
         if isinstance(response, tuple):
@@ -1294,7 +1312,6 @@ def dashboard():
 @app.route('/dashboard/<path:filename>', methods=['GET'])
 def dashboard_static(filename):
     """Serve static files for the dashboard"""
-    import os
     allowed_extensions = {'js': 'application/javascript', 'css': 'text/css', 'html': 'text/html', 'map': 'application/json'}
     ext = os.path.splitext(filename)[1].lstrip('.')
     content_type = allowed_extensions.get(ext, 'text/plain')

@@ -1,6 +1,7 @@
 {
     "python.analysis.extraPaths": [
-        "${workspaceFolder}"
+        "${workspaceFolder}",
+        "${workspaceFolder}/src"
     ],
     "python.analysis.autoImportCompletions": true,
     "python.analysis.importMode": "preferStdlib",
