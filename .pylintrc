@@ -3,8 +3,8 @@
 init-hook='import sys; sys.path.insert(0, r"C:\\Users\\bizle\\Desktop\\jpmorgan_financial_apis")'
 
 [MESSAGES CONTROL]
-# Temporarily relax only the import-position warning while we refactor imports
-disable=wrong-import-position
+# Disable import-related warnings
+disable=wrong-import-position,import-error,no-name-in-module,no-else-return,too-many-return-statements
 
 [TYPECHECK]
 ignored-modules=

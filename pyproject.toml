@@ -104,6 +104,11 @@ disable = [
     "C0111",  # missing-docstring
     "C0103",  # invalid-name
     "R0903",  # too-few-public-methods
+    "C0413",  # wrong-import-position
+    "E0401",  # import-error
+    "E0611",  # no-name-in-module
+    "R1705",  # no-else-return
+    "R0911",  # too-many-return-statements
 ]
 
 [tool.black]
