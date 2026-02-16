@@ -74,7 +74,7 @@ services:
     build: .
     container_name: jpmorgan_app
     ports:
-      - "8000:8000"
+      - "5000:8000"
     environment:
       - FLASK_ENV=production
       - TESTING=0

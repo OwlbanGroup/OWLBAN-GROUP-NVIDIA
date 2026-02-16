@@ -1,25 +1,10 @@
 {
-    "black-formatter.cwd": "${workspaceFolder}",
-    "black-formatter.interpreter": ["./venv/Scripts/python.exe"],
-    "black-formatter.importStrategy": "useBundled",
-    "black-formatter.args": [],
-    "black-formatter.showNotifications": "off",
     "python.analysis.extraPaths": [
-        "${workspaceFolder}",
-        "${workspaceFolder}/src"
+        "${workspaceFolder}"
     ],
-    "python.autoComplete.extraPaths": [
-        "${workspaceFolder}",
-        "${workspaceFolder}/src"
-    ],
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportMissingImports": "none"
-    },
-    "pylint.args": [
-        "--init-hook",
-        "import sys; sys.path.append('.')"
-    ],
-    "mypy-type-checker.args": [
-        "--ignore-missing-imports"
-    ]
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.importMode": "preferStdlib",
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
+    "python.analysis.diagnosticsMode": "openFilesOnly",
+    "python.analysis.indexing": true
 }
