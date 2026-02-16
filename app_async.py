@@ -1034,60 +1034,38 @@ async def convert_data_format(
     }
     """
     try:
+        # Import the conversion logic function
+        from src.data_conversion_handler import convert_data_format_logic
+        
         request_data = await request.json()
-
-        if not request_data or 'data' not in request_data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No data provided for conversion"
+        
+        # Call the shared utility function
+        # The function returns Flask response tuple, we need to adapt it for FastAPI
+        flask_response = convert_data_format_logic(request_data)
+        
+        # Extract status code, headers, and body from Flask response
+        if isinstance(flask_response, tuple):
+            body, status, headers = flask_response
+            # If body is a Flask Response object
+            if hasattr(body, 'data'):
+                return Response(
+                    content=body.data,
+                    status_code=status,
+                    headers=headers
+                )
+            # If body is already a string
+            return Response(
+                content=body,
+                status_code=status,
+                headers=headers
             )
-
-        data = request_data['data']
-        from_format = request_data.get('from_format', 'json').lower()
-        to_format = request_data.get('to_format', 'json').lower()
-        options = request_data.get('options', {})
-
-        if not isinstance(data, list):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Data must be a list of records"
+        else:
+            # It's a Flask Response object
+            return Response(
+                content=flask_response.data,
+                status_code=flask_response.status_code,
+                headers=dict(flask_response.headers)
             )
-
-        # Basic format validation
-        supported_formats = ['json', 'csv', 'xml', 'yaml']
-        if from_format not in supported_formats:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported import format. Supported formats: {supported_formats}"
-            )
-
-        if to_format not in supported_formats:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported export format. Supported formats: {supported_formats}"
-            )
-
-        # For now, return the data as-is (would integrate with DataFormatConverter)
-        result = data
-        content_type = 'application/json'
-
-        if to_format == 'csv':
-            # Simple CSV conversion
-            if data:
-                import csv
-                import io
-                output = io.StringIO()
-                fieldnames = data[0].keys() if isinstance(data[0], dict) else ['value']
-                writer = csv.DictWriter(output, fieldnames=fieldnames)
-                writer.writeheader()
-                writer.writerows(data)
-                result = output.getvalue()
-                content_type = 'text/csv'
-
-        return Response(
-            content=result if isinstance(result, str) else json.dumps(result),
-            media_type=content_type
-        )
 
     except HTTPException:
         raise

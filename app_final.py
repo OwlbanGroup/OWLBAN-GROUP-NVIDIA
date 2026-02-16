@@ -15,11 +15,13 @@ from functools import wraps
 import numpy as np
 import redis
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, render_template
+from typing import Optional
+
+from flask import Flask, request, jsonify, render_template, g
 from flask_cors import CORS  # type: ignore
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_restx import Api  # type: ignore
+from flask_restx import Api, Blueprint  # type: ignore
 from flask_talisman import Talisman  # type: ignore
 from prometheus_client import Counter, Histogram, Gauge
 from werkzeug.exceptions import BadRequest
@@ -44,77 +46,85 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 # Import PFM blueprint (will be registered after app creation)
+pfm_bp: Optional[Blueprint] = None
+PFM_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.pfm import pfm_bp
     PFM_BLUEPRINT_AVAILABLE = True
 except ImportError as e:
-    pfm_bp = None
-    PFM_BLUEPRINT_AVAILABLE = False
     print(f"Warning: Could not import PFM blueprint: {e}")
 
 # Import Payments Blueprint
+payments_bp: Optional[Blueprint] = None
+PAYMENTS_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.payments import payments_bp
     PAYMENTS_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    payments_bp = None
-    PAYMENTS_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import Payroll Blueprint
+payroll_bp: Optional[Blueprint] = None
+PAYROLL_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.payroll import payroll_bp
     PAYROLL_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    payroll_bp = None
-    PAYROLL_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import User Blueprint
+user_bp: Optional[Blueprint] = None
+USER_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.user import user_bp
     USER_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    user_bp = None
-    USER_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import Asset Blueprint
+asset_bp: Optional[Blueprint] = None
+ASSET_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.asset import asset_bp
     ASSET_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    asset_bp = None
-    ASSET_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import Business Blueprint
+business_bp: Optional[Blueprint] = None
+BUSINESS_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.business import business_bp
     BUSINESS_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    business_bp = None
-    BUSINESS_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import ML Blueprint
+ml_bp: Optional[Blueprint] = None
+ML_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.ml import ml_bp
     ML_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    ml_bp = None
-    ML_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import Data Blueprint
+data_bp: Optional[Blueprint] = None
+DATA_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.data import data_bp
     DATA_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    data_bp = None
-    DATA_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Import AI Blueprint
+ai_bp: Optional[Blueprint] = None
+AI_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.ai import ai_bp
     AI_BLUEPRINT_AVAILABLE = True
 except ImportError:
-    ai_bp = None
-    AI_BLUEPRINT_AVAILABLE = False
+    pass
 
 # Load environment variables from .env file
 load_dotenv()
@@ -169,12 +179,14 @@ from src.token_manager import TokenManager  # type: ignore
 from src.validation import InputValidator, ValidationError  # type: ignore
 from src.cloud_storage import setup_cloud_storage  # type: ignore
 from src.data_format_converter import DataFormatConverter  # type: ignore
+from src.data_conversion_handler import convert_data_format_logic  # type: ignore
 from src.ml_model import AnomalyDetector  # type: ignore
 from src.database_fixed import db_manager, DBBusinessModel, DBAssetModel  # type: ignore
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 from src.ai_service import ai_service  # type: ignore
 from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
 from src.payments_service import payments_service  # type: ignore
+from src.sync_service import sync_service  # type: ignore
 
 # Initialize cloud storage
 setup_cloud_storage(config.get_all_settings())
@@ -662,61 +674,7 @@ def convert_data_format():
     """
     try:
         request_data = request.get_json()
-        if not request_data or 'data' not in request_data:
-            return jsonify({'error': 'No data provided for conversion', 'status': 'error'}), 400
-
-        data = request_data['data']
-        from_format = request_data.get('from_format', 'json').lower()
-        to_format = request_data.get('to_format', 'json').lower()
-        options = request_data.get('options', {})
-
-        if not isinstance(data, list):
-            return jsonify({'error': 'Data must be a list of records', 'status': 'error'}), 400
-
-        if from_format not in DataFormatConverter.get_supported_import_formats():
-            return jsonify({'error': f'Unsupported import format. Supported formats: {DataFormatConverter.get_supported_import_formats()}', 'status': 'error'}), 400
-
-        if to_format not in DataFormatConverter.get_supported_formats():
-            return jsonify({'error': f'Unsupported export format. Supported formats: {DataFormatConverter.get_supported_formats()}', 'status': 'error'}), 400
-
-        # Convert from source format to internal representation
-        if from_format == 'json':
-            internal_data = data
-        elif from_format == 'csv':
-            internal_data = DataFormatConverter.convert_from_csv('\n'.join([','.join([str(v) for v in record.values()]) for record in data]))
-        elif from_format == 'xml':
-            xml_data = request_data.get('xml_data', '')
-            internal_data = DataFormatConverter.convert_from_xml(xml_data)
-        elif from_format == 'yaml':
-            yaml_data = request_data.get('yaml_data', '')
-            internal_data = DataFormatConverter.convert_from_yaml(yaml_data)
-        else:
-            return jsonify({'error': f'Unsupported conversion from {from_format}', 'status': 'error'}), 400
-
-        # Convert to target format
-        if to_format == 'json':
-            result = DataFormatConverter.convert_to_json(internal_data, pretty=options.get('pretty', True))
-            content_type = 'application/json'
-        elif to_format == 'csv':
-            result = DataFormatConverter.convert_to_csv(internal_data)
-            content_type = 'text/csv'
-        elif to_format == 'xml':
-            result = DataFormatConverter.convert_to_xml(internal_data)
-            content_type = 'application/xml'
-        elif to_format == 'yaml':
-            result = DataFormatConverter.convert_to_yaml(internal_data)
-            content_type = 'application/x-yaml'
-        elif to_format == 'excel':
-            result_bytes = DataFormatConverter.convert_to_excel(internal_data)
-            return result_bytes, 200, {'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
-        elif to_format == 'parquet':
-            result_bytes = DataFormatConverter.convert_to_parquet(internal_data)
-            return result_bytes, 200, {'Content-Type': 'application/octet-stream'}
-        else:
-            return jsonify({'error': f'Unsupported conversion to {to_format}', 'status': 'error'}), 400
-
-        return result, 200, {'Content-Type': content_type}
-
+        return convert_data_format_logic(request_data)
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'data_conversion_endpoint'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500

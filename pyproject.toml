@@ -97,7 +97,7 @@ disallow_untyped_defs = false
 ignore_missing_imports = true
 
 [tool.pylint.MASTER]
-init-hook='import sys; sys.path.append(".")'
+init-hook='import sys; sys.path.insert(0, r"C:\\Users\\bizle\\Desktop\\jpmorgan_financial_apis")'
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
