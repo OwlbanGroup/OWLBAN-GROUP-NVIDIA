@@ -1,9 +1,11 @@
-# OWLBAN System Update TODO
+# E2E Perfection Execution TODO
 
-- [x] Add OWLBAN internal update endpoint(s) in `app.py`
-- [x] Ensure OWLBAN users are provisioned (`oscar.broome`, `david.leeper`) via `src/user_manager.py`
-- [x] Add OWLBAN status card/section in `dashboard/index.html`
-- [x] Integrate OWLBAN status fetch/render in `dashboard/dashboard.js`
-- [ ] Update internal documentation (`README.md`) with OWLBAN operational notes
-- [ ] Add/extend tests for OWLBAN endpoint and user provisioning
-- [ ] Run targeted tests and confirm pass
+- [x] Review core app contracts in `app.py` and `app_async.py`
+- [x] Review E2E harness in `comprehensive_e2e_test.py` and detect contract mismatches
+- [x] Review supporting runner in `test_runner.py`
+- [ ] Refactor `comprehensive_e2e_test.py` to align with FastAPI async app contracts and stable status codes
+- [ ] Run targeted comprehensive E2E test script and capture failures
+- [ ] Patch remaining mismatches in tests (and app only if truly defective)
+- [ ] Re-run until comprehensive E2E passes consistently
+- [ ] Run broader validation (`pytest`) for regression confidence
+- [ ] Finalize and report verified end-to-end readiness
