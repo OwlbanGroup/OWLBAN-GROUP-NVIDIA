@@ -40,7 +40,10 @@ services:
 
   # JPMorgan API Application
   jpmorgan-api:
-    image: ${APP_IMAGE:-owlbandocker/jpmorgan-financial-apis:latest}
+    image: ${APP_IMAGE:-jpmorgan-financial-apis:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       - FLASK_ENV=production
       - TESTING=0
