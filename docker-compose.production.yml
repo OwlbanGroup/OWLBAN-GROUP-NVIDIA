@@ -18,14 +18,6 @@ services:
     ports:
       - "127.0.0.1:5432:5432"  # Bind to localhost explicitly
     restart: unless-stopped
-    command: >
-      sh -c "
-        docker-entrypoint.sh postgres &
-        PID=$$!
-        sleep 5
-        psql -U postgres -c \"CREATE USER jpmorgan WITH PASSWORD '${DB_PASSWORD:-secure_password_123}';\" 2>/dev/null || psql -U postgres -c \"ALTER USER jpmorgan PASSWORD '${DB_PASSWORD:-secure_password_123}';\" 2>/dev/null || true
-        wait $$PID
-      "
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U jpmorgan -d jpmorgan_api"]
       interval: 30s
@@ -48,7 +40,7 @@ services:
 
   # JPMorgan API Application
   jpmorgan-api:
-    build: .
+    image: ${APP_IMAGE:-owlbandocker/jpmorgan-financial-apis:latest}
     environment:
       - FLASK_ENV=production
       - TESTING=0
@@ -119,21 +111,6 @@ services:
       - '--storage.path=/alertmanager'
     restart: unless-stopped
 
-  # Node Exporter for system metrics
-  node-exporter:
-    image: prom/node-exporter:latest
-    ports:
-      - "127.0.0.1:9100:9100"  # Bind to localhost explicitly
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    restart: unless-stopped
 
   # Grafana Dashboards
   grafana:
@@ -159,6 +136,7 @@ services:
       - ./ssl:/etc/letsencrypt
       - ./data/certbot:/var/www/html
     command: certonly --webroot --webroot-path=/var/www/html --email ${SSL_EMAIL:-admin@equityshieldadvocates.com} --agree-tos --no-eff-email -d ${DOMAIN:-api.equityshieldadvocates.com}
+    restart: unless-stopped
 
 
 volumes:
@@ -167,3 +145,4 @@ volumes:
   prometheus_data:
   alertmanager_data:
   grafana_data:
+

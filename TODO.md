@@ -1,10 +1,6 @@
-# Ops Hardening + Validation Closure TODO
+# TODO - Production Runnable Fixes
 
-- [x] Audit `PRODUCTION_DEPLOYMENT_RUNBOOK.md` for repo-accurate filenames/commands and remove placeholder drift
-- [ ] Normalize deployment references (`docker-compose.production.yml`, `app_async:app`, health endpoints, monitoring paths)
-- [ ] Add "Exhaustive Validation Evidence" section with executable command matrix + pass criteria
-- [ ] Add "Ops Hardening Closure Checklist" with verification-ready controls
-- [x] Align `jpmorgan_financial_apis/README.md` production/deployment instructions with runbook
-- [x] Align `jpmorgan_financial_apis/USER_GUIDE.md` operational guidance with runbook and validation evidence
-- [ ] Run feasible validation commands and record evidence snapshot in docs
-- [ ] Final review for consistency across runbook/README/user guide and mark closure
+- [x] Remove fragile custom PostgreSQL startup command from `docker-compose.production.yml`
+- [x] Disable Windows-incompatible `node-exporter` service mounts from `docker-compose.production.yml`
+- [x] Add/ensure `restart: unless-stopped` for `certbot`
+- [x] Validate final compose with `docker compose -f jpmorgan_financial_apis/docker-compose.production.yml config`
