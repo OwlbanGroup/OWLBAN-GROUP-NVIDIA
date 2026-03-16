@@ -1,11 +1,10 @@
-# E2E Perfection Execution TODO
+# Ops Hardening + Validation Closure TODO
 
-- [x] Review core app contracts in `app.py` and `app_async.py`
-- [x] Review E2E harness in `comprehensive_e2e_test.py` and detect contract mismatches
-- [x] Review supporting runner in `test_runner.py`
-- [x] Refactor `comprehensive_e2e_test.py` to align with FastAPI async app contracts and stable status codes
-- [x] Run targeted comprehensive E2E test script and capture failures
-- [x] Patch remaining mismatches in tests (and app only if truly defective)
-- [x] Re-run until comprehensive E2E passes consistently
-- [x] Run broader validation (`pytest`) for regression confidence
-- [x] Finalize and report verified end-to-end readiness
+- [x] Audit `PRODUCTION_DEPLOYMENT_RUNBOOK.md` for repo-accurate filenames/commands and remove placeholder drift
+- [ ] Normalize deployment references (`docker-compose.production.yml`, `app_async:app`, health endpoints, monitoring paths)
+- [ ] Add "Exhaustive Validation Evidence" section with executable command matrix + pass criteria
+- [ ] Add "Ops Hardening Closure Checklist" with verification-ready controls
+- [x] Align `jpmorgan_financial_apis/README.md` production/deployment instructions with runbook
+- [x] Align `jpmorgan_financial_apis/USER_GUIDE.md` operational guidance with runbook and validation evidence
+- [ ] Run feasible validation commands and record evidence snapshot in docs
+- [ ] Final review for consistency across runbook/README/user guide and mark closure
