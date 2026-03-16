@@ -5,14 +5,27 @@ Tests bill tracking and payment scheduling, recurring transaction detection,
 investment tracking, and financial planning tools
 """
 
+import os
 import requests
 import json
 import time
 from datetime import datetime, timedelta, timezone
 
 # Test configuration
-BASE_URL = "http://localhost:5000"
+BASE_URL = os.getenv("PHASE8_BASE_URL", "http://127.0.0.1:5000")
 TEST_USER_ID = "test_user_phase8"
+
+def request_with_retries(method, path, **kwargs):
+    """Request helper with short retry/backoff for server readiness and transient errors."""
+    url = f"{BASE_URL}{path}"
+    last_exc = None
+    for attempt in range(6):
+        try:
+            return requests.request(method, url, timeout=5, **kwargs)
+        except requests.RequestException as exc:
+            last_exc = exc
+            time.sleep(0.4 * (attempt + 1))
+    raise last_exc
 
 def test_bill_scheduling():
     """Test bill payment scheduling"""
@@ -28,7 +41,7 @@ def test_bill_scheduling():
         "frequency": "monthly"
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/bills", json=bill_data)
+    response = request_with_retries("POST", "/pfm/bills", json=bill_data)
     print(f"Create bill response: {response.status_code}")
     
     if response.status_code == 201:
@@ -45,14 +58,14 @@ def test_bill_scheduling():
             "is_recurring": True
         }
 
-        response = requests.post(f"{BASE_URL}/pfm/bills/schedule", json=schedule_data)
+        response = request_with_retries("POST", "/pfm/bills/schedule", json=schedule_data)
         print(f"Schedule payment response: {response.status_code}")
         if response.status_code == 201:
             scheduled = response.json()['scheduled_payment']
             print(f"Payment scheduled: {scheduled.get('schedule_id')}")
 
         # Get scheduled payments
-        response = requests.get(f"{BASE_URL}/pfm/bills/scheduled?user_id={TEST_USER_ID}")
+        response = request_with_retries("GET", f"/pfm/bills/scheduled?user_id={TEST_USER_ID}")
         print(f"Get scheduled payments response: {response.status_code}")
         if response.status_code == 200:
             scheduled_list = response.json()['scheduled_payments']
@@ -105,7 +118,7 @@ def test_recurring_transaction_detection():
     ]
 
     # Categorize transactions first
-    response = requests.post(f"{BASE_URL}/pfm/transactions/categorize", json={
+    response = request_with_retries("POST", "/pfm/transactions/categorize", json={
         "user_id": TEST_USER_ID,
         "transactions": transactions
     })
@@ -117,7 +130,7 @@ def test_recurring_transaction_detection():
         "min_occurrences": 2
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/transactions/recurring/detect", json=detect_data)
+    response = request_with_retries("POST", "/pfm/transactions/recurring/detect", json=detect_data)
     print(f"Detect recurring response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -127,7 +140,7 @@ def test_recurring_transaction_detection():
             print(f"  - {r.get('description')}: ${r.get('average_amount')}/month")
 
     # Get recurring transactions
-    response = requests.get(f"{BASE_URL}/pfm/transactions/recurring?user_id={TEST_USER_ID}")
+    response = request_with_retries("GET", f"/pfm/transactions/recurring?user_id={TEST_USER_ID}")
     print(f"Get recurring response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -152,7 +165,7 @@ def test_investment_tracking():
         "purchase_date": "2023-06-15"
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/investments", json=investment_data)
+    response = request_with_retries("POST", "/pfm/investments", json=investment_data)
     print(f"Add investment response: {response.status_code}")
     if response.status_code == 201:
         investment = response.json()['investment']
@@ -171,11 +184,11 @@ def test_investment_tracking():
         "purchase_date": "2023-01-10"
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/investments", json=investment_data2)
+    response = request_with_retries("POST", "/pfm/investments", json=investment_data2)
     print(f"Add investment 2 response: {response.status_code}")
 
     # Get all investments
-    response = requests.get(f"{BASE_URL}/pfm/investments?user_id={TEST_USER_ID}")
+    response = request_with_retries("GET", f"/pfm/investments?user_id={TEST_USER_ID}")
     print(f"Get investments response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -204,7 +217,7 @@ def test_retirement_planning():
         "expected_return_annual": 0.07
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/planning/retirement", json=retirement_data)
+    response = request_with_retries("POST", "/pfm/planning/retirement", json=retirement_data)
     print(f"Retirement planning response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -253,7 +266,7 @@ def test_debt_payoff_planning():
         "strategy": "avalanche"  # Highest interest first
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/planning/debt-payoff", json=debt_data)
+    response = request_with_retries("POST", "/pfm/planning/debt-payoff", json=debt_data)
     print(f"Debt payoff planning response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -272,7 +285,7 @@ def test_debt_payoff_planning():
 
     # Test snowball method
     debt_data["strategy"] = "snowball"
-    response = requests.post(f"{BASE_URL}/pfm/planning/debt-payoff", json=debt_data)
+    response = request_with_retries("POST", "/pfm/planning/debt-payoff", json=debt_data)
     print(f"Debt payoff (snowball) response: {response.status_code}")
 
     return True
@@ -291,7 +304,7 @@ def test_savings_goal_planning():
         "expected_return_annual": 0.04
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/planning/savings-goal", json=goal_data)
+    response = request_with_retries("POST", "/pfm/planning/savings-goal", json=goal_data)
     print(f"Savings goal planning response: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
@@ -317,7 +330,7 @@ def test_savings_goal_planning():
         "monthly_contribution": 100
     }
 
-    response = requests.post(f"{BASE_URL}/pfm/planning/savings-goal", json=goal_data2)
+    response = request_with_retries("POST", "/pfm/planning/savings-goal", json=goal_data2)
     print(f"Already reached goal response: {response.status_code}")
     if response.status_code == 200:
         print(f"  Goal already reached!")
@@ -330,21 +343,21 @@ def test_error_handling():
     print("Testing Error Handling...")
 
     # Test missing user_id for bill scheduling
-    response = requests.post(f"{BASE_URL}/pfm/bills/schedule", json={
+    response = request_with_retries("POST", "/pfm/bills/schedule", json={
         "bill_id": "some_bill_id",
         "payment_date": "2024-12-31"
     })
     print(f"Missing user_id response: {response.status_code}")
 
     # Test invalid investment data
-    response = requests.post(f"{BASE_URL}/pfm/investments", json={
+    response = request_with_retries("POST", "/pfm/investments", json={
         "user_id": TEST_USER_ID,
         "amount": -100  # Invalid - missing required fields
     })
     print(f"Invalid investment response: {response.status_code}")
 
     # Test invalid retirement planning (retirement age < current age)
-    response = requests.post(f"{BASE_URL}/pfm/planning/retirement", json={
+    response = request_with_retries("POST", "/pfm/planning/retirement", json={
         "user_id": TEST_USER_ID,
         "current_age": 70,
         "retirement_age": 65  # Invalid - less than current age
@@ -352,7 +365,7 @@ def test_error_handling():
     print(f"Invalid retirement age response: {response.status_code}")
 
     # Test invalid debt planning (no monthly budget)
-    response = requests.post(f"{BASE_URL}/pfm/planning/debt-payoff", json={
+    response = request_with_retries("POST", "/pfm/planning/debt-payoff", json={
         "user_id": TEST_USER_ID,
         "debts": [{"name": "Test", "balance": 1000, "interest_rate": 5}],
         "monthly_budget": 0
