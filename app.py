@@ -1262,6 +1262,39 @@ def list_users():
             'status': 'error'
         }), 500
 
+@app.route('/internal/owlban/status', methods=['GET'])
+@limiter.limit("20 per minute")
+def owlban_internal_status():
+    """Get OWLBAN internal team operational status and ensure key team users exist."""
+    try:
+        users = user_manager.ensure_owlban_team_users()
+        return jsonify({
+            'status': 'operational',
+            'group': 'OWLban',
+            'team_members': [
+                {
+                    'name': 'Oscar Broome',
+                    'username': 'oscar.broome',
+                    'role': 'manager'
+                },
+                {
+                    'name': 'David Leeper',
+                    'username': 'david.leeper',
+                    'role': 'manager'
+                }
+            ],
+            'provisioning': users,
+            'message': 'OWLban internal team is up to date',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'owlban_internal_status'})
+        return jsonify({
+            'error': 'Failed to fetch OWLBAN internal status',
+            'status': 'error'
+        }), 500
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Root endpoint for API information"""
@@ -1290,7 +1323,8 @@ def index():
             '/data/formats - Supported formats',
             '/mcp/repos - GitHub repositories',
             '/mcp/issues/<owner>/<repo> - GitHub issues',
-            '/dashboard - Web dashboard'
+            '/dashboard - Web dashboard',
+            '/internal/owlban/status - OWLBAN internal team status'
         ],
         'timestamp': datetime.now(timezone.utc).isoformat()
     }), 200

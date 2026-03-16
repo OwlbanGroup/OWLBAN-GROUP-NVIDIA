@@ -2,6 +2,7 @@
 User Manager for Database Operations
 """
 from datetime import datetime, timezone
+import secrets
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
 from src.models.user import User
@@ -146,6 +147,60 @@ class UserManager:
                 }
                 for user in users
             ]
+
+    @staticmethod
+    def ensure_user(username: str, password: str, email: str | None = None, role: str = 'user'):
+        """Ensure user exists; create if missing."""
+        with db_manager.get_session() as session:
+            existing_user = session.query(User).filter_by(username=username).first()
+            if existing_user:
+                return existing_user, "User already exists"
+
+            user = User(
+                username=username,
+                password_hash=generate_password_hash(password),
+                email=email,
+                role=role,
+                created_at=datetime.now(timezone.utc)
+            )
+            session.add(user)
+            session.commit()
+            return user, "User created successfully"
+
+    @staticmethod
+    def ensure_owlban_team_users():
+        """Ensure OWLBAN internal team users are provisioned."""
+        provisioned = []
+        defaults = [
+            {
+                "username": "oscar.broome",
+                "password": "Owlban#TempPass2026!",
+                "email": "oscar.broome@owlban.internal",
+                "role": "manager"
+            },
+            {
+                "username": "david.leeper",
+                "password": "Owlban#TempPass2026!",
+                "email": "david.leeper@owlban.internal",
+                "role": "manager"
+            }
+        ]
+
+        for user_data in defaults:
+            user, message = UserManager.ensure_user(
+                username=user_data["username"],
+                password=user_data["password"],
+                email=user_data["email"],
+                role=user_data["role"]
+            )
+            provisioned.append({
+                "username": user_data["username"],
+                "email": user_data["email"],
+                "role": user_data["role"],
+                "status": "existing" if message == "User already exists" else "created"
+            })
+
+        return provisioned
 
 
 

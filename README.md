@@ -163,6 +163,7 @@ open http://localhost:3000  # admin/admin
 #### Health & Status
 - `GET /health` - Service health check
 - `GET /metrics` - Prometheus metrics
+- `GET /internal/owlban/status` - OWLBAN internal team status + provisioning check (Oscar Broome, David Leeper)
 
 #### Authentication
 - `POST /user/register` - User registration
@@ -554,6 +555,25 @@ python app_final.py
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🦉 OWLBAN Internal Team Operations
+
+The system now includes an internal OWLBAN status endpoint and dashboard visibility to keep the internal team up to date.
+
+### OWLBAN endpoint
+- `GET /internal/owlban/status`
+- Returns:
+  - operational status
+  - team metadata for **Oscar Broome** and **David Leeper**
+  - provisioning status for users:
+    - `oscar.broome`
+    - `david.leeper`
+
+### Dashboard updates
+The dashboard includes an OWLBAN section that displays:
+- Team status
+- Team update message
+- Number of tracked OWLBAN members
 
 ## 📞 Support
 

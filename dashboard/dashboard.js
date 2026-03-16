@@ -229,6 +229,23 @@ async function loadStatus() {
   }
 }
 
+async function loadOWLbanStatus() {
+  try {
+    const data = await fetchJson('/internal/owlban/status');
+    document.getElementById('owlbanStatus').textContent =
+      data.status === 'operational' ? 'Operational' : 'Degraded';
+    document.getElementById('owlbanMessage').textContent =
+      data.message || 'OWLban status unavailable';
+
+    const members = Array.isArray(data.team_members) ? data.team_members.length : 0;
+    document.getElementById('owlbanMembers').textContent = formatNumber(members);
+  } catch (error) {
+    console.error('Error loading OWLBAN status:', error);
+    document.getElementById('owlbanStatus').textContent = 'Error';
+    document.getElementById('owlbanMessage').textContent = 'Failed to load OWLBAN updates';
+  }
+}
+
 // Load PFM Budgets
 async function loadPFMBudgets() {
   try {
@@ -396,6 +413,7 @@ async function initializeDashboard() {
       loadStocks(),
       loadPerformance(),
       loadStatus(),
+      loadOWLbanStatus(),
       loadPFMBudgets(),
       loadPFMGoals(),
       loadPFMInsights(),
@@ -413,6 +431,7 @@ async function initializeDashboard() {
       loadStocks();
       loadPerformance();
       loadStatus();
+      loadOWLbanStatus();
       loadPFMBudgets();
       loadPFMGoals();
       loadPFMInsights();
