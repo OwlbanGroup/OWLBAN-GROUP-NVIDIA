@@ -48,8 +48,23 @@ class Logger:
         self.logger.error(error_msg)
         self.logger.debug(traceback.format_exc())
 
+    def debug(self, msg):
+        """Log debug message"""
+        self.logger.debug(msg)
+
+    def log_debug(self, msg, context=None):
+        """Log debug with context"""
+        if context:
+            msg = f"{msg} | Context: {context}"
+        self.logger.debug(msg)
+
     def get_logger(self):
         return self.logger
+
+    def warning(self, msg):
+        """Log warning message"""
+        self.logger.warning(msg)
+
 
 
 telemetry_logger = Logger()

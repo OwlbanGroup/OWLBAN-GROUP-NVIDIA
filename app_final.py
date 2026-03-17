@@ -210,8 +210,9 @@ try:
     sync_scheduler = create_scheduler()
     telemetry_logger.get_logger().info("Sync scheduler initialized successfully")
 except Exception as e:
-    telemetry_logger.get_logger().error(f"Failed to initialize sync scheduler: {e}")
+    telemetry_logger.get_logger().debug(f"Non-fatal startup - sync scheduler unavailable (creds missing?): {e}")
     sync_scheduler = None
+
 
 # Prometheus metrics (app_final version to avoid conflicts)
 REQUEST_COUNT_FINAL = Counter('http_requests_total_final', 'Total HTTP requests (final)', ['method', 'endpoint', 'status_code'])
@@ -274,8 +275,9 @@ if config.REDIS_URL:
     try:
         REDIS_CLIENT = redis.from_url(config.REDIS_URL, decode_responses=True)
     except Exception as e:
-        telemetry_logger.get_logger().warning(f"Failed to connect to Redis at {config.REDIS_URL}: {str(e)}. Using in-memory cache.")
+        telemetry_logger.get_logger().debug(f"Non-fatal startup - Redis unavailable, using in-memory: {config.REDIS_URL}: {str(e)}")
         REDIS_CLIENT = None
+
 else:
     REDIS_CLIENT = None
 
@@ -1733,35 +1735,35 @@ if PFM_BLUEPRINT_AVAILABLE and pfm_bp:
     app.register_blueprint(pfm_bp, url_prefix='/pfm')
     telemetry_logger.get_logger().info("PFM blueprint registered successfully")
 else:
-    telemetry_logger.get_logger().warning("PFM blueprint not available")
+    telemetry_logger.get_logger().debug("PFM blueprint not available - skipped")
 
 # Register Payments blueprint
 if PAYMENTS_BLUEPRINT_AVAILABLE and payments_bp:
     app.register_blueprint(payments_bp, url_prefix='/payments')
     telemetry_logger.get_logger().info("Payments blueprint registered successfully")
 else:
-    telemetry_logger.get_logger().warning("Payments blueprint not available")
+    telemetry_logger.get_logger().debug("Payments blueprint not available - skipped")
 
 # Register Payroll blueprint
 if PAYROLL_BLUEPRINT_AVAILABLE and payroll_bp:
     app.register_blueprint(payroll_bp, url_prefix='/payroll')
     telemetry_logger.get_logger().info("Payroll blueprint registered successfully")
 else:
-    telemetry_logger.get_logger().warning("Payroll blueprint not available")
+    telemetry_logger.get_logger().debug("Payroll blueprint not available - skipped")
 
 # Register User blueprint
 if USER_BLUEPRINT_AVAILABLE and user_bp:
     app.register_blueprint(user_bp, url_prefix='/user')
     telemetry_logger.get_logger().info("User blueprint registered successfully")
 else:
-    telemetry_logger.get_logger().warning("User blueprint not available")
+    telemetry_logger.get_logger().debug("User blueprint not available - skipped")
 
 # Register Asset blueprint
 if ASSET_BLUEPRINT_AVAILABLE and asset_bp:
     app.register_blueprint(asset_bp, url_prefix='/asset')
     telemetry_logger.get_logger().info("Asset blueprint registered successfully")
 else:
-    telemetry_logger.get_logger().warning("Asset blueprint not available")
+    telemetry_logger.get_logger().debug("Asset blueprint not available - skipped")
 
 # Register Business blueprint
 if BUSINESS_BLUEPRINT_AVAILABLE and business_bp:

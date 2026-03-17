@@ -193,7 +193,40 @@ if _settings.get('REDIS_URL'):
         telemetry_logger.get_logger().warning("Failed to connect to Redis at %s: %s. Using in-memory cache.", _settings.get('REDIS_URL'), str(e))
         REDIS_CLIENT = None
 else:
-    REDIS_CLIENT = None
+REDIS_CLIENT = None
+
+# Blueprint Registrations - JPMorgan Financial APIs
+# Register all available blueprints with graceful error handling
+try:
+    from blueprints import *
+    bp_configs = [
+        ('user_bp', '/user', 'User'),
+        ('asset_bp', '/asset', 'Asset'),
+        ('business_bp', '/business', 'Business'),
+        ('telemetry_bp', '/telemetry', 'Telemetry'),
+        ('payments_bp', '/payments', 'Payments'),
+        ('pfm_bp', '/pfm', 'PFM'),
+        ('payroll_bp', '/payroll', 'Payroll'),
+        ('loans_bp', '/loans', 'Loans'),
+        ('credit_bp', '/credit', 'Credit'),
+        ('transfers_bp', '/transfers', 'Transfers'),
+        ('statements_bp', '/statements', 'Statements'),
+        ('ml_bp', '/ml', 'ML'),
+        ('ai_bp', '/ai', 'AI'),
+        ('data_bp', '/data', 'Data'),
+        ('internal_ops_bp', '/internal-ops', 'Internal Ops')
+    ]
+    registered_count = 0
+    for bp_name, url_prefix, desc in bp_configs:
+        if bp_name in locals() and locals()[bp_name]:
+            app.register_blueprint(locals()[bp_name], url_prefix=url_prefix)
+            telemetry_logger.get_logger().info(f"{desc} blueprint ({url_prefix}) registered successfully")
+            registered_count += 1
+        else:
+            telemetry_logger.get_logger().warning(f"{desc} blueprint not available - skipping")
+    telemetry_logger.get_logger().info(f"Registered {registered_count} blueprints successfully")
+except ImportError as e:
+    telemetry_logger.get_logger().warning(f"Blueprint package import failed (normal during partial development): {str(e)}")
 
 def cache_result(key_prefix, expiration=300):
     """Decorator to cache function results in Redis with enhanced features"""
