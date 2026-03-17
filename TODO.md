@@ -1,15 +1,18 @@
-# TODO - Phase 4/5/8 Stabilization and Validation
+# TODO - Internal Operations Orchestration (Payroll + Personal Banking + Company Bills)
 
-- [x] Analyze failing tests and identify root causes
-- [ ] Add missing `process_agentic_commerce` function in `blueprints/ai.py`
-- [ ] Fix Phase 4 route validation logic to use Flask app `url_map` after blueprint registration
-- [ ] Re-run `test_phase4_endpoints.py`
-- [ ] Re-run `test_phase5_alerts.py`
-- [ ] Re-run `test_phase8_endpoints.py`
-- [ ] Summarize final status and confirm whether any code changes remain required
+- [x] Analyze existing payroll, PFM, payments, and app registration files
+- [x] Confirm implementation plan with user
+- [ ] Add `blueprints/internal_ops.py` with unified orchestration endpoint(s)
+- [ ] Register `internal_ops` blueprint in `app_final.py`
+- [ ] Add/extend unit tests in `tests/test_phase8_units.py`
+- [ ] Update `README.md` with internal operations usage examples
+- [ ] Run relevant tests and summarize outcomes
 
 ## Execution Plan (Approved)
-1. Update AI blueprint to include missing function expected by Phase 4 tests.
-2. Correct Phase 4 test harness route inspection from blueprint-level to app-level.
-3. Execute Phase 4, then Phase 5, then Phase 8 tests using PowerShell-compatible command separators.
-4. Report pass/fail results and next remediation items (if any).
+1. Introduce a dedicated internal operations blueprint that orchestrates:
+   - Internal team payroll processing
+   - Internal personal banking account/budget/bill interactions
+   - Company bill payment execution
+2. Wire this blueprint into `app_final.py` with a stable URL prefix.
+3. Add tests for success and validation/error scenarios.
+4. Document request/response examples in README.

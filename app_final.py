@@ -21,7 +21,8 @@ from flask import Flask, request, jsonify, render_template, g
 from flask_cors import CORS  # type: ignore
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_restx import Api, Blueprint  # type: ignore
+from flask_restx import Api  # type: ignore
+from flask import Blueprint
 from flask_talisman import Talisman  # type: ignore
 from prometheus_client import Counter, Histogram, Gauge
 from werkzeug.exceptions import BadRequest
@@ -123,6 +124,15 @@ AI_BLUEPRINT_AVAILABLE = False
 try:
     from blueprints.ai import ai_bp
     AI_BLUEPRINT_AVAILABLE = True
+except ImportError:
+    pass
+
+# Import Internal Operations Blueprint
+internal_ops_bp: Optional[Blueprint] = None
+INTERNAL_OPS_BLUEPRINT_AVAILABLE = False
+try:
+    from blueprints.internal_ops import internal_ops_bp
+    INTERNAL_OPS_BLUEPRINT_AVAILABLE = True
 except ImportError:
     pass
 
@@ -1780,6 +1790,13 @@ if AI_BLUEPRINT_AVAILABLE and ai_bp:
     telemetry_logger.get_logger().info("AI blueprint registered successfully")
 else:
     telemetry_logger.get_logger().warning("AI blueprint not available")
+
+# Register Internal Operations blueprint
+if INTERNAL_OPS_BLUEPRINT_AVAILABLE and internal_ops_bp:
+    app.register_blueprint(internal_ops_bp, url_prefix='/internal-ops')
+    telemetry_logger.get_logger().info("Internal Operations blueprint registered successfully")
+else:
+    telemetry_logger.get_logger().warning("Internal Operations blueprint not available")
 
 if __name__ == '__main__':
     # Log application startup

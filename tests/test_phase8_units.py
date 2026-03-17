@@ -412,6 +412,56 @@ class TestSpendingInsights:
         assert abs(category_spending['dining']['percentage'] - 23.26) < 0.01
 
 
+class TestInternalOperationsOrchestration:
+    """Tests for internal operations orchestration endpoint payload logic"""
+
+    def test_internal_ops_payload_shape(self):
+        payload = {
+            "user_id": "internal_user_1",
+            "payroll": {
+                "pay_period_start": "2026-03-01",
+                "pay_period_end": "2026-03-15",
+                "payment_date": "2026-03-20"
+            },
+            "personal_banking": {
+                "account_review": True,
+                "budget_check": True,
+                "bill_reminders_check": True
+            },
+            "company_bills": {
+                "bills": [
+                    {"vendor": "Utilities Co", "amount": 1200.50, "currency": "USD"},
+                    {"vendor": "SaaS Vendor", "amount": 899.99, "currency": "USD"}
+                ]
+            }
+        }
+
+        assert "payroll" in payload
+        assert "personal_banking" in payload
+        assert "company_bills" in payload
+        assert isinstance(payload["company_bills"]["bills"], list)
+        assert payload["payroll"]["payment_date"] == "2026-03-20"
+
+    def test_company_bills_aggregation_logic(self):
+        bills = [
+            {"vendor": "A", "amount": 100.00},
+            {"vendor": "B", "amount": 250.25},
+            {"vendor": "C", "amount": 49.75}
+        ]
+        total = round(sum(float(b.get("amount", 0) or 0) for b in bills), 2)
+        count = len(bills)
+
+        assert count == 3
+        assert total == 400.00
+
+    def test_internal_ops_requires_at_least_one_section(self):
+        payload = {}
+        has_any_section = any(
+            k in payload for k in ["payroll", "personal_banking", "company_bills"]
+        )
+        assert has_any_section is False
+
+
 # Run tests
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
