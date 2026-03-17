@@ -25,6 +25,7 @@ except ImportError:
         return decorator
 
 ml_bp = Blueprint('ml', __name__)
+bp = ml_bp
 
 
 # =============================================================================

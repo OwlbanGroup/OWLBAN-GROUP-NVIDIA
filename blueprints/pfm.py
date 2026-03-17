@@ -56,6 +56,7 @@ except ImportError:
         return decorator
 
 pfm_bp = Blueprint('pfm', __name__)
+bp = pfm_bp
 
 # Mock data storage for PFM features (in real implementation, this would be a database)
 _mock_accounts = {}

@@ -18,6 +18,7 @@ from src.auth import token_auth_required
 from src.rate_limiting import conditional_limit
 
 payments_bp = Blueprint('payments', __name__)
+bp = payments_bp
 
 
 # =============================================================================

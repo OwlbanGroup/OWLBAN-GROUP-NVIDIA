@@ -425,3 +425,7 @@ def get_telemetry_dashboard():
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'get_telemetry_dashboard'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+
+# Export generic bp for compatibility
+bp = telemetry_bp

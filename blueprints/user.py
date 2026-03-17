@@ -59,7 +59,7 @@ def get_profile():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/profile', methods=['PUT'])
+@bp.route('/profile', methods=['PUT'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def update_profile():
@@ -96,7 +96,7 @@ def update_profile():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/profile/password', methods=['PUT'])
+@bp.route('/profile/password', methods=['PUT'])
 @token_auth_required
 @conditional_limit("5 per minute")
 def change_password():
@@ -139,7 +139,7 @@ def change_password():
 # USER MANAGEMENT ENDPOINTS (Admin Only)
 # =============================================================================
 
-@user_bp.route('/users', methods=['GET'])
+@bp.route('/users', methods=['GET'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def list_users():
@@ -166,7 +166,7 @@ def list_users():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/users/<user_id>', methods=['GET'])
+@bp.route('/users/<user_id>', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_user(user_id):
@@ -195,7 +195,7 @@ def get_user(user_id):
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/users/<user_id>', methods=['PUT'])
+@bp.route('/users/<user_id>', methods=['PUT'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def update_user(user_id):
@@ -235,7 +235,7 @@ def update_user(user_id):
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/users/<user_id>', methods=['DELETE'])
+@bp.route('/users/<user_id>', methods=['DELETE'])
 @token_auth_required
 @conditional_limit("5 per minute")
 def delete_user(user_id):
@@ -273,7 +273,7 @@ def delete_user(user_id):
 # USER PREFERENCES ENDPOINTS
 # =============================================================================
 
-@user_bp.route('/preferences', methods=['GET'])
+@bp.route('/preferences', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_preferences():
@@ -309,7 +309,7 @@ def get_preferences():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/preferences', methods=['PUT'])
+@bp.route('/preferences', methods=['PUT'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def update_preferences():
@@ -350,7 +350,10 @@ def update_preferences():
 # USER ACTIVITY ENDPOINTS
 # =============================================================================
 
-@user_bp.route('/activity', methods=['GET'])
+# Export generic bp for compatibility
+bp = user_bp
+
+@bp.route('/activity', methods=['GET'])
 @token_auth_required
 @conditional_limit("15 per minute")
 def get_activity():
@@ -388,7 +391,7 @@ def get_activity():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 
-@user_bp.route('/dashboard', methods=['GET'])
+@bp.route('/dashboard', methods=['GET'])
 @token_auth_required
 @conditional_limit("10 per minute")
 def get_user_dashboard():

@@ -494,6 +494,17 @@ def get_assets_dashboard():
     """
     Get assets dashboard overview
     """
+    # Export blueprint for compatibility with __init__.py
+    bp = asset_bp
+
+
+@asset_bp.route('/dashboard', methods=['GET'])
+@token_auth_required
+@conditional_limit("10 per minute")
+def get_assets_dashboard():
+    """
+    Get assets dashboard overview
+    """
     try:
         user_id = getattr(request, 'user_id', 'demo_user')  # Would come from JWT token
 
@@ -502,6 +513,46 @@ def get_assets_dashboard():
             a for a in _mock_assets.values()
             if a['user_id'] == user_id
         ]
+
+        # Calculate dashboard stats
+        total_assets = len(user_assets)
+        total_value = sum(a.get('value', 0) for a in user_assets)
+        active_assets = len([a for a in user_assets if a.get('is_active', True)])
+
+        # Group by type
+        type_distribution = {}
+        for asset in user_assets:
+            asset_type = asset.get('type', 'other')
+            type_distribution[asset_type] = type_distribution.get(asset_type, 0) + 1
+
+        # Recent assets
+        recent_assets = sorted(
+            user_assets,
+            key=lambda x: x.get('created_at', ''),
+            reverse=True
+        )[:5]
+
+        dashboard_data = {
+            'stats': {
+                'total_assets': total_assets,
+                'active_assets': active_assets,
+                'total_value': total_value,
+                'average_value': total_value / max(total_assets, 1)
+            },
+            'type_distribution': type_distribution,
+            'recent_assets': recent_assets,
+            'high_value_assets': sorted(user_assets, key=lambda x: x.get('value', 0), reverse=True)[:3]
+        }
+
+        return jsonify({
+            'status': 'success',
+            'dashboard': dashboard_data
+        }), 200
+
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'get_assets_dashboard'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
 
         # Calculate dashboard stats
         total_assets = len(user_assets)
