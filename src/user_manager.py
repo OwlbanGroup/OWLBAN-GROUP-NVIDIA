@@ -203,4 +203,7 @@ class UserManager:
         return provisioned
 
 
+user_manager = UserManager()
+
+
 

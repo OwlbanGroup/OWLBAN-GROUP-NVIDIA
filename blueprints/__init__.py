@@ -1,10 +1,11 @@
 # Blueprints package - convenience imports for all blueprints
 
 # Core blueprints
-from .user import bp as user_bp
+from .user import user_bp as user_bp
 from .asset import bp as asset_bp
 from .business import bp as business_bp
 from .telemetry import bp as telemetry_bp
+from .financial import bp as financial_bp
 
 # Financial services
 from .payments import bp as payments_bp
@@ -24,7 +25,7 @@ from .data import bp as data_bp
 from .internal_ops import bp as internal_ops_bp
 
 __all__ = [
-    'user_bp', 'asset_bp', 'business_bp', 'telemetry_bp',
+    'user_bp', 'asset_bp', 'business_bp', 'telemetry_bp', 'financial_bp',
     'payments_bp', 'pfm_bp', 'payroll_bp', 'loans_bp', 
     'credit_bp', 'transfers_bp', 'statements_bp',
     'ml_bp', 'ai_bp', 'data_bp', 'internal_ops_bp'

@@ -25,14 +25,16 @@ except ImportError:
             return f
         return decorator
 
-user_bp = Blueprint('user', __name__)
+bp = Blueprint('user', __name__)
+user_bp = bp
 
 
 # =============================================================================
 # USER PROFILE ENDPOINTS
 # =============================================================================
 
-@user_bp.route('/profile', methods=['GET'])
+
+@bp.route('/profile', methods=['GET'])
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_profile():

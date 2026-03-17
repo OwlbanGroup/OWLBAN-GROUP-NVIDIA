@@ -1,27 +1,21 @@
-# TODO.md - Finishing JPMorgan Financial APIs Application
+# JPMorgan Dashboard Completion Plan
+## Step 1: ✅ Files Analyzed (dashboard/index.html, dashboard.js, styles.css, app.py, blueprints/pfm.py, etc.)
 
-## Overall Progress
-- [x] Step 1: Create/Update blueprints/__init__.py with convenience imports ✅
+## Step 2: Create blueprints/financial.py [PENDING]
+- Mock JPMorgan-scale data: $3.2T assets, $125B revenue, etc.
+- Endpoints: /financial/summary, /financial/assets, /financial/stocks, /financial/performance
 
-- [x] Step 2: Update app.py - Add all blueprint imports and registrations ✅
+## Step 3: Update blueprints/__init__.py [PENDING]
+- Import financial_bp
 
-- [x] Step 3: Update TODO_INTEGRATION_PLAN.md - Mark Phase 1 & 2 complete, assess others ✅
+## Step 4: Update app.py [PENDING]
+- Register financial_bp in loop
+- Add /system/status endpoint
 
-- [x] Step 4: Verify/create key src files (auth.py, rate_limiting.py if needed) ✅
+## Step 5: Test & Complete [PENDING]
+- python app.py (TESTING=1)
+- http://localhost:5000/dashboard
+- Login: POST /user/login {"username":"oscar.broome","password":"password"}
 
-- [x] Step 5: Install dependencies and test imports/startup ✅
-- [x] Step 6: Run unit/integration tests (test_runner.py, pytest) ✅
-- [x] Step 7: Docker compose up and test endpoints ✅
-
-- [ ] Step 8: Update TODO files (PFM Phase 8, etc.) and README.md
-- [x] Step 9: Complete! (to be checked last)
-
-## Current Step: 6/9
-
-- [x] Step 1: Create/Update blueprints/__init__.py with convenience imports
-- [x] Step 2: Update app.py - Add all blueprint imports and registrations
-- [x] Step 3: Update TODO_INTEGRATION_PLAN.md - Mark Phase 1 & 2 complete, assess others
-- [x] Step 4: Verify/create key src files (auth.py, rate_limiting.py if needed)
-- [x] Step 5: Install dependencies and test imports/startup
-Follow the plan step-by-step. After each tool success, update this file.
+## Step 2: ✅ Create blueprints/financial.py\n- JPMorgan-scale data implemented ($3.2T assets etc.)\n\n## Step 3: ✅ Update blueprints/__init__.py\n- financial_bp imported\n\n## Step 4: ✅ Update app.py\n- financial_bp registered\n- /system/status added\n\n## Step 5: 🧪 Test Dashboard [PENDING]\n\n**Progress: 80% | Next: Test server & complete**
 
