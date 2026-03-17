@@ -40,11 +40,16 @@ from decimal import Decimal
 # Import sync scheduler for integrated data synchronization
 from sync_scheduler import JPMorganSyncScheduler, create_scheduler
 
-# Ensure project root is in sys.path before importing blueprints
-# This allows importing from blueprints.* modules both when run directly and via app_final.py
+# Ensure project root and 'src' directory are in sys.path before importing blueprints
+# This allows importing from blueprints.* modules and their src.* dependencies
+# both when run directly and via app_final.py
 _project_root = os.path.dirname(os.path.abspath(__file__))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
+
+src_path = os.path.join(_project_root, 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 # Import PFM blueprint (will be registered after app creation)
 pfm_bp: Optional[Blueprint] = None
@@ -173,11 +178,6 @@ except ImportError:
                 'LOG_LEVEL': Config.LOG_LEVEL
             }
     config = Config()  # type: ignore
-
-# Ensure 'src' directory is in sys.path before importing modules
-src_path = os.path.join(os.path.dirname(__file__), 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 
 try:
     from src.telemetry_handler_new import telemetry_handler  # type: ignore

@@ -8,6 +8,8 @@
 - [x] Update `README.md` with internal operations usage examples
 - [ ] Fix `/internal-ops/execute` happy-path behavior for payroll-only minimal payload
 - [ ] Run relevant tests and summarize outcomes
+- [ ] Fix direct app startup blocker in `app_final.py` (blueprint import/source package path ordering)
+- [ ] Run import smoke test for `app_final.py`
 
 ## Execution Plan (Approved)
 1. Introduce a dedicated internal operations blueprint that orchestrates:

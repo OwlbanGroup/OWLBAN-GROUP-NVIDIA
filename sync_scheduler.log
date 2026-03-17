@@ -2093,3 +2093,17 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-03-16 21:43:11,640 - telemetry_logger - INFO - Internal Operations blueprint registered successfully
 2026-03-16 21:43:11,667 - telemetry_logger - INFO - Internal operations executed | Context: {'user_id': 'test_user', 'context': 'internal_ops', 'has_errors': True}
 2026-03-16 21:43:11,676 - telemetry_logger - INFO - Internal operations executed | Context: {'user_id': 'test_user', 'context': 'internal_ops', 'has_errors': True}
+2026-03-16 21:53:15,951 - jpmorgan_api - INFO - {"timestamp": "2026-03-17T01:53:15.951581+00:00", "level": "INFO", "message": "Stripe payment service initialized", "logger": "jpmorgan_api"}
+2026-03-16 21:53:18,412 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-03-16 21:53:18,414 - telemetry_logger - INFO - No GPU found, using CPU
+2026-03-16 21:53:18,416 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-03-16 21:53:18,471 - telemetry_logger - INFO - PFM blueprint registered successfully
+2026-03-16 21:53:18,481 - telemetry_logger - INFO - Payments blueprint registered successfully
+2026-03-16 21:53:18,497 - telemetry_logger - INFO - Payroll blueprint registered successfully
+2026-03-16 21:53:18,501 - telemetry_logger - WARNING - User blueprint not available
+2026-03-16 21:53:18,517 - telemetry_logger - INFO - Asset blueprint registered successfully
+2026-03-16 21:53:18,534 - telemetry_logger - INFO - Business blueprint registered successfully
+2026-03-16 21:53:18,559 - telemetry_logger - INFO - ML blueprint registered successfully
+2026-03-16 21:53:18,580 - telemetry_logger - INFO - Data blueprint registered successfully
+2026-03-16 21:53:18,594 - telemetry_logger - INFO - AI blueprint registered successfully
+2026-03-16 21:53:18,599 - telemetry_logger - INFO - Internal Operations blueprint registered successfully
