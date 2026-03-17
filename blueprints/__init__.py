@@ -84,6 +84,11 @@ try:
 except ImportError:
     internal_ops_bp = None
 
+try:
+    from .banking import banking_bp as banking_bp
+except ImportError:
+    banking_bp = None
+
 __all__ = [
     'user_bp', 'asset_bp', 'business_bp', 'telemetry_bp', 'financial_bp',
     'payments_bp', 'pfm_bp', 'payroll_bp', 'loans_bp', 

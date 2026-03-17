@@ -2370,3 +2370,37 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-03-16 23:28:20,765 - slowapi - WARNING - ratelimit 1 per 1 minute (testclient) exceeded at endpoint: /ml/train
 2026-03-16 23:28:20,780 - httpx - INFO - HTTP Request: POST http://testserver/ml/train "HTTP/1.1 429 Too Many Requests"
 2026-03-16 23:28:20,793 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/export?limit=10&format=json "HTTP/1.1 200 OK"
+2026-03-17 00:05:20,957 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-03-17 00:05:20,962 - telemetry_logger - INFO - No GPU found, using CPU
+2026-03-17 00:05:25,154 - jpmorgan_api - INFO - {"timestamp": "2026-03-17T04:05:25.154323+00:00", "level": "INFO", "message": "Stripe payment service initialized", "logger": "jpmorgan_api"}
+2026-03-17 00:05:25,155 - telemetry_logger - INFO - PyTorch not available or error: No module named 'torch', checking TensorFlow...
+2026-03-17 00:05:25,156 - telemetry_logger - INFO - No GPU found, using CPU
+2026-03-17 00:05:25,158 - telemetry_logger - ERROR - Failed to initialize sync scheduler: Missing required JPMorgan API credentials in environment variables
+2026-03-17 00:05:25,418 - telemetry_logger - INFO - Health check requested
+2026-03-17 00:05:25,429 - httpx - INFO - HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+2026-03-17 00:05:25,445 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 200 OK"
+2026-03-17 00:05:25,459 - httpx - INFO - HTTP Request: POST http://testserver/telemetry/batch "HTTP/1.1 200 OK"
+2026-03-17 00:05:25,468 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/metrics?hours=24 "HTTP/1.1 200 OK"
+2026-03-17 00:05:25,483 - httpx - INFO - HTTP Request: POST http://testserver/ml/anomalies "HTTP/1.1 200 OK"
+2026-03-17 00:05:25,488 - telemetry_logger - INFO - cuML not available, falling back to sklearn
+2026-03-17 00:05:41,342 - telemetry_logger - INFO - CPU-based anomaly detection model trained with sklearn
+2026-03-17 00:05:41,342 - httpx - INFO - HTTP Request: POST http://testserver/ml/train "HTTP/1.1 200 OK"
+2026-03-17 00:05:41,358 - httpx - INFO - HTTP Request: GET http://testserver/telemetry/export?limit=10&format=json "HTTP/1.1 200 OK"
+2026-03-17 00:05:41,364 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 422 Unprocessable Entity"
+2026-03-17 00:05:41,364 - httpx - INFO - HTTP Request: POST http://testserver/telemetry "HTTP/1.1 400 Bad Request"
+2026-03-17 00:05:41,376 - httpx - INFO - HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+2026-03-17 00:05:41,531 - httpx - INFO - HTTP Request: GET http://testserver/dashboard "HTTP/1.1 200 OK"
+2026-03-17 00:05:41,547 - httpx - INFO - HTTP Request: GET http://testserver/nonexistent "HTTP/1.1 404 Not Found"
+2026-03-17 00:05:41,554 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\bizle\AppData\Local\Programs\Python\Python312\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-03-17 00:05:41,827 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,038 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,238 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,468 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,682 - httpx - INFO - HTTP Request: POST http://testserver/user/login "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,689 - httpx - INFO - HTTP Request: GET http://testserver/user/profile "HTTP/1.1 200 OK"
+2026-03-17 00:05:42,940 - httpx - INFO - HTTP Request: POST http://testserver/user/register "HTTP/1.1 200 OK"

@@ -508,9 +508,6 @@ def get_businesses_dashboard():
             if b['user_id'] == user_id
         ]
 
-        # Export blueprint for compatibility with __init__.py
-        bp = business_bp
-
         # Calculate dashboard stats
         total_businesses = len(user_businesses)
         active_businesses = len([b for b in user_businesses if b.get('is_active', True)])

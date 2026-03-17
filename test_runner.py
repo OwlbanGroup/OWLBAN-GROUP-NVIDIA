@@ -37,6 +37,15 @@ CORS(app)
 # Register PFM blueprint
 app.register_blueprint(pfm_bp, url_prefix='/pfm')
 
+# Register Banking blueprint for testing
+try:
+    from blueprints import banking_bp
+    app.register_blueprint(banking_bp, url_prefix='/banking')
+    print("Successfully imported and registered banking blueprint for testing")
+except ImportError as e:
+    print(f"Warning: Banking blueprint not available for testing: {e}")
+
+
 print("Flask app created with PFM blueprint")
 print("Available routes:")
 for rule in app.url_map.iter_rules():

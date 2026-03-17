@@ -1,7 +1,16 @@
 """Main Flask application - SYSTEM STATUS ENDPOINT ADDED
 
 New endpoint: /system/status for dashboard.js compatibility
+
+# Blueprint registrations (standard pattern used in project)
+try:
+    from blueprints import banking_bp
+    app.register_blueprint(banking_bp, url_prefix='/banking')
+    print("Banking blueprint registered successfully")
+except ImportError as e:
+    print(f"Warning: Banking blueprint not available: {e}")
 """
+
 
 # ... [keeping ALL existing app.py content unchanged until the registration loop]
 

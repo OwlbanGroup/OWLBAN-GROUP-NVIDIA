@@ -494,10 +494,6 @@ def get_assets_dashboard():
     """
     Get assets dashboard overview
     """
-    # Export blueprint for compatibility with __init__.py
-    bp = asset_bp
-
-
 @asset_bp.route('/dashboard', methods=['GET'])
 @token_auth_required
 @conditional_limit("10 per minute")
