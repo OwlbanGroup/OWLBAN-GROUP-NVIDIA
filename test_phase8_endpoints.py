@@ -10,6 +10,7 @@ import requests
 import json
 import time
 from datetime import datetime, timedelta, timezone
+from test_server_utils import ensure_local_test_server, stop_local_test_server
 
 # Test configuration
 BASE_URL = os.getenv("PHASE8_BASE_URL", "http://127.0.0.1:5000")
@@ -380,10 +381,17 @@ def main():
     print("Starting Phase 8: Advanced Features Testing")
     print("=" * 50)
 
-    # Wait a moment for server to start if needed
-    time.sleep(2)
-
+    started_here = False
     try:
+        started_here, _ = ensure_local_test_server(BASE_URL)
+        if started_here:
+            print("Started local in-process PFM test server")
+        else:
+            print("Using existing healthy PFM server")
+
+        # Wait a moment for server readiness
+        time.sleep(1)
+
         # Test bill scheduling
         test_bill_scheduling()
         print()
@@ -416,6 +424,10 @@ def main():
 
     except Exception as e:
         print(f"Test failed with error: {e}")
+    finally:
+        if started_here:
+            stop_local_test_server()
+            print("Stopped local in-process PFM test server")
 
 
 if __name__ == "__main__":

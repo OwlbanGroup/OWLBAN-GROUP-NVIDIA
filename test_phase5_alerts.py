@@ -8,9 +8,10 @@ import requests
 import json
 import time
 from datetime import datetime, timedelta, timezone
+from test_server_utils import ensure_local_test_server, stop_local_test_server
 
 # Test configuration
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://127.0.0.1:5000"
 TEST_USER_ID = "test_user_123"
 
 def test_bill_management():
@@ -203,10 +204,17 @@ def main():
     print("Starting Phase 5: Notifications and Alerts Testing")
     print("=" * 50)
 
-    # Wait a moment for server to start if needed
-    time.sleep(2)
-
+    started_here = False
     try:
+        started_here, _ = ensure_local_test_server(BASE_URL)
+        if started_here:
+            print("Started local in-process PFM test server")
+        else:
+            print("Using existing healthy PFM server")
+
+        # Wait a moment for server readiness
+        time.sleep(1)
+
         # Test bill management
         test_bill_management()
         print()
@@ -235,6 +243,10 @@ def main():
 
     except Exception as e:
         print(f"Test failed with error: {e}")
+    finally:
+        if started_here:
+            stop_local_test_server()
+            print("Stopped local in-process PFM test server")
 
 if __name__ == "__main__":
     main()
