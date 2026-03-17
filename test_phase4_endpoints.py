@@ -126,14 +126,21 @@ def test_ml_financial_functions_exist():
 def test_blueprint_route_prefixes():
     """Test that blueprints have correct route prefixes."""
     try:
+        from flask import Flask
         from blueprints.ai import ai_bp
         from blueprints.data import data_bp
         from blueprints.ml import ml_bp
 
-        # Check if blueprints have routes (basic check)
-        ai_routes = [rule.rule for rule in ai_bp.url_map.iter_rules()]
-        data_routes = [rule.rule for rule in data_bp.url_map.iter_rules()]
-        ml_routes = [rule.rule for rule in ml_bp.url_map.iter_rules()]
+        app = Flask(__name__)
+        app.register_blueprint(ai_bp)
+        app.register_blueprint(data_bp)
+        app.register_blueprint(ml_bp)
+
+        all_routes = [rule.rule for rule in app.url_map.iter_rules()]
+
+        ai_routes = [r for r in all_routes if r.startswith('/ai/')]
+        data_routes = [r for r in all_routes if r.startswith('/data/')]
+        ml_routes = [r for r in all_routes if r.startswith('/ml/')]
 
         print(f"✓ AI routes found: {len(ai_routes)}")
         print(f"✓ Data routes found: {len(data_routes)}")
@@ -141,7 +148,15 @@ def test_blueprint_route_prefixes():
 
         # Check for financial-specific routes
         financial_routes = [r for r in data_routes if 'financial' in r]
-        ml_financial_routes = [r for r in ml_routes if any(x in r for x in ['financial-context', 'transaction-patterns', 'spending-insights', 'cash-flow-analysis'])]
+        ml_financial_routes = [
+            r for r in ml_routes
+            if any(x in r for x in [
+                'financial-context',
+                'transaction-patterns',
+                'spending-insights',
+                'cash-flow-analysis'
+            ])
+        ]
 
         if len(financial_routes) >= 4:
             print("✓ Data financial routes detected")
