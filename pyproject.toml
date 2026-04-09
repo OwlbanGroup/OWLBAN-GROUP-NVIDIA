@@ -21,15 +21,7 @@ mypy = "^1.15.0"
 prometheus-client = "^0.21.0"
 numpy = "^2.1.0"
 torch = {version = "^2.5.0", optional = true}
-sqlalchemy = "^2.0.0"
-psycopg2-binary = "^2.9.0"
-redis = "^5.0.0"
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
-mypy = "^1.5.0"
 flask-limiter = "^3.5.0"
-prometheus-client = "^0.19.0"
-numpy = "^1.24.0"
 
 [tool.pytest.ini_options]
 # addopts disabled - using pytest.ini
