@@ -1,1 +1,6 @@
-# MCP Schema Error Fix - COMPLETED&#10;&#10;- [x] 1. Add $schema to mcp.json&#10;- [x] 2. Reload VSCode window&#10;- [x] 3. Verify no parse error&#10;- [x] 4. Test MCP catalog if needed&#10;&#10;Task complete: VSCode mcp.json diagnostics resolved.
+- [x] Review real audit modules and current tests to map gaps
+- [ ] Refactor tests/test_audit_logging.py to use real audit implementations where feasible
+- [ ] Add focused branch coverage tests for src.audit_logger and src.models.audit_log
+- [ ] Adjust audit-specific pytest config for intended coverage scope
+- [ ] Run thorough test commands and verify coverage gate passes
+- [ ] Summarize fixes and final verification

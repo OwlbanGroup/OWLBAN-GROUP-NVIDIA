@@ -1,523 +1,368 @@
 """
 Test suite for Audit Logging System
-Tests core functionality, database integration, and security features
+Uses real audit modules with lightweight test doubles for DB/session dependencies.
 """
-import sys
-import os
-import pytest
-from datetime import datetime, timezone, timedelta
 import json
-from typing import Any
+from datetime import datetime, timezone, timedelta
+from types import SimpleNamespace
+from unittest.mock import Mock
+import pytest
 
-# Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.audit_logger import AuditLogger
+from src.models.audit_log import AuditLogModel, AuditLogSummary
 
-from unittest.mock import Mock, patch, MagicMock
-import hashlib
 
-# Lightweight deterministic stand-ins for missing audit modules
-class _AuditLogModel:
-    @staticmethod
-    def calculate_hash(log_data, previous_hash=None):
-        payload = json.dumps(log_data, sort_keys=True, default=str)
-        if previous_hash:
-            payload = f"{payload}|{previous_hash}"
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+class _DummyLogger:
+    def info(self, *args, **kwargs):
+        return None
 
-AuditLogModel = _AuditLogModel
-AuditLogSummary = Mock()
+    def warning(self, *args, **kwargs):
+        return None
 
-class _AuditLogger:
-    def __init__(self, db_manager):
-        self.db_manager = db_manager
+    def error(self, *args, **kwargs):
+        return None
 
-    def _sanitize_data(self, data, max_length=5000):
-        redacted = {}
-        for k, v in data.items():
-            if str(k).lower() in {"password", "token", "api_key", "secret", "authorization"}:
-                redacted[k] = "***REDACTED***"
-            else:
-                redacted[k] = v
-        payload = json.dumps(redacted)
-        if len(payload) > max_length:
-            payload = payload[:max_length] + "...[TRUNCATED]"
-        return payload
 
-    def log_authentication_attempt(self, username, success, reason=None, auth_method="password"):
-        return Mock(
-            action="authentication_attempt",
-            username=username,
-            status_code=200 if success else 401,
-            severity="info" if success else "warning",
-            category="authentication",
-            error_message=reason
-        )
+class _SessionContext:
+    def __init__(self, session):
+        self._session = session
 
-    def log_api_call(self, endpoint, method, status_code, response_time_ms=0):
-        return Mock(
-            action="api_call",
-            resource_id=endpoint,
-            status_code=status_code,
-            response_time_ms=response_time_ms,
-            severity="info" if status_code < 400 else "warning"
-        )
+    def __enter__(self):
+        return self._session
 
-    def log_database_operation(self, operation, table, record_id, data=None, success=True):
-        return Mock(
-            action=f"db_{operation}",
-            resource_type="database",
-            resource_id=f"{table}:{record_id}",
-            status_code=200 if success else 500
-        )
+    def __exit__(self, exc_type, exc, tb):
+        return False
 
-    def log_security_event(self, event_type, description, severity="medium"):
-        return Mock(
-            action="security_event",
-            resource_type="security",
-            severity=severity,
-            category="security"
-        )
 
-AuditLogger = _AuditLogger
+class _QueryStub:
+    def __init__(self, rows=None):
+        self.rows = rows or []
 
-class _AuditReportGenerator:
-    def __init__(self, db_manager):
-        self.db_manager = db_manager
+    def order_by(self, *args, **kwargs):
+        return self
 
-    def generate_user_activity_report(self, username, start_date):
-        return {"report_type": "user_activity", "summary": {}, "generated_at": datetime.now(timezone.utc).isoformat()}
+    def filter(self, *args, **kwargs):
+        return self
 
-    def generate_security_report(self, start_date):
-        return {"report_type": "security", "summary": {}, "generated_at": datetime.now(timezone.utc).isoformat()}
+    def limit(self, *args, **kwargs):
+        return self
 
-    def generate_compliance_report(self, compliance_standard, start_date):
-        return {
-            "report_type": "compliance",
-            "compliance_standard": compliance_standard,
-            "compliance_metrics": {},
-            "generated_at": datetime.now(timezone.utc).isoformat()
-        }
+    def offset(self, *args, **kwargs):
+        return self
 
-    def export_report(self, report_data, format_type="json"):
-        if format_type == "html":
-            return f"<html><body><h1>{report_data.get('report_type','report')}</h1></body></html>"
-        return json.dumps(report_data)
+    def all(self):
+        return list(self.rows)
 
-AuditReportGenerator = _AuditReportGenerator
+    def first(self):
+        return self.rows[0] if self.rows else None
 
-class _AuditAlertManager:
-    def __init__(self, db_manager):
-        self.db_manager = db_manager
-        self.alert_rules = [object()]
-        self.active_alerts = []
 
-    def add_alert_rule(self, rule):
-        self.alert_rules.append(rule)
+class _SessionStub:
+    def __init__(self, rows=None):
+        self.rows = rows or []
+        self.added = []
 
-    def remove_alert_rule(self, rule_id):
-        self.alert_rules = [r for r in self.alert_rules if getattr(r, "rule_id", None) != rule_id]
+    def query(self, *_args, **_kwargs):
+        return _QueryStub(self.rows)
 
-    def get_active_alerts(self, severity=None, acknowledged=None):
-        return list(self.active_alerts)
+    def add(self, model):
+        self.added.append(model)
 
-AuditAlertManager = _AuditAlertManager
+    def commit(self):
+        return None
 
-AlertSeverity = Mock(HIGH="high", MEDIUM="medium")
-AlertType = Mock(UNUSUAL_ACTIVITY="unusual_activity")
+    def refresh(self, _model):
+        return None
 
-class _DatabaseManager:
-    def __init__(self, uri):
-        self.uri = uri
 
-    def health_check(self):
-        return True
+class _DBManagerStub:
+    def __init__(self, session=None):
+        self._session = session or _SessionStub()
 
-    def get_audit_logs(self):
-        return []
+    def get_session(self):
+        return _SessionContext(self._session)
 
-    def get_audit_log_count(self):
-        return 0
 
-    def cleanup_old_audit_logs(self, retention_days=90):
-        return 0
+@pytest.fixture
+def audit_logger(monkeypatch):
+    import src.audit_logger as audit_mod
 
-DatabaseManager = _DatabaseManager
-config = Mock()
+    monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+    db_manager = _DBManagerStub()
+    return AuditLogger(db_manager)
 
 
 class TestAuditLogModel:
-    """Test AuditLogModel functionality"""
-    
-    def test_calculate_hash(self):
-        """Test hash calculation"""
+    def test_calculate_hash_stable(self):
         log_data = {
-            'timestamp': '2025-12-01T10:00:00Z',
-            'user_id': 'user123',
-            'action': 'login',
-            'resource_type': 'user',
-            'resource_id': 'user123',
-            'endpoint': '/api/login',
-            'status_code': 200
+            "timestamp": "2025-12-01T10:00:00Z",
+            "user_id": "user123",
+            "action": "login",
+            "resource_type": "user",
+            "resource_id": "user123",
+            "endpoint": "/api/login",
+            "status_code": 200,
         }
-        
         hash1 = AuditLogModel.calculate_hash(log_data)
         hash2 = AuditLogModel.calculate_hash(log_data)
-        
-        # Same data should produce same hash
         assert hash1 == hash2
-        assert len(hash1) == 64  # SHA-256 produces 64 character hex string
-        
-    def test_calculate_hash_with_previous(self):
-        """Test hash calculation with previous hash"""
-        log_data = {
-            'timestamp': '2025-12-01T10:00:00Z',
-            'user_id': 'user123',
-            'action': 'login'
-        }
-        
-        previous_hash = 'abc123'
-        hash_with_prev = AuditLogModel.calculate_hash(log_data, previous_hash)
-        hash_without_prev = AuditLogModel.calculate_hash(log_data)
-        
-        # Hash should be different with previous hash
-        assert hash_with_prev != hash_without_prev
-        
-    def test_to_dict(self):
-        """Test conversion to dictionary"""
-        # This would require a database session, so we'll test the structure
-        log_dict = {
-            'id': 1,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'user_id': 'user123',
-            'username': 'john.doe',
-            'action': 'login',
-            'status_code': 200
-        }
-        
-        # Verify expected keys
-        expected_keys = ['id', 'timestamp', 'user_id', 'username', 'action', 'status_code']
-        for key in expected_keys:
-            assert key in log_dict
+        assert len(hash1) == 64
+
+    def test_calculate_hash_with_previous_changes_value(self):
+        log_data = {"timestamp": datetime.now(timezone.utc), "user_id": "u1", "action": "login"}
+        a = AuditLogModel.calculate_hash(log_data)
+        b = AuditLogModel.calculate_hash(log_data, previous_hash="prev")
+        assert a != b
+
+    def test_verify_chain_integrity_happy_path(self):
+        t1 = datetime.now(timezone.utc)
+        t2 = t1 + timedelta(seconds=1)
+
+        l1 = AuditLogModel(
+            id=1,
+            timestamp=t1,
+            user_id="u1",
+            action="a1",
+            resource_type="r",
+            resource_id="1",
+            endpoint="/e1",
+            status_code=200,
+        )
+        l1.current_hash = AuditLogModel.calculate_hash(l1.to_dict(), None)
+        l1.previous_hash = None
+
+        l2 = AuditLogModel(
+            id=2,
+            timestamp=t2,
+            user_id="u1",
+            action="a2",
+            resource_type="r",
+            resource_id="2",
+            endpoint="/e2",
+            status_code=200,
+        )
+        l2.previous_hash = l1.current_hash
+        l2.current_hash = AuditLogModel.calculate_hash(l2.to_dict(), l1.current_hash)
+
+        ok, err = AuditLogModel.verify_chain_integrity([l1, l2])
+        assert ok is True
+        assert err is None
+
+    def test_verify_chain_integrity_broken_hash(self):
+        t1 = datetime.now(timezone.utc)
+        l1 = AuditLogModel(
+            id=1,
+            timestamp=t1,
+            user_id="u1",
+            action="a1",
+            resource_type="r",
+            resource_id="1",
+            endpoint="/e1",
+            status_code=200,
+        )
+        l1.previous_hash = None
+        l1.current_hash = "bad_hash"
+
+        ok, err = AuditLogModel.verify_chain_integrity([l1])
+        assert ok is False
+        assert "Hash mismatch" in err
+
+    def test_audit_summary_to_dict(self):
+        now = datetime.now(timezone.utc)
+        summary = AuditLogSummary(
+            total_logs=10,
+            by_action={"login": 5},
+            by_severity={"info": 8, "warning": 2},
+            by_user={"alice": 3},
+            failed_attempts=2,
+            time_range=(now - timedelta(hours=1), now),
+        )
+        result = summary.to_dict()
+        assert result["total_logs"] == 10
+        assert result["by_action"]["login"] == 5
+        assert result["time_range"]["start"] is not None
+        assert result["time_range"]["end"] is not None
 
 
 class TestAuditLogger:
-    """Test AuditLogger functionality"""
-    
-    @pytest.fixture
-    def db_manager(self):
-        """Create test database manager"""
-        # Use in-memory SQLite for testing
-        return DatabaseManager('sqlite:///:memory:')
-    
-    @pytest.fixture
-    def audit_logger(self, db_manager: Any):
-        """Create audit logger instance"""
-        return AuditLogger(db_manager)
-    
-    def test_sanitize_data(self, audit_logger: Any):
-        """Test sensitive data sanitization"""
-        sensitive_data = {
-            'username': 'john.doe',
-            'password': 'secret123',
-            'token': 'abc123token',
-            'api_key': 'key123',
-            'normal_field': 'normal_value'
+    def test_sanitize_data_redacts_sensitive_fields(self, audit_logger):
+        data = {
+            "username": "john.doe",
+            "password": "secret123",
+            "token": "abc123token",
+            "api_key": "key123",
+            "authorization": "Bearer abc",
+            "normal_field": "normal_value",
         }
-        
-        sanitized = audit_logger._sanitize_data(sensitive_data)
+        sanitized = audit_logger._sanitize_data(data)
         sanitized_dict = json.loads(sanitized)
-        
-        # Sensitive fields should be redacted
-        assert sanitized_dict['password'] == '***REDACTED***'
-        assert sanitized_dict['token'] == '***REDACTED***'
-        assert sanitized_dict['api_key'] == '***REDACTED***'
-        
-        # Normal fields should remain
-        assert sanitized_dict['username'] == 'john.doe'
-        assert sanitized_dict['normal_field'] == 'normal_value'
-    
-    def test_sanitize_data_truncation(self, audit_logger: Any):
-        """Test data truncation for large payloads"""
-        large_data = {'data': 'x' * 10000}
-        
+        assert sanitized_dict["password"] == "***REDACTED***"
+        assert sanitized_dict["token"] == "***REDACTED***"
+        assert sanitized_dict["api_key"] == "***REDACTED***"
+        assert sanitized_dict["authorization"] == "***REDACTED***"
+        assert sanitized_dict["normal_field"] == "normal_value"
+
+    def test_sanitize_data_truncation(self, audit_logger):
+        large_data = {"data": "x" * 10000}
         sanitized = audit_logger._sanitize_data(large_data, max_length=100)
-        
-        # Should be truncated
-        assert len(sanitized) <= 120  # 100 + truncation message
-        assert '[TRUNCATED]' in sanitized
-    
-    def test_log_authentication_attempt_success(self, audit_logger: Any):
-        """Test logging successful authentication"""
-        log = audit_logger.log_authentication_attempt(
-            username='john.doe',
-            success=True,
-            auth_method='password'
-        )
-        
-        if log:
-            assert log.action == 'authentication_attempt'
-            assert log.username == 'john.doe'
-            assert log.status_code == 200
-            assert log.severity == 'info'
-            assert log.category == 'authentication'
-    
-    def test_log_authentication_attempt_failure(self, audit_logger: Any):
-        """Test logging failed authentication"""
-        log = audit_logger.log_authentication_attempt(
-            username='john.doe',
-            success=False,
-            reason='Invalid password',
-            auth_method='password'
-        )
-        
-        if log:
-            assert log.action == 'authentication_attempt'
-            assert log.status_code == 401
-            assert log.severity == 'warning'
-            assert log.error_message == 'Invalid password'
-    
-    def test_log_api_call(self, audit_logger: Any):
-        """Test logging API call"""
-        log = audit_logger.log_api_call(
-            endpoint='/api/users',
-            method='GET',
+        assert len(sanitized) <= 120
+        assert "[TRUNCATED]" in sanitized
+
+    def test_sanitize_data_non_dict(self, audit_logger):
+        sanitized = audit_logger._sanitize_data("plain-text")
+        obj = json.loads(sanitized)
+        assert obj["value"] == "plain-text"
+
+    def test_log_event_creates_model(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        session = _SessionStub(rows=[])
+        db = _DBManagerStub(session=session)
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(db)
+
+        evt = logger.log_event(
+            action="authentication_attempt",
+            resource_type="user",
+            resource_id="john",
             status_code=200,
-            response_time_ms=45
+            request_data={"password": "x"},
+            response_data={"ok": True},
+            category="authentication",
+            compliance_tags=["PCI-DSS"],
+            username="john",
         )
-        
-        if log:
-            assert log.action == 'api_call'
-            assert log.resource_id == '/api/users'
-            assert log.status_code == 200
-            assert log.response_time_ms == 45
-            assert log.severity == 'info'
-    
-    def test_log_database_operation(self, audit_logger: Any):
-        """Test logging database operation"""
-        log = audit_logger.log_database_operation(
-            operation='create',
-            table='users',
-            record_id='123',
-            data={'username': 'john.doe'},
-            success=True
-        )
-        
-        if log:
-            assert log.action == 'db_create'
-            assert log.resource_type == 'database'
-            assert 'users:123' in log.resource_id
-            assert log.status_code == 200
-    
-    def test_log_security_event(self, audit_logger: Any):
-        """Test logging security event"""
-        log = audit_logger.log_security_event(
-            event_type='suspicious_activity',
-            description='Multiple failed login attempts',
-            severity='high'
-        )
-        
-        if log:
-            assert log.action == 'security_event'
-            assert log.resource_type == 'security'
-            assert log.severity == 'high'
-            assert log.category == 'security'
 
+        assert evt is not None
+        assert len(session.added) == 1
+        assert session.added[0].action == "authentication_attempt"
+        assert session.added[0].severity == "info"
 
-class TestAuditReports:
-    """Test AuditReportGenerator functionality"""
-    
-    @pytest.fixture
-    def db_manager(self):
-        """Create test database manager"""
-        return DatabaseManager('sqlite:///:memory:')
-    
-    @pytest.fixture
-    def report_generator(self, db_manager: Any):
-        """Create report generator instance"""
-        return AuditReportGenerator(db_manager)
-    
-    def test_generate_user_activity_report(self, report_generator: Any):
-        """Test user activity report generation"""
-        report = report_generator.generate_user_activity_report(
-            username='john.doe',
-            start_date=datetime.now(timezone.utc) - timedelta(days=7)
-        )
-        
-        assert 'report_type' in report
-        assert report['report_type'] == 'user_activity'
-        assert 'summary' in report
-        assert 'generated_at' in report
-    
-    def test_generate_security_report(self, report_generator: Any):
-        """Test security report generation"""
-        report = report_generator.generate_security_report(
-            start_date=datetime.now(timezone.utc) - timedelta(days=7)
-        )
-        
-        assert 'report_type' in report
-        assert report['report_type'] == 'security'
-        assert 'summary' in report
-    
-    def test_generate_compliance_report(self, report_generator: Any):
-        """Test compliance report generation"""
-        report = report_generator.generate_compliance_report(
-            compliance_standard='PCI-DSS',
-            start_date=datetime.now(timezone.utc) - timedelta(days=30)
-        )
-        
-        assert 'report_type' in report
-        assert report['report_type'] == 'compliance'
-        assert 'compliance_standard' in report
-        assert report['compliance_standard'] == 'PCI-DSS'
-        assert 'compliance_metrics' in report
-    
-    def test_export_report_json(self, report_generator: Any):
-        """Test report export in JSON format"""
-        report_data = {
-            'report_type': 'test',
-            'data': {'key': 'value'}
-        }
-        
-        exported = report_generator.export_report(report_data, format_type='json')
-        
-        assert isinstance(exported, str)
-        parsed = json.loads(exported)
-        assert parsed['report_type'] == 'test'
-    
-    def test_export_report_html(self, report_generator: Any):
-        """Test report export in HTML format"""
-        report_data = {
-            'report_type': 'test',
-            'summary': {'total': 100}
-        }
-        
-        exported = report_generator.export_report(report_data, format_type='html')
-        
-        assert isinstance(exported, str)
-        assert '<html>' in exported
-        assert 'test' in exported
+    def test_log_authentication_attempt_success(self, monkeypatch):
+        import src.audit_logger as audit_mod
 
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(_DBManagerStub())
+        result = logger.log_authentication_attempt("john.doe", True, auth_method="password")
+        assert result is not None
+        assert result.action == "authentication_attempt"
+        assert result.status_code == 200
+        assert result.severity == "info"
 
-class TestAuditAlerts:
-    """Test AuditAlertManager functionality"""
-    
-    @pytest.fixture
-    def db_manager(self):
-        """Create test database manager"""
-        return DatabaseManager('sqlite:///:memory:')
-    
-    @pytest.fixture
-    def alert_manager(self, db_manager: Any):
-        """Create alert manager instance"""
-        return AuditAlertManager(db_manager)
-    
-    def test_alert_manager_initialization(self, alert_manager: Any):
-        """Test alert manager initialization"""
-        assert alert_manager is not None
-        assert len(alert_manager.alert_rules) > 0  # Should have default rules
-        assert alert_manager.active_alerts == []
-    
-    def test_add_alert_rule(self, alert_manager: Any):
-        """Test adding custom alert rule"""
-        from src.audit_alerts import AlertRule
-        
-        initial_count = len(alert_manager.alert_rules)
-        
-        rule = AlertRule(
-            rule_id='test_rule',
-            name='Test Rule',
-            alert_type=AlertType.UNUSUAL_ACTIVITY,
-            severity=AlertSeverity.MEDIUM,
-            condition=lambda logs: len(logs) > 10
-        )
-        
-        alert_manager.add_alert_rule(rule)
-        
-        assert len(alert_manager.alert_rules) == initial_count + 1
-    
-    def test_remove_alert_rule(self, alert_manager: Any):
-        """Test removing alert rule"""
-        from src.audit_alerts import AlertRule
-        
-        rule = AlertRule(
-            rule_id='test_rule_remove',
-            name='Test Rule',
-            alert_type=AlertType.UNUSUAL_ACTIVITY,
-            severity=AlertSeverity.MEDIUM,
-            condition=lambda logs: True
-        )
-        
-        alert_manager.add_alert_rule(rule)
-        initial_count = len(alert_manager.alert_rules)
-        
-        alert_manager.remove_alert_rule('test_rule_remove')
-        
-        assert len(alert_manager.alert_rules) == initial_count - 1
-    
-    def test_get_active_alerts(self, alert_manager: Any):
-        """Test getting active alerts"""
-        alerts = alert_manager.get_active_alerts()
-        
-        assert isinstance(alerts, list)
-    
-    def test_get_active_alerts_with_filters(self, alert_manager: Any):
-        """Test getting active alerts with filters"""
-        alerts = alert_manager.get_active_alerts(
-            severity=AlertSeverity.HIGH,
-            acknowledged=False
-        )
-        
-        assert isinstance(alerts, list)
+    def test_log_authentication_attempt_failure(self, monkeypatch):
+        import src.audit_logger as audit_mod
 
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(_DBManagerStub())
+        result = logger.log_authentication_attempt("john.doe", False, reason="Invalid password")
+        assert result is not None
+        assert result.status_code == 401
+        assert result.severity == "warning"
+        assert result.error_message == "Invalid password"
 
-class TestDatabaseIntegration:
-    """Test database integration"""
-    
-    @pytest.fixture
-    def db_manager(self):
-        """Create test database manager"""
-        return DatabaseManager('sqlite:///:memory:')
-    
-    def test_database_health_check(self, db_manager: Any):
-        """Test database connectivity"""
-        assert db_manager.health_check() is True
-    
-    def test_get_audit_logs_empty(self, db_manager: Any):
-        """Test getting audit logs from empty database"""
-        logs = db_manager.get_audit_logs()
-        
-        assert isinstance(logs, list)
-        assert len(logs) == 0
-    
-    def test_get_audit_log_count(self, db_manager: Any):
-        """Test getting audit log count"""
-        count = db_manager.get_audit_log_count()
-        
-        assert isinstance(count, int)
-        assert count >= 0
-    
-    def test_cleanup_old_audit_logs(self, db_manager: Any):
-        """Test cleanup of old audit logs"""
-        deleted = db_manager.cleanup_old_audit_logs(retention_days=90)
-        
-        assert isinstance(deleted, int)
-        assert deleted >= 0
+    def test_log_api_call_severity_branches(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(_DBManagerStub())
+
+        ok = logger.log_api_call("/api/users", "GET", 200, 10)
+        warn = logger.log_api_call("/api/users", "GET", 404, 11)
+        err = logger.log_api_call("/api/users", "GET", 500, 12)
+
+        assert ok.severity == "info"
+        assert warn.severity == "warning"
+        assert err.severity == "error"
+
+    def test_log_database_operation_and_security_event(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(_DBManagerStub())
+
+        db_log = logger.log_database_operation("create", "users", "123", {"username": "john"}, success=True)
+        sec_log = logger.log_security_event("suspicious_activity", "Multiple failed login attempts", severity="high")
+
+        assert db_log.action == "db_create"
+        assert db_log.resource_type == "database"
+        assert db_log.status_code == 200
+        assert sec_log.action == "security_event"
+        assert sec_log.resource_type == "security"
+        assert sec_log.severity == "high"
+
+    def test_get_audit_trail_and_summary(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        row = AuditLogModel(
+            id=1,
+            timestamp=datetime.now(timezone.utc),
+            user_id="u1",
+            username="john",
+            action="login",
+            severity="warning",
+            resource_type="user",
+            status_code=401,
+            current_hash="x" * 64,
+        )
+        row.previous_hash = None
+        db = _DBManagerStub(session=_SessionStub(rows=[row]))
+        logger = AuditLogger(db)
+
+        trail = logger.get_audit_trail(user_id="u1", action="login", severity="warning", limit=10, offset=0)
+        summary = logger.get_audit_summary()
+
+        assert isinstance(trail, list)
+        assert len(trail) == 1
+        assert summary.total_logs == 1
+        assert summary.failed_attempts == 1
+        assert summary.by_action["login"] == 1
+
+    def test_verify_integrity_and_export_json_csv(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+
+        t = datetime.now(timezone.utc)
+        row = AuditLogModel(
+            id=1,
+            timestamp=t,
+            user_id="u1",
+            username="john",
+            action="login",
+            severity="info",
+            resource_type="user",
+            status_code=200,
+        )
+        row.previous_hash = None
+        row.current_hash = AuditLogModel.calculate_hash(row.to_dict(), None)
+
+        db = _DBManagerStub(session=_SessionStub(rows=[row]))
+        logger = AuditLogger(db)
+
+        ok, err = logger.verify_integrity()
+        assert ok is True
+        assert err is None
+
+        json_blob = logger.export_audit_logs("json")
+        csv_blob = logger.export_audit_logs("csv")
+        assert "login" in json_blob
+        assert "login" in csv_blob
+
+    def test_export_unsupported_format_raises(self, monkeypatch):
+        import src.audit_logger as audit_mod
+
+        monkeypatch.setattr(audit_mod, "telemetry_logger", SimpleNamespace(get_logger=lambda: _DummyLogger()))
+        logger = AuditLogger(_DBManagerStub())
+        with pytest.raises(ValueError):
+            logger.export_audit_logs("xml")
 
 
 class TestConfiguration:
-    """Test configuration settings"""
-    
-    @pytest.mark.skip(reason="Mock config lacks specific attrs")
+    @pytest.mark.skip(reason="Config validation out of scope for this focused suite")
     def test_audit_config_exists(self):
-        """Test that audit configuration exists"""
         assert True
-    
-    @pytest.mark.skip(reason="Mock config lacks specific attrs")
+
+    @pytest.mark.skip(reason="Config validation out of scope for this focused suite")
     def test_audit_config_values(self):
-        """Test audit configuration values"""
         assert True
-
-
-# Run tests
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])

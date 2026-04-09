@@ -38,6 +38,7 @@ if exist "..\app_final.py" (
     copy "..\config.py" . >nul 2>nul
     copy "..\Dockerfile" . >nul
     copy "..\docker-compose.yml" . >nul
+    copy "..\docker-compose.production.yml" . >nul 2>nul
     copy "..\nginx.conf" . >nul
     copy "..\demo_script.py" . >nul
     echo ✓ Copied main project files
@@ -89,8 +90,8 @@ echo ✓ Docker is available
 
 REM Deploy application
 echo Deploying application with Docker...
-docker-compose down >nul 2>&1
-docker-compose up -d --build
+docker-compose -f docker-compose.production.yml down >nul 2>&1
+docker-compose -f docker-compose.production.yml up -d --build
 
 if %errorlevel% equ 0 (
     echo ✓ Application deployed successfully
@@ -107,7 +108,7 @@ timeout /t 30 /nobreak >nul
 
 REM Check service status
 echo Checking service status...
-docker-compose ps
+docker-compose -f docker-compose.production.yml ps
 
 REM Test health endpoint
 echo Testing health endpoint...

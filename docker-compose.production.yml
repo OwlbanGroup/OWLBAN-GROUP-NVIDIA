@@ -74,8 +74,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "127.0.0.1:80:80"    # Bind to localhost explicitly
-      - "127.0.0.1:443:443"  # Bind to localhost explicitly
+      - "80:80"    # Public exposure for live production access
+      - "443:443"  # Public exposure for live production HTTPS access
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
@@ -118,7 +118,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "127.0.0.1:3000:3000"  # Bind to localhost explicitly
+      - "127.0.0.1:3000:3000"  # Keep internal-only; access via secured network/VPN
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
