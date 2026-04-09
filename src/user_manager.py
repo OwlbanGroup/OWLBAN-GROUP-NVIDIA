@@ -22,6 +22,8 @@ class UserManager:
                 if existing_user:
                     return None, "User already exists"
 
+                # Truncate password to 72 bytes for bcrypt compatibility
+                password = password[:72]
                 # Create new user
                 user = User(
                     username=username,
@@ -44,6 +46,7 @@ class UserManager:
             if not user:
                 return False, None
 
+            password = password[:72]
             if check_password_hash(user.password_hash, password):
                 return True, user
             return False, None
@@ -155,6 +158,9 @@ class UserManager:
             existing_user = session.query(User).filter_by(username=username).first()
             if existing_user:
                 return existing_user, "User already exists"
+
+            # Truncate password to 72 bytes for bcrypt compatibility
+            password = password[:72]
 
             user = User(
                 username=username,

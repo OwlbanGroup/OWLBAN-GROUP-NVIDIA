@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """Banking Blueprint for personal bank account management and transactions."""
 
 from flask import Blueprint, request, jsonify, current_app
 from typing import Dict, Any
-from src.banking_service import banking_service
+from src.banking_service_fixed import banking_service
 from src.auth import token_auth_required
 from src.rate_limiting import conditional_limit
 from src.logger import telemetry_logger
@@ -15,7 +14,7 @@ banking_bp = Blueprint('banking', __name__)
 @token_auth_required
 @conditional_limit("20 per minute")
 def list_accounts():
- """List user's bank accounts."""
+    """List user's bank accounts."""
     user_id = getattr(request, 'user_id', 'demo_user')
     try:
         accounts = banking_service.get_accounts(user_id)
@@ -32,7 +31,7 @@ def list_accounts():
 @token_auth_required
 @conditional_limit("5 per minute")
 def create_account():
- """Create new bank account."""
+    """Create new bank account."""
     user_id = getattr(request, 'user_id', 'demo_user')
     data = request.get_json() or {}
     data['user_id'] = user_id
@@ -53,7 +52,7 @@ def create_account():
 @token_auth_required
 @conditional_limit("20 per minute")
 def get_account(account_id: int):
-    \"\"\"Get specific account details.\"\"\"
+    """Get specific account details."""
     user_id = getattr(request, 'user_id', 'demo_user')
     try:
         account = banking_service.get_account(account_id, user_id)
@@ -68,7 +67,7 @@ def get_account(account_id: int):
 @token_auth_required
 @conditional_limit("5 per minute")
 def update_account(account_id: int):
- """Update account details (interest_rate, overdraft_limit, etc.)."""
+    """Update account details (interest_rate, overdraft_limit, etc.)."""
     user_id = getattr(request, 'user_id', 'demo_user')
     data = request.get_json() or {}
     try:
@@ -84,7 +83,7 @@ def update_account(account_id: int):
 @token_auth_required
 @conditional_limit("20 per minute")
 def validate_account(account_id: int):
- """Validate account status and balance for transactions."""
+    """Validate account status and balance for transactions."""
     user_id = getattr(request, 'user_id', 'demo_user')
     data = request.get_json() or {}
     min_balance = data.get('min_balance', 0.0)
@@ -99,7 +98,7 @@ def validate_account(account_id: int):
 @token_auth_required
 @conditional_limit("30 per minute")
 def list_transactions(account_id: int):
-    \"\"\"List account transactions.\"\"\"
+    """List account transactions."""
     user_id = getattr(request, 'user_id', 'demo_user')
     limit = min(int(request.args.get('limit', 50)), 100)
     try:
@@ -117,7 +116,7 @@ def list_transactions(account_id: int):
 @token_auth_required
 @conditional_limit("10 per minute")
 def create_transaction(account_id: int):
- """Create deposit/withdrawal/transfer transaction."""
+    """Create deposit/withdrawal/transfer transaction."""
     user_id = getattr(request, 'user_id', 'demo_user')
     data = request.get_json() or {}
     tx_type = data.get('type', 'deposit')  # deposit|withdrawal|transfer

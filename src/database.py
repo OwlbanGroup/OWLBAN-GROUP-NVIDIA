@@ -17,6 +17,7 @@ from .models.base import Base
 class TelemetryEventModel(Base):
     """SQLAlchemy model for telemetry events"""
     __tablename__ = 'telemetry_events'
+    __abstract__ = True  # Prevent duplicate registry warning with database_fixed stub
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(String, nullable=False)

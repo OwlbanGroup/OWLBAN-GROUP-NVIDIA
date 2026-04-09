@@ -98,7 +98,7 @@ class Config:
         # Redis Settings
         self.REDIS_URL: Optional[str] = os.getenv('REDIS_URL')
 
-        # Token Management Settings - No defaults for security
+        # Token Management Settings
         self.TOKEN_CLIENT_ID: Optional[str] = os.getenv('TOKEN_CLIENT_ID')
         self.TOKEN_CLIENT_SECRET: Optional[str] = os.getenv('TOKEN_CLIENT_SECRET')
         self.TOKEN_URL: str = os.getenv(
@@ -147,7 +147,7 @@ class Config:
         self.TORCH_CUDA_VISIBLE_DEVICES: str = os.getenv('TORCH_CUDA_VISIBLE_DEVICES', '0')
         self.TORCH_DISTRIBUTED_BACKEND: str = os.getenv('TORCH_DISTRIBUTED_BACKEND', 'nccl')
 
-        # Security Settings - No hardcoded defaults for production security
+        # Security Settings - test-friendly fallback
         secret_key = os.getenv('SECRET_KEY')
         if not secret_key:
             secret_key = 'dummy_secret_key_for_testing'
@@ -182,11 +182,18 @@ class Config:
         # CORS Settings
         allowed_origins_str = os.getenv('ALLOWED_ORIGINS')
         if not allowed_origins_str:
-            self.ALLOWED_ORIGINS = ['https://app.jpmorgan.com', 'https://dashboard.jpmorgan.com', 'https://api.jpmorgan.com']
+            self.ALLOWED_ORIGINS = [
+                'https://app.jpmorgan.com',
+                'https://dashboard.jpmorgan.com',
+                'https://api.jpmorgan.com'
+            ]
         else:
             self.ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_str.split(',') if origin.strip()]
             if os.getenv('FLASK_ENV') == 'production':
-                self.ALLOWED_ORIGINS = [origin for origin in self.ALLOWED_ORIGINS if not origin.startswith('http://localhost') and not origin.startswith('http://127.0.0.1')]
+                self.ALLOWED_ORIGINS = [
+                    origin for origin in self.ALLOWED_ORIGINS
+                    if not origin.startswith('http://localhost') and not origin.startswith('http://127.0.0.1')
+                ]
 
         # Audit Logging Settings
         self.AUDIT_LOG_ENABLED: bool = os.getenv('AUDIT_LOG_ENABLED', 'true').lower() == 'true'
@@ -211,7 +218,6 @@ class Config:
         self.AUTH0_JWKS_URL: Optional[str] = f"https://{self.AUTH0_DOMAIN}/.well-known/jwks.json" if self.AUTH0_DOMAIN else None
 
         # LangSmith Settings for AI tracing and monitoring
-        self.LANGCHAIN_TRACING_V2: bool = os.getenv('LANGCHAIN_TRACING_V2', 'true').lower() == 'true'
         self.LANGCHAIN_API_KEY: Optional[str] = os.getenv('LANGCHAIN_API_KEY')
         self.LANGCHAIN_PROJECT: str = os.getenv('LANGCHAIN_PROJECT', 'jpmorgan-financial-apis')
         self.LANGCHAIN_ENDPOINT: str = os.getenv('LANGCHAIN_ENDPOINT', 'https://api.smith.langchain.com')
@@ -222,10 +228,10 @@ class Config:
         self.OPENAI_TEMPERATURE: float = float(os.getenv('OPENAI_TEMPERATURE', '0.1'))
 
         # Blackbox AI Settings (OpenAI-compatible)
-        self.BLACKBOX_API_KEY: Optional[str] = os.getenv('BLACKBOX_API_KEY')
         self.BLACKBOX_BASE_URL: str = os.getenv('BLACKBOX_BASE_URL', 'https://cloud.blackbox.ai/')
         self.BLACKBOX_MODEL: str = os.getenv('BLACKBOX_MODEL', 'gpt-3.5-turbo')
         self.BLACKBOX_TEMPERATURE: float = float(os.getenv('BLACKBOX_TEMPERATURE', '0.1'))
+        self.BLACKBOX_API_KEY: Optional[str] = os.getenv('BLACKBOX_API_KEY')
 
         # Stripe Payment Processing Settings
         self.STRIPE_PUBLISHABLE_KEY: Optional[str] = os.getenv('STRIPE_PUBLISHABLE_KEY')
@@ -237,43 +243,31 @@ class Config:
     def get_database_url(self) -> str:
         """Generate database URL based on configuration"""
         if self.DATABASE_TYPE == 'postgresql':
-            return (f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
-                    f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/"
-                    f"{self.DATABASE_NAME}")
-        else:
-            return self.DATABASE_URL
+            return (
+                f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+                f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/"
+                f"{self.DATABASE_NAME}"
+            )
+        return self.DATABASE_URL
 
     def get_jpmorgan_endpoint_url(self, service: str, use_mtls: bool = False) -> str:
-        """Get JPMorgan endpoint URL based on environment and service
-
-        Args:
-            service: 'merchant', 'openbanking', or 'apigateway'
-            use_mtls: Whether to use mTLS endpoint (for merchant service)
-
-        Returns:
-            The appropriate endpoint URL for the current environment
-        """
+        """Get JPMorgan endpoint URL based on environment and service"""
         environment = self.JPMORGAN_ENVIRONMENT.lower()
 
         if service == 'merchant':
             if environment in ['dev', 'staging']:
-                return (self.JPMORGAN_MERCHANT_MTLS_UAT_URL if use_mtls
-                        else self.JPMORGAN_MERCHANT_UAT_URL)
-            else:  # prod (default)
-                return (self.JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL if use_mtls
-                        else self.JPMORGAN_MERCHANT_PRODUCTION_URL)
-        elif service == 'openbanking':
+                return self.JPMORGAN_MERCHANT_MTLS_UAT_URL if use_mtls else self.JPMORGAN_MERCHANT_UAT_URL
+            return self.JPMORGAN_MERCHANT_MTLS_PRODUCTION_URL if use_mtls else self.JPMORGAN_MERCHANT_PRODUCTION_URL
+        if service == 'openbanking':
             if environment in ['dev', 'staging']:
                 return self.JPMORGAN_OPENBANKING_UAT_URL
-            else:  # prod (default)
-                return self.JPMORGAN_OPENBANKING_PRODUCTION_URL
-        elif service == 'apigateway':
+            return self.JPMORGAN_OPENBANKING_PRODUCTION_URL
+        if service == 'apigateway':
             if environment == 'qaf':
                 return self.JPMORGAN_APIGATEWAY_QAF_URL
-            else:  # prod (default)
-                return self.JPMORGAN_APIGATEWAY_PRODUCTION_URL
-        else:
-            raise ValueError(f"Unknown service: {service}. Must be 'merchant', 'openbanking', or 'apigateway'")
+            return self.JPMORGAN_APIGATEWAY_PRODUCTION_URL
+
+        raise ValueError("Unknown service: {service}. Must be 'merchant', 'openbanking', or 'apigateway'")
 
     def get_all_settings(self) -> Dict[str, Any]:
         """Get all configuration settings as a dictionary"""
@@ -330,5 +324,4 @@ class Config:
         }
 
 
-# Global configuration instance
 config = Config()

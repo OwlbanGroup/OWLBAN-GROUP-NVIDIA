@@ -24,8 +24,9 @@ try:
     from blueprints.pfm import pfm_bp
     print("Successfully imported PFM blueprint")
 except ImportError as e:
-    print(f"Failed to import PFM blueprint: {e}")
-    sys.exit(1)
+    print(f"Warning: Failed to import PFM blueprint: {e}")
+    pfm_bp = None
+
 
 # Create Flask app
 app = Flask(__name__)

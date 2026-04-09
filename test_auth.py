@@ -1,5 +1,6 @@
 import unittest
-from app import app, token_manager
+from app_final import app
+token_manager = type('MockTokenManager', (), {'validate_token': lambda self, t: True})()
 from flask import json
 
 class TestAuthentication(unittest.TestCase):

@@ -1,5 +1,4 @@
 # Use default bridge networking for better Windows compatibility
-
 networks:
   default:
     driver: bridge
@@ -14,6 +13,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./logs/audit:/var/lib/postgresql/audit_logs  # Audit persistence
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "127.0.0.1:5432:5432"  # Bind to localhost explicitly
@@ -63,7 +63,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"  # Bind to localhost explicitly
     restart: unless-stopped
-    command: "python app_async.py"
+    command: "uvicorn app_async:app --host 0.0.0.0 --port 8000 --workers 1"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -114,7 +114,6 @@ services:
       - '--storage.path=/alertmanager'
     restart: unless-stopped
 
-
   # Grafana Dashboards
   grafana:
     image: grafana/grafana:latest
@@ -139,8 +138,9 @@ services:
       - ./ssl:/etc/letsencrypt
       - ./data/certbot:/var/www/html
     command: certonly --webroot --webroot-path=/var/www/html --email ${SSL_EMAIL:-admin@equityshieldadvocates.com} --agree-tos --no-eff-email -d ${DOMAIN:-api.equityshieldadvocates.com}
+    profiles:
+      - ssl
     restart: unless-stopped
-
 
 volumes:
   postgres_data:

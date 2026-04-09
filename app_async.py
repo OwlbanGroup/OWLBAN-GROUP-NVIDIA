@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from passlib.hash import bcrypt
+from werkzeug.security import generate_password_hash, check_password_hash
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -339,7 +339,8 @@ async def register_user(request: Request, user_data: UserRegisterRequest):
                 detail="User already exists"
             )
 
-        hashed_password = bcrypt.hash(user_data.password)
+        password = user_data.password[:72]
+        hashed_password = generate_password_hash(password)
         users[user_data.username] = {
             'password': hashed_password,
             'created_at': datetime.now(timezone.utc).isoformat()
@@ -364,7 +365,8 @@ async def login_user(request: Request, login_data: UserLoginRequest):
     """
     try:
         user = users.get(login_data.username)
-        if not user or not bcrypt.verify(login_data.password, user['password']):
+        password = login_data.password[:72]
+        if not user or not check_password_hash(user['password'], password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password"

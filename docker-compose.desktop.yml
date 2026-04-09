@@ -1,0 +1,25 @@
+name: jpm-finance-gui
+
+include:
+  - docker-compose.fixed.yml
+
+x-docker-desktop:
+  logging: awslogs
+  labels:
+    - "com.docker.compose.project=jpmorgan-financial-apis"
+    - "com.docker.desktop.gui.project=true"
+    - "traefik.enable=false"
+
+services:
+  gateway:
+    labels:
+      - "com.docker.compose.service=gateway"
+      - "com.docker.desktop.gui.stack=true"
+  mcp-server:
+    labels:
+      - "com.docker.compose.service=mcp-server"
+      - "com.docker.desktop.gui.stack=true"
+
+# Optimized for Docker Desktop GUI dashboard
+# Run: docker compose -f docker-compose.desktop.yml up -d
+# View in Docker Desktop → Compose → jpm-finance-gui

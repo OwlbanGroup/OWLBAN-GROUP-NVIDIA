@@ -650,19 +650,44 @@ UPDATEDATE<!DOCTYPE html>
             }
         }
 
-        // Update metrics periodically
-        function updateMetrics() {
-            // Simulate metrics updates
-            const now = new Date().toLocaleTimeString();
-            if (metricsChart.data.labels.length > 10) {
-                metricsChart.data.labels.shift();
-                metricsChart.data.datasets[0].data.shift();
-            }
-            metricsChart.data.labels.push(now);
-            metricsChart.data.datasets[0].data.push(Math.floor(Math.random() * 20) + 5);
-            metricsChart.update();
+        // Update metrics from backend dashboard endpoints
+        async function updateMetrics() {
+            try {
+                const [summaryResponse, trendsResponse] = await Promise.all([
+                    fetch('/api/dashboard/summary'),
+                    fetch('/api/dashboard/trends?points=12')
+                ]);
 
-            document.getElementById('requests-min').textContent = Math.floor(Math.random() * 50) + 10;
+                const summaryJson = await summaryResponse.json();
+                const trendsJson = await trendsResponse.json();
+
+                if (summaryJson.status === 'success' && summaryJson.data) {
+                    const s = summaryJson.data;
+                    document.getElementById('telemetry-events').textContent = s.telemetry_events ?? 0;
+                    document.getElementById('anomalies-detected').textContent = s.anomalies_detected ?? 0;
+                    document.getElementById('total-businesses').textContent = s.total_businesses ?? 0;
+                    document.getElementById('total-assets').textContent = s.total_assets ?? 0;
+                    document.getElementById('active-users').textContent = s.active_users ?? 0;
+                }
+
+                if (trendsJson.status === 'success' && trendsJson.data) {
+                    const t = trendsJson.data;
+                    const labels = Array.isArray(t.labels) ? t.labels : [];
+                    const requests = Array.isArray(t.requests) ? t.requests : [];
+
+                    metricsChart.data.labels = labels.map((label) => {
+                        const d = new Date(label);
+                        return isNaN(d.getTime()) ? label : d.toLocaleTimeString();
+                    });
+                    metricsChart.data.datasets[0].data = requests;
+                    metricsChart.update();
+
+                    const latest = requests.length ? requests[requests.length - 1] : 0;
+                    document.getElementById('requests-min').textContent = latest;
+                }
+            } catch (error) {
+                console.error('Dashboard metrics update failed:', error);
+            }
         }
 
         // Batch processing functions
@@ -762,8 +787,8 @@ UPDATEDATE<!DOCTYPE html>
             // Update status every 30 seconds
             setInterval(updateSystemStatus, 30000);
 
-            // Update metrics every 5 seconds
-            setInterval(updateMetrics, 5000);
+            // Update dashboard metrics every 10 seconds
+            setInterval(updateMetrics, 10000);
 
             console.log('Dashboard initialization complete');
         });

@@ -1,0 +1,64 @@
+[run]
+source =
+    jpmorgan_financial_apis/
+omit =
+    */venv/*
+    */__pycache__/*
+    */.mypy_cache/*
+    */tests/*
+    */jpmorgan_financial_apis/tests/*
+    */migrations/*
+    */scripts/*
+    */backups/*
+    *conftest.py
+    *test_*.py
+    *e2e_*.py
+    *benchmark*.py
+    *deploy*.py
+    *demo*.py
+    *apply_*.py
+    *fix_*.py
+    *check*.py
+    *run*.py
+    *create*.py
+    *init*.py
+    *manual_test.py
+    *simple_test.py
+    *production_server.py
+    *proxy_app.py
+    manage.py
+    wsgi.py
+    gunicorn_config.py
+    fabfile.py
+    tox.ini
+    .env
+    requirements*.txt
+    pyproject.toml
+    pytest.ini
+    .coveragerc
+    README*
+    LICENSE*
+    TODO.md
+    *migrations/*
+    db.py
+exclude_lines =
+    pragma: no cover
+    pragma: nocover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    from __future__ import annotations
+    def main
+
+[report]
+exclude_lines =
+    pragma: nocover
+    def __repr__
+    raise NotImplementedError
+    raise AssertionError
+
+[html]
+directory = htmlcov
+

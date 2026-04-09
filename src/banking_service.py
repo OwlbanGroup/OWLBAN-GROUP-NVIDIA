@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-\"\"\"Banking Service for JPMorgan Financial APIs
-CRUD operations for bank accounts and transactions with validation and ACID compliance.\"\"\"
+"""Banking Service for JPMorgan Financial APIs
+CRUD operations for bank accounts and transactions with validation and ACID compliance."""
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
@@ -16,7 +15,7 @@ class BankingService:
         self.logger = telemetry_logger.get_logger()
 
     def create_account(self, account_data: Dict[str, Any], session: Session = None) -> BankAccountModel:
-        \"\"\"Create new bank account\"\"\"
+        \"\"\"Create new bank account\"\"
         account_data: dict with user_id, account_type ('checking'|'savings'), initial_balance=0.0
         \"\"\"
         def operation(session: Session):
@@ -40,7 +39,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def get_accounts(self, user_id: str, session: Optional[Session] = None) -> List[BankAccountModel]:
-        \"\"\"Get all accounts for user\"\"\"
+        \"\"\"Get all accounts for user\"\"
         def operation(session: Session):
             accounts = session.query(BankAccountModel).filter(
                 BankAccountModel.user_id == user_id,
@@ -51,7 +50,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def get_account(self, account_id: int, user_id: str, session: Optional[Session] = None) -> Optional[BankAccountModel]:
-        \"\"\"Get specific account by ID, verify ownership\"\"\"
+        \"\"\"Get specific account by ID, verify ownership\"\"
         def operation(session: Session):
             account = session.query(BankAccountModel).filter(
                 BankAccountModel.id == account_id,
@@ -62,7 +61,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def update_account(self, account_id: int, user_id: str, updates: Dict[str, Any], session: Optional[Session] = None) -> Optional[BankAccountModel]:
-        \"\"\"Update account details\"\"\"
+        \"\"\"Update account details\"\"
         allowed_updates = ['interest_rate', 'overdraft_limit', 'monthly_fee']
         def operation(session: Session):
             account = session.query(BankAccountModel).filter(
@@ -81,7 +80,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def validate_account(self, account_id: int, user_id: str, min_balance: float = 0.0, session: Optional[Session] = None) -> Dict[str, Any]:
-        \"\"\"Validate account status and balance\"\"\"
+        \"\"\"Validate account status and balance\"\"
         def operation(session: Session):
             account = session.query(BankAccountModel).filter(
                 BankAccountModel.id == account_id,
@@ -104,7 +103,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def create_transaction(self, account_id: int, user_id: str, tx_type: str, amount: float, description: str = \"\", session: Optional[Session] = None) -> TransactionModel:
-        \"\"\"Create transaction (deposit/withdrawal/transfer), update balance\"\"\"
+        \"\"\"Create transaction (deposit/withdrawal/transfer), update balance\"\"
         if tx_type not in ['deposit', 'withdrawal', 'transfer']:
             raise ValueError(f\"Invalid tx_type: {tx_type}\")
         
@@ -150,7 +149,7 @@ class BankingService:
         return transaction_manager.execute_with_retry(operation)
 
     def get_account_transactions(self, account_id: int, user_id: str, limit: int = 50, session: Optional[Session] = None) -> List[TransactionModel]:
-        \"\"\"Get recent transactions for account\"\"\"
+        \"\"\"Get recent transactions for account\"\"
         def operation(session: Session):
             txs = session.query(TransactionModel).filter(
                 TransactionModel.account_id == account_id,

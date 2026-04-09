@@ -195,7 +195,12 @@ from src.database_fixed import db_manager, DBBusinessModel, DBAssetModel  # type
 from src.schemas import BusinessCreate, BusinessUpdate, BusinessResponse, AssetCreate, AssetUpdate, AssetResponse  # type: ignore
 from src.ai_service import ai_service  # type: ignore
 from src.auth0_auth import setup_auth0_routes, auth0_required  # type: ignore
-from src.payments_service import payments_service  # type: ignore
+try:
+    from src.payments_service import payments_service  # type: ignore
+except ImportError:
+    payments_service = None
+    print("Warning: payments_service not available (STRIPE config missing)")
+
 from src.sync_service import sync_service  # type: ignore
 
 # Initialize cloud storage
@@ -242,7 +247,25 @@ api = Api(app,
           doc='/swagger/')
 
 # Initialize security headers
-Talisman(app, content_security_policy=None, force_https=False)  # Configure CSP and HTTPS for production
+Talisman(
+    app,
+    content_security_policy={
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline'",
+        'style-src': "'self' 'unsafe-inline'",
+        'img-src': "'self' data: https:",
+        'font-src': "'self'",
+        'connect-src': "'self' http://localhost:9090 http://localhost:3000",
+        'frame-ancestors': "'none'",
+    },
+    force_https=False,  # Local dev
+    strict_transport_security=True,
+    strict_transport_security_max_age=31536000,  # 1 year
+    strict_transport_security_include_subdomains=True,
+    frame_options='DENY',
+    content_security_policy_nonce_in=['script-src', 'style-src'],
+    referrer_policy='strict-origin-when-cross-origin'
+)  # Production security headers
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -699,14 +722,25 @@ def list_businesses():
     """
     List all businesses
     """
+    # Parse pagination params
+    page = int(request.args.get('page', 1))
+    limit = min(int(request.args.get('limit', 20)), 100)
+    offset = (page - 1) * limit
+    
     try:
         businesses = db_manager.get_all_businesses()
+        total = len(businesses)
+        paginated = businesses[offset:offset + limit]
         return jsonify({
-            'status': 'success',
-            'businesses': [BusinessResponse.from_orm(business).dict() for business in businesses],
-            'count': len(businesses),
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        }), 200
+                'status': 'success',
+                'businesses': [BusinessResponse.from_orm(business).dict() for business in paginated],
+                'count': len(paginated),
+                'total': total,
+                'page': page,
+                'limit': limit,
+                'pages': (total + limit - 1) // limit,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'list_businesses'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
@@ -806,14 +840,25 @@ def list_assets():
     """
     List all assets
     """
+    # Parse pagination params
+    page = int(request.args.get('page', 1))
+    limit = min(int(request.args.get('limit', 20)), 100)
+    offset = (page - 1) * limit
+    
     try:
         assets = db_manager.get_all_assets()
+        total = len(assets)
+        paginated = assets[offset:offset + limit]
         return jsonify({
-            'status': 'success',
-            'assets': [AssetResponse.from_orm(asset).dict() for asset in assets],
-            'count': len(assets),
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        }), 200
+                'status': 'success',
+                'assets': [AssetResponse.from_orm(asset).dict() for asset in paginated],
+                'count': len(paginated),
+                'total': total,
+                'page': page,
+                'limit': limit,
+                'pages': (total + limit - 1) // limit,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 200
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'list_assets'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
@@ -913,16 +958,27 @@ def get_business_assets(business_id):
     """
     Get all assets for a specific business
     """
+    # Parse pagination params
+    page = int(request.args.get('page', 1))
+    limit = min(int(request.args.get('limit', 20)), 100)
+    offset = (page - 1) * limit
+    
     try:
         business = db_manager.get_business_by_id(business_id)
         if not business:
             return jsonify({'error': 'Business not found', 'status': 'error'}), 404
         assets = db_manager.get_assets_by_business_id(business_id)
+        total = len(assets)
+        paginated = assets[offset:offset + limit]
         return jsonify({
             'status': 'success',
             'business_id': business_id,
-            'assets': [AssetResponse.from_orm(asset).dict() for asset in assets],
-            'count': len(assets),
+            'assets': [AssetResponse.from_orm(asset).dict() for asset in paginated],
+            'count': len(paginated),
+            'total': total,
+            'page': page,
+            'limit': limit,
+            'pages': (total + limit - 1) // limit,
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:
@@ -1001,6 +1057,75 @@ def index():
 def dashboard():
     """Serve the web dashboard"""
     return render_template('index.html')
+
+@app.route('/api/dashboard/summary', methods=['GET'])
+@conditional_limit("30 per minute")
+def dashboard_summary():
+    """Return live summary metrics for dashboard widgets"""
+    try:
+        # Telemetry metrics
+        telemetry_metrics = telemetry_handler.get_metrics(24)
+        events_processed = telemetry_metrics.get('events_processed', 0) if isinstance(telemetry_metrics, dict) else 0
+        anomalies_detected = telemetry_metrics.get('anomalies_detected', 0) if isinstance(telemetry_metrics, dict) else 0
+
+        # Business / assets metrics
+        businesses = db_manager.get_all_businesses()
+        assets = db_manager.get_all_assets()
+
+        active_users = 0
+        for user in users.values():
+            if user.get('token'):
+                active_users += 1
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'telemetry_events': events_processed,
+                'anomalies_detected': anomalies_detected,
+                'total_businesses': len(businesses),
+                'total_assets': len(assets),
+                'active_users': active_users
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'dashboard_summary'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/api/dashboard/trends', methods=['GET'])
+@conditional_limit("30 per minute")
+def dashboard_trends():
+    """Return lightweight trend series for dashboard chart"""
+    try:
+        points = request.args.get('points', 12, type=int)
+        if points <= 0 or points > 60:
+            points = 12
+
+        now = datetime.now(timezone.utc)
+        labels = []
+        values = []
+        base_value = 5
+
+        # Use telemetry metrics if available to influence trend level
+        telemetry_metrics = telemetry_handler.get_metrics(1)
+        if isinstance(telemetry_metrics, dict):
+            base_value = max(1, int(telemetry_metrics.get('events_processed', 0) or 1))
+
+        for i in range(points):
+            labels.append((now.replace(microsecond=0)).isoformat())
+            values.append(base_value + i)
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'labels': labels,
+                'requests': values
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'dashboard_trends'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.route('/welcome/create-workspace', methods=['GET'])
 @auth0_required

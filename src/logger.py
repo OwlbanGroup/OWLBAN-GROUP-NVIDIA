@@ -65,6 +65,50 @@ class Logger:
         """Log warning message"""
         self.logger.warning(msg)
 
+    def audit_log_transaction(self, user_id, action, endpoint, ip_address, user_agent, request_data=None, response_status=None, details=None):
+        """
+        Log audit trail entry to database
+        
+        Args:
+            user_id: User identifier
+            action: Action performed (e.g. 'CREATE_BUSINESS', 'PAYMENT_CONFIRM')
+            endpoint: API endpoint used
+            ip_address: Client IP
+            user_agent: User agent string
+            request_data: Request payload (JSON serializable)
+            response_status: HTTP status code
+            details: Additional context
+        """
+        try:
+            import psycopg2
+            from psycopg2.extras import Json  # For JSONB
+            
+            # Use same conn string as app (from env or default)
+            conn_str = "postgresql://jpmorgan:secure_password_123@localhost:5432/jpmorgan_api"  # Default local
+            
+            conn = psycopg2.connect(conn_str)
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO audit_logs (user_id, action, endpoint, ip_address, user_agent, 
+                                          request_data, response_status, details)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    user_id or 'anonymous',
+                    action,
+                    endpoint,
+                    ip_address,
+                    user_agent[:1000],  # Truncate
+                    Json(request_data) if request_data else None,
+                    response_status,
+                    Json(details) if details else None
+                ))
+                conn.commit()
+        except Exception as e:
+            self.logger.error(f"Audit log failed: {str(e)}")
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
 
 
 telemetry_logger = Logger()

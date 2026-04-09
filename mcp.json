@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "jpmorgan-financial-apis-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for JPMorgan Financial APIs - Accounts, Balances, Transfers, Transactions, LLM Analysis",
+  "long_description": "Docker MCP Catalog entry for production financial APIs. Tools: get_accounts, get_balance, transfer_funds, get_transactions, analyze_financial_data. GPU/LLM Model Runner ready. (Updated: Added standard $schema for VSCode validation)",
+  "author": "JPMorgan Financial Team",
+  "tags": ["finance","banking","payments","ml","llm","docker"],
+  "icon": "💰",
+  "url": "http://localhost:8080",
+  "endpoints": {
+    "tools_list": "http://localhost:8080/mcp/tools",
+    "call_tool": "http://localhost:8080/mcp/call",
+    "health": "http://localhost:8080/health"
+  },
+  "tools": [
+    {
+      "name": "get_accounts",
+      "description": "List user financial accounts"
+    },
+    {
+      "name": "get_balance",
+      "description": "Get account balance"
+    },
+    {
+      "name": "transfer_funds",
+      "description": "Transfer funds between accounts"
+    },
+    {
+      "name": "get_transactions",
+      "description": "List recent transactions"
+    },
+    {
+      "name": "analyze_financial_data",
+      "description": "LLM analysis of financial data (risk/insights with GPU Model Runner)"
+    }
+  ],
+  "docker": {
+    "image": "jpmorgan-financial-apis-mcp:latest",
+    "compose": "docker-compose.yml",
+    "makefile": true,
+    "ports": [8080]
+  },
+  "requirements": "Python 3.12+, Docker, NVIDIA GPU (optional for ML/LLM)",
+  "publish": "docker push yourorg/jpmorgan-financial-mcp &amp;&amp; docker mcp catalog add mcp.json"
+}

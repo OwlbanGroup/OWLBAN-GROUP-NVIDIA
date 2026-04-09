@@ -21,7 +21,7 @@ class AIService:
         self.logger = telemetry_logger.get_logger()
 
         # Initialize LangSmith client for tracing
-        if config.LANGCHAIN_API_KEY:
+        if hasattr(config, 'LANGCHAIN_API_KEY') and config.LANGCHAIN_API_KEY:
             self.langsmith_client = LangSmithClient(
                 api_key=config.LANGCHAIN_API_KEY,
                 api_url=config.LANGCHAIN_ENDPOINT
@@ -35,13 +35,14 @@ class AIService:
         self.llm_provider = None
 
         # Try Blackbox AI first
-        if config.BLACKBOX_API_KEY:
+        blackbox_key = getattr(config, 'BLACKBOX_API_KEY', None)
+        if blackbox_key:
             try:
                 self.llm = ChatOpenAI(
-                    model=config.BLACKBOX_MODEL,
-                    temperature=config.BLACKBOX_TEMPERATURE,
-                    openai_api_key=config.BLACKBOX_API_KEY,
-                    openai_api_base=config.BLACKBOX_BASE_URL
+                    model=getattr(config, 'BLACKBOX_MODEL', 'gpt-3.5-turbo'),
+                    temperature=getattr(config, 'BLACKBOX_TEMPERATURE', 0.1),
+                    openai_api_key=blackbox_key,
+                    openai_api_base=getattr(config, 'BLACKBOX_BASE_URL', 'https://cloud.blackbox.ai/')
                 )
                 self.llm_provider = "blackbox"
                 self.logger.info("Blackbox AI initialized successfully")
@@ -49,7 +50,7 @@ class AIService:
                 self.logger.warning(f"Failed to initialize Blackbox AI: {str(e)}")
 
         # Fallback to OpenAI if Blackbox not available or failed
-        if not self.llm and config.OPENAI_API_KEY:
+        if not self.llm and hasattr(config, 'OPENAI_API_KEY') and config.OPENAI_API_KEY:
             try:
                 self.llm = ChatOpenAI(
                     model=config.OPENAI_MODEL,

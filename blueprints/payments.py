@@ -310,20 +310,21 @@ def get_transactions():
     try:
         user_id = getattr(request, 'user_id', 'demo_user')  # Would come from JWT token
 
-        # Parse query parameters
-        limit = min(int(request.args.get('limit', 50)), 100)  # Max 100
-        offset = int(request.args.get('offset', 0))
+        # Parse pagination params
+        page = int(request.args.get('page', 1))
+        limit = min(int(request.args.get('limit', 20)), 100)
+        offset = (page - 1) * limit
         status = request.args.get('status')
         payment_type = request.args.get('type')
 
-        # Get user payments
-        payments = payments_service.get_user_payments(user_id, limit=limit, offset=offset)
-
+        # Get all user payments first
+        all_payments = payments_service.get_user_payments(user_id, limit=1000)
+        
         # Filter by status if provided
         if status:
             try:
                 status_enum = PaymentStatus(status)
-                payments = [p for p in payments if p.status == status_enum]
+                all_payments = [p for p in all_payments if p.status == status_enum]
             except ValueError:
                 return jsonify({'error': f'Invalid status: {status}', 'status': 'error'}), 400
 
@@ -331,17 +332,24 @@ def get_transactions():
         if payment_type:
             try:
                 type_enum = PaymentType(payment_type)
-                payments = [p for p in payments if p.payment_type == type_enum.value]
+                all_payments = [p for p in all_payments if p.payment_type == type_enum.value]
             except ValueError:
                 return jsonify({'error': f'Invalid payment type: {payment_type}', 'status': 'error'}), 400
 
-        transactions = [p.to_dict() for p in payments]
+        total = len(all_payments)
+        paginated_payments = all_payments[offset:offset + limit]
+
+        transactions = [p.to_dict() for p in paginated_payments]
 
         return jsonify({
             'status': 'success',
             'transactions': transactions,
             'count': len(transactions),
-            'total_count': len(payments_service.get_user_payments(user_id, limit=1000))  # Rough total
+            'total': total,
+            'page': page,
+            'limit': limit,
+            'pages': (total + limit - 1) // limit,
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
 
     except Exception as e:

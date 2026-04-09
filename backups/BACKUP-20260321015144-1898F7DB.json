@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Test User"
+    }
+  ],
+  "accounts": [
+    {
+      "id": 1,
+      "balance": 1000
+    }
+  ]
+}

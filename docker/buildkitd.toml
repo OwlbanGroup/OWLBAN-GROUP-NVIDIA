@@ -1,0 +1,20 @@
+[worker.oci]
+  enabled = true
+  selinuxEnabled = false
+  networkMode = "host"
+  platform = ["linux/amd64", "linux/arm64"]
+  useLiveMounts = true
+
+  [worker.oci.images]
+    "docker.io/docker/dockerfile:1.8" = {}
+
+  [worker.oci.goroutines] 
+    enabled = 32
+
+[worker.docker]
+  enabled = true
+  platform = ["linux/amd64", "linux/arm64"]
+
+[registry."docker.io"]
+  http = true  # For local testing
+

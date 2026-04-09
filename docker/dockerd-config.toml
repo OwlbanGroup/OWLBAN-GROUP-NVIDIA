@@ -1,0 +1,22 @@
+[log-driver]
+  name = "json-file"
+
+[log-opts]
+  max-size = "10m"
+  max-file = "3"
+
+[metrics]
+  enabled = true
+  host = "tcp://0.0.0.0:9323"
+  env-labels = ["com.docker.compose.project", "com.docker.compose.service"]
+
+[exec-opts]
+  native.cgroupdriver = "systemd"
+
+[debug]
+  level = "info"
+
+# Production dockerd daemon config
+# Usage: dockerd --config-file docker/dockerd-config.toml
+# Matches https://docs.docker.com/reference/cli/dockerd/
+
