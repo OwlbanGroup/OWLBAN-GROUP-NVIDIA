@@ -1,0 +1,319 @@
+# Istio Virtual Services and Traffic Management
+# Phase 7 - Service Mesh
+
+---
+# VirtualService for API Gateway
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: jpmorgan-gateway-vs
+  namespace: jpmorgan
+  labels:
+    app: gateway
+spec:
+  hosts:
+  - api.jpmorgan-financial.com
+  - gateway-service
+  gateways:
+  - jpmorgan-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1
+    route:
+    - destination:
+        host: gateway-service
+        port:
+          number: 8000
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: connect-failure,refused-stream,unavailable,cancelled,503
+    timeout: 10s
+  - match:
+    - uri:
+        prefix: /health
+    route:
+    - destination:
+        host: gateway-service
+        port:
+          number: 8000
+    timeout: 1s
+
+---
+# VirtualService for MCP Server
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mcp-server-vs
+  namespace: jpmorgan
+  labels:
+    app: mcp-server
+spec:
+  hosts:
+  - mcp-service
+  http:
+  - match:
+    - uri:
+        prefix: /mcp
+    route:
+    - destination:
+        host: mcp-service
+        port:
+          number: 8080
+    retries:
+      attempts: 2
+      perTryTimeout: 5s
+    timeout: 30s
+
+---
+# VirtualService for Model Runner (Ollama)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: model-runner-vs
+  namespace: jpmorgan
+  labels:
+    app: model-runner
+spec:
+  hosts:
+  - model-runner-service
+  http:
+  - match:
+    - uri:
+        prefix: /ai
+    route:
+    - destination:
+        host: model-runner-service
+        port:
+          number: 11434
+    retries:
+      attempts: 1
+      perTryTimeout: 30s
+      retryOn: connect-failure,unavailable
+    timeout: 60s
+    trafficPolicy:
+      connectionPool:
+        http:
+          h2UpgradePolicy: UPGRADE
+          http1MaxPendingRequests: 100
+          http2MaxRequests: 500
+
+---
+# VirtualService for Telemetry Service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: telemetry-vs
+  namespace: jpmorgan
+  labels:
+    app: telemetry
+spec:
+  hosts:
+  - telemetry-service
+  http:
+  - match:
+    - uri:
+        prefix: /telemetry
+    route:
+    - destination:
+        host: telemetry-service
+        port:
+          number: 8000
+    timeout: 5s
+
+---
+# VirtualService for Business Service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: business-vs
+  namespace: jpmorgan
+  labels:
+    app: business
+spec:
+  hosts:
+  - business-service
+  http:
+  - match:
+    - uri:
+        prefix: /business
+    route:
+    - destination:
+        host: business-service
+        port:
+          number: 8000
+    timeout: 10s
+    retries:
+      attempts: 3
+      perTryTimeout: 3s
+
+---
+# VirtualService for Revenue Service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: revenue-vs
+  namespace: jpmorgan
+  labels:
+    app: revenue
+spec:
+  hosts:
+  - revenue-service
+  http:
+  - match:
+    - uri:
+        prefix: /revenue
+    route:
+    - destination:
+        host: revenue-service
+        port:
+          number: 8000
+    timeout: 10s
+
+---
+# VirtualService with Circuit Breaking Destination Rules
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: gateway-dr
+  namespace: jpmorgan
+spec:
+  host: gateway-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 500
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_REQUEST
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# DestinationRule for MCP Server
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mcp-server-dr
+  namespace: jpmorgan
+spec:
+  host: mcp-service
+  trafficPolicy:
+    connectionPool:
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 60s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 30
+    loadBalancer:
+      simple: ROUND_ROBIN
+
+---
+# DestinationRule for Model Runner
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: model-runner-dr
+  namespace: jpmorgan
+spec:
+  host: model-runner-service
+  trafficPolicy:
+    connectionPool:
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 20
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 120s
+      baseEjectionTime: 120s
+      maxEjectionPercent: 20
+    loadBalancer:
+      simple: LEAST_REQUEST
+
+---
+# DestinationRule for Database
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: postgres-dr
+  namespace: jpmorgan
+spec:
+  host: postgres-telemetry
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+    loadBalancer:
+      simple: LEAST_REQUEST
+
+---
+# ServiceEntry for External Services
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-plaid
+  namespace: jpmorgan
+spec:
+  hosts:
+  - plaid.com
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+
+---
+# ServiceEntry for Plaid API
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: plaid-api
+  namespace: jpmorgan
+spec:
+  hosts:
+  - sandbox.plaid.com
+  - production.plaid.com
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+  endpoints:
+  - address: sandbox.plaid.com
+    locality: us-east-1
+  - address: production.plaid.com
+    locality: us-east-1
+
+---
+# ServiceEntry for Ollama Models
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: ollama-models
+  namespace: jpmorgan
+spec:
+  hosts:
+  - ollama.ai
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
