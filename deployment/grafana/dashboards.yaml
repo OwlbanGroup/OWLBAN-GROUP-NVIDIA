@@ -1,0 +1,457 @@
+# Grafana Dashboard Configurations for JPMorgan Financial APIs
+# Phase 8 - Post-Deployment Monitoring
+
+---
+# Prometheus Datasource Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: jpmorgan
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        editable: true
+      - name: Elasticsearch
+        type: elasticsearch
+        access: proxy
+        url: http://elasticsearch:9200
+        database: jpmorgan-*
+        jsonData:
+          timeField: "@timestamp"
+          esVersion: 8
+
+---
+# API Gateway Dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-dashboard
+  namespace: jpmorgan
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "uid": "jpmorgan-gateway",
+        "title": "JPMorgan API Gateway",
+        "tags": ["jpmorgan", "gateway"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "30s",
+        "panels": [
+          {
+            "id": 1,
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "type": "graph",
+            "title": "Request Rate (req/s)",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{service=\"gateway\"}[5m])",
+                "legendFormat": "{{method}} {{path}}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {"format": "reqps", "label": "Requests/sec"},
+              {"format": "short", "label": ""}
+            ]
+          },
+          {
+            "id": 2,
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "type": "graph",
+            "title": "Response Time (P95/P99)",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"gateway\"}[5m]))",
+                "legendFormat": "P95",
+                "refId": "A"
+              },
+              {
+                "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"gateway\"}[5m]))",
+                "legendFormat": "P99",
+                "refId": "B"
+              }
+            ],
+            "yaxes": [
+              {"format": "s", "label": "Response Time"},
+              {"format": "short", "label": ""}
+            ]
+          },
+          {
+            "id": 3,
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "type": "graph",
+            "title": "Error Rate (%)",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{service=\"gateway\",status=~\"5..\"}[5m]) / rate(http_requests_total{service=\"gateway\"}[5m]) * 100",
+                "legendFormat": "5xx Errors",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [
+              {"format": "percent", "label": "Error %"},
+              {"format": "short", "label": ""}
+            ]
+          },
+          {
+            "id": 4,
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "type": "stat",
+            "title": "Active Connections",
+            "targets": [
+              {
+                "expr": "sum(http_connections_active{service=\"gateway\"})",
+                "legendFormat": "Active",
+                "refId": "A"
+              }
+            ],
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "orientation": "auto"
+            }
+          },
+          {
+            "id": 5,
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+            "type": "table",
+            "title": "Top Endpoints by Latency",
+            "targets": [
+              {
+                "expr": "topk(10, histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"gateway\"}[5m])))",
+                "legendFormat": "{{path}}",
+                "refId": "A",
+                "format": "table"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+---
+# Services Overview Dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: services-dashboard
+  namespace: jpmorgan
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "uid": "jpmorgan-services",
+        "title": "JPMorgan Services Overview",
+        "tags": ["jpmorgan", "services"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "30s",
+        "panels": [
+          {
+            "id": 1,
+            "gridPos": {"h": 6, "w": 4, "x": 0, "y": 0},
+            "type": "stat",
+            "title": "Gateway",
+            "targets": [
+              {"expr": "up{service=\"gateway\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 2,
+            "gridPos": {"h": 6, "w": 4, "x": 4, "y": 0},
+            "type": "stat",
+            "title": "Auth",
+            "targets": [
+              {"expr": "up{service=\"auth\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 3,
+            "gridPos": {"h": 6, "w": 4, "x": 8, "y": 0},
+            "type": "stat",
+            "title": "Payments",
+            "targets": [
+              {"expr": "up{service=\"payments\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 4,
+            "gridPos": {"h": 6, "w": 4, "x": 12, "y": 0},
+            "type": "stat",
+            "title": "Business",
+            "targets": [
+              {"expr": "up{service=\"business\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 5,
+            "gridPos": {"h": 6, "w": 4, "x": 16, "y": 0},
+            "type": "stat",
+            "title": "Telemetry",
+            "targets": [
+              {"expr": "up{service=\"telemetry\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 6,
+            "gridPos": {"h": 6, "w": 4, "x": 20, "y": 0},
+            "type": "stat",
+            "title": "ML",
+            "targets": [
+              {"expr": "up{service=\"ml\"}", "refId": "A"}
+            ],
+            "options": {"colorMode": "background", "graphMode": "none"}
+          },
+          {
+            "id": 7,
+            "gridPos": {"h": 10, "w": 12, "x": 0, "y": 6},
+            "type": "graph",
+            "title": "CPU Usage by Service",
+            "targets": [
+              {
+                "expr": "rate(process_cpu_seconds_total[5m])",
+                "legendFormat": "{{service}}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [{"format": "percentunit", "label": "CPU"}]
+          },
+          {
+            "id": 8,
+            "gridPos": {"h": 10, "w": 12, "x": 12, "y": 6},
+            "type": "graph",
+            "title": "Memory Usage by Service",
+            "targets": [
+              {
+                "expr": "process_resident_memory_bytes",
+                "legendFormat": "{{service}}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [{"format": "bytes", "label": "Memory"}]
+          },
+          {
+            "id": 9,
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+            "type": "graph",
+            "title": "Request Rate by Service",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total[5m])",
+                "legendFormat": "{{service}}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [{"format": "reqps", "label": "req/s"}]
+          },
+          {
+            "id": 10,
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+            "type": "graph",
+            "title": "Error Rate by Service",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+                "legendFormat": "{{service}}",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [{"format": "reqps", "label": "Errors/sec"}]
+          }
+        ]
+      }
+    }
+
+---
+# Business Metrics Dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: business-metrics-dashboard
+  namespace: jpmorgan
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "uid": "jpmorgan-business",
+        "title": "JPMorgan Business Metrics",
+        "tags": ["jpmorgan", "business"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "1m",
+        "panels": [
+          {
+            "id": 1,
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "type": "graph",
+            "title": "Daily Transaction Volume",
+            "targets": [
+              {
+                "expr": "sum(increase(transactions_total[24h]))",
+                "legendFormat": "Transactions",
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "type": "graph",
+            "title": "Revenue (24h)",
+            "targets": [
+              {
+                "expr": "sum(increase(revenue_total[24h]))",
+                "legendFormat": "Revenue",
+                "refId": "A"
+              }
+            ],
+            "yaxes": [{"format": "currency", "label": "$"}]
+          },
+          {
+            "id": 3,
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "type": "graph",
+            "title": "Active Users",
+            "targets": [
+              {
+                "expr": "active_users",
+                "legendFormat": "Active Users",
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "type": "graph",
+            "title": "API Key Usage",
+            "targets": [
+              {
+                "expr": "rate(api_keys_used_total[24h])",
+                "legendFormat": "API Keys",
+                "refId": "A"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+---
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: jpmorgan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.2.0
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          value: admin
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: password
+        - name: GF_INSTALL_PLUGINS
+          value: grafana-piechart-panel
+        - name: GF_SERVER_ROOT_URL
+          value: https://grafana.jpmorgan-financial.com
+        - name: GF_SERVER_SERVE_FROM_SUB_PATH
+          value: "true"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+          readOnly: true
+        - name: dashboards
+          mountPath: /etc/grafana/provisioning/dashboards
+          readOnly: true
+      volumes:
+      - name: datasources
+        configMap:
+          name: grafana-datasources
+      - name: dashboards
+        configMap:
+          name: grafana-dashboards
+
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: jpmorgan
+spec:
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+
+---
+# Grafana Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: jpmorgan
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  rules:
+  - host: grafana.jpmorgan-financial.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+  tls:
+  - hosts:
+    - grafana.jpmorgan-financial.com
+    secretName: grafana-tls

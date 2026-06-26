@@ -1,0 +1,367 @@
+# Prometheus Alerting Rules for JPMorgan Financial APIs
+# Phase 8 - Post-Deployment Monitoring
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alerts
+  namespace: jpmorgan
+data:
+  alerts.yml: |
+    groups:
+      - name: jpmorgan-api-alerts
+        interval: 30s
+        rules:
+          # Service Down Alerts
+          - alert: ServiceDown
+            expr: up{job!="prometheus"} == 0
+            for: 2m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Service {{ $labels.instance }} is down"
+              description: "{{ $labels.job }} service has been down for more than 2 minutes"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/service-down"
+          
+          # High Error Rate Alerts
+          - alert: HighErrorRate
+            expr: |
+              sum(rate(http_requests_total{status=~"5..",service=~".+"}[5m])) 
+              / sum(rate(http_requests_total{service=~".+"}[5m])) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High error rate on {{ $labels.service }}"
+              description: "Error rate is above 5% for more than 5 minutes"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/high-error-rate"
+          
+          # Critical Error Rate
+          - alert: CriticalErrorRate
+            expr: |
+              sum(rate(http_requests_total{status=~"5..",service=~".+"}[5m])) 
+              / sum(rate(http_requests_total{service=~".+"}[5m])) > 0.15
+            for: 2m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "CRITICAL: Error rate above 15% on {{ $labels.service }}"
+              description: "Critical error rate detected - immediate action required"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/critical-error-rate"
+          
+          # High Latency Alerts
+          - alert: HighLatencyP95
+            expr: |
+              histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High P95 latency on {{ $labels.service }}"
+              description: "P95 latency is above 2 seconds"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/high-latency"
+          
+          - alert: CriticalLatencyP95
+            expr: |
+              histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+            for: 2m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "CRITICAL: P95 latency above 5 seconds"
+              description: "Critical latency detected - immediate scaling required"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/critical-latency"
+          
+          # High Request Rate (Potential DDoS)
+          - alert: HighRequestRate
+            expr: |
+              sum(rate(http_requests_total[5m])) > 10000
+            for: 5m
+            labels:
+              severity: warning
+              team: security
+            annotations:
+              summary: "High request rate detected"
+              description: "Request rate is above 10,000 req/s - possible attack"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/high-request-rate"
+          
+          # CPU Usage Alerts
+          - alert: HighCPUUsage
+            expr: |
+              sum(rate(process_cpu_seconds_total[5m])) by (job) > 0.8
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High CPU usage on {{ $labels.job }}"
+              description: "CPU usage is above 80%"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/high-cpu"
+          
+          - alert: CriticalCPUUsage
+            expr: |
+              sum(rate(process_cpu_seconds_total[5m])) by (job) > 0.95
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "CRITICAL: CPU usage above 95%"
+              description: "Critical CPU usage - service may become unresponsive"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/critical-cpu"
+          
+          # Memory Usage Alerts
+          - alert: HighMemoryUsage
+            expr: |
+              process_resident_memory_bytes / process_max_memory_bytes > 0.85
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High memory usage on {{ $labels.job }}"
+              description: "Memory usage is above 85%"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/high-memory"
+          
+          - alert: CriticalMemoryUsage
+            expr: |
+              process_resident_memory_bytes / process_max_memory_bytes > 0.95
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "CRITICAL: Memory usage above 95%"
+              description: "Critical memory usage - OOM risk"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/critical-memory"
+          
+          # Database Alerts
+          - alert: DatabaseConnectionFailure
+            expr: |
+              postgres_connections_active / postgres_connections_max < 0.1
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Database connection issue"
+              description: "Low active connections may indicate connection issues"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/db-connections"
+          
+          - alert: DatabaseSlowQueries
+            expr: |
+              rate(postgres_slow_queries_total[5m]) > 10
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High number of slow queries"
+              description: "More than 10 slow queries per second"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/slow-queries"
+          
+          # Redis Alerts
+          - alert: RedisHighMemory
+            expr: |
+              redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Redis memory above 90%"
+              description: "Redis approaching memory limit"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/redis-memory"
+          
+          - alert: RedisConnectionErrors
+            expr: |
+              rate(redis_connection_errors_total[5m]) > 1
+            for: 2m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Redis connection errors"
+              description: "High rate of Redis connection errors"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/redis-errors"
+          
+          # Authentication Alerts
+          - alert: HighAuthFailures
+            expr: |
+              sum(rate(auth_failed_total[5m])) > 100
+            for: 5m
+            labels:
+              severity: warning
+              team: security
+            annotations:
+              summary: "High authentication failure rate"
+              description: "More than 100 failed auth attempts per second"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/auth-failures"
+          
+          - alert: CriticalAuthFailures
+            expr: |
+              sum(rate(auth_failed_total[5m])) > 500
+            for: 2m
+            labels:
+              severity: critical
+              team: security
+            annotations:
+              summary: "CRITICAL: Authentication attack detected"
+              description: "Massive auth failure rate - possible brute force attack"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/auth-attack"
+          
+          # Payment Service Alerts
+          - alert: PaymentFailures
+            expr: |
+              sum(rate(payment_transactions_failed_total[5m])) > 0.01
+            for: 5m
+            labels:
+              severity: warning
+              team: payments
+            annotations:
+              summary: "Payment failures detected"
+              description: "Payment failure rate above 1%"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/payment-failures"
+          
+          # API Key Quota Alerts
+          - alert: APIKeyQuotaWarning
+            expr: |
+              api_key_usage_percent > 80
+            for: 30m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "API key quota above 80%"
+              description: "API key usage approaching limit"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/quota-warning"
+          
+          # Backup Alerts
+          - alert: BackupFailure
+            expr: |
+              backup_last_success_timestamp < (time() - 86400)
+            for: 1h
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Backup has not completed in 24 hours"
+              description: "Last successful backup was more than 24 hours ago"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/backup-failure"
+          
+          # Certificate Expiry Alerts
+          - alert: CertExpiringSoon
+            expr: |
+              ( tls_cert_expiry_seconds - 2592000 ) < 0
+            for: 1h
+            labels:
+              severity: warning
+              team: security
+            annotations:
+              summary: "TLS certificate expiring in 30 days"
+              description: "Certificate {{ $labels.instance }} expires soon"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/cert-expiry"
+          
+          - alert: CertExpiringCritical
+            expr: |
+              ( tls_cert_expiry_seconds - 604800 ) < 0
+            for: 1h
+            labels:
+              severity: critical
+              team: security
+            annotations:
+              summary: "TLS certificate expiring in 7 days"
+              description: "Certificate {{ $labels.instance }} expires within 7 days"
+              runbook_url: "https://wiki.jpmorgan.com/runbooks/cert-expiry-critical"
+
+---
+# Prometheus Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: jpmorgan
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.45.0
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=30d
+        - --storage.tsdb.min-block-duration=2h
+        - --storage.tsdb.max-block-duration=2h
+        - --web.enable-lifecycle
+        - --web.enable-admin-api
+        ports:
+        - containerPort: 9090
+          name: http
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: alerts
+          mountPath: /etc/prometheus/rules
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: alerts
+        configMap:
+          name: prometheus-alerts
+
+---
+# Prometheus Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: jpmorgan
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090
+
+---
+# Prometheus Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: jpmorgan
+spec:
+  rules:
+  - host: prometheus.jpmorgan-financial.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090

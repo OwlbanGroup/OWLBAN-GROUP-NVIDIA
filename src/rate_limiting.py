@@ -102,4 +102,74 @@ def conditional_limit(limit_str: str, scope: Optional[str] = None):
     return decorator
 
 
+def auth_limit():
+    """Rate limit decorator for authentication endpoints"""
+    return conditional_limit("5 per minute", scope="auth")
+
+
+def api_limit():
+    """Rate limit decorator for general API endpoints"""
+    return conditional_limit("60 per minute", scope="api")
+
+
+def payment_limit():
+    """Rate limit decorator for payment endpoints (stricter)"""
+    return conditional_limit("10 per minute", scope="payments")
+
+
+class RateLimitConfig:
+    """Rate limit configuration"""
+    
+    # Endpoint-specific limits
+    LIMITS = {
+        'auth': {
+            'login': '5 per minute',
+            'register': '3 per minute',
+            'password_reset': '3 per minute',
+        },
+        'api': {
+            'general': '60 per minute',
+            'search': '20 per minute',
+            'bulk': '10 per minute',
+        },
+        'payments': {
+            'create': '10 per minute',
+            'verify': '20 per minute',
+            'status': '30 per minute',
+        },
+        'data': {
+            'export': '5 per minute',
+            'import': '5 per minute',
+        }
+    }
+    
+    @classmethod
+    def get_limit(cls, category: str, endpoint: str = 'general') -> str:
+        """Get rate limit for a specific endpoint"""
+        return cls.LIMITS.get(category, {}).get(endpoint, '60 per minute')
+    
+    @classmethod
+    def apply_limits(cls, limiter, category: str):
+        """Apply all limits for a category"""
+        if limiter is None:
+            return
+        
+        for endpoint, limit in cls.LIMITS.get(category, {}).items():
+            try:
+                limiter.limit(limit, scope_func=lambda e=endpoint: f"{category}:{e}")
+            except Exception as e:
+                print(f"⚠️ Failed to apply limit {category}:{endpoint}: {e}")
+
+
+# Export for use in other modules
+__all__ = [
+    'init_limiter',
+    'get_limiter', 
+    'conditional_limit',
+    'auth_limit',
+    'api_limit',
+    'payment_limit',
+    'RateLimitConfig',
+    'FLASK_LIMITER_AVAILABLE'
+]
 

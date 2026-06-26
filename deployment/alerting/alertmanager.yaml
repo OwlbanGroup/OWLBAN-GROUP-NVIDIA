@@ -1,0 +1,237 @@
+# AlertManager Configuration for JPMorgan Financial APIs
+# Phase 8 - Post-Deployment Monitoring
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: jpmorgan
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: 'smtp.jpmorgan.com:587'
+      smtp_from: 'alerts@jpmorgan-financial.com'
+      smtp_auth_username: 'alerts@jpmorgan-financial.com'
+      smtp_auth_password: '${SMTP_PASSWORD}'
+    
+    route:
+      group_by: ['alertname', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'default-receiver'
+      routes:
+        # Critical alerts - immediate notification
+        - match:
+            severity: critical
+          receiver: 'critical-receiver'
+          continue: true
+        
+        # Security alerts - security team
+        - match:
+            team: security
+          receiver: 'security-receiver'
+          continue: true
+        
+        # Payment alerts - payments team
+        - match:
+            team: payments
+          receiver: 'payments-receiver'
+          continue: true
+    
+    #抑制规则
+    inhib rules:
+        # 抑制，当实例已经发送预警时，停止发送相关预警
+        - source_match:
+            alertname: ServiceDown
+          target_match:
+            severity: warning
+          equal: ['instance', 'job']
+        
+        # 抑制高CPU预警下的严重CPU预警
+        - source_match:
+            alertname: CriticalCPUUsage
+          target_match:
+            alertname: HighCPUUsage
+          equal: ['instance']
+    
+    receivers:
+      #默认接收器 - 发送所有预警到 Slack
+      - name: 'default-receiver'
+        email_configs:
+          - to: 'platform-oncall@jpmorgan.com'
+            send_resolved: true
+        slack_configs:
+          - api_url: '${SLACK_WEBHOOK_URL}'
+            channel: '#alerts-platform'
+            title: 'JPMorgan Alert: {{ .GroupLabels.alertname }}'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Service:* {{ .Labels.service }}
+              *Severity:* {{ .Labels.severity }}
+              *Time:* {{ .StartsAt }}
+              *Runbook:* {{ .Annotations.runbook_url }}
+              {{ end }}
+            color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+            footer: 'JPMorgan Financial APIs Monitoring'
+            footer_icon: 'https://grafana.com/assets/img/favicon32x32.png'
+    
+      #严重预警接收器 - 同时打电话和发 Slack
+      - name: 'critical-receiver'
+        email_configs:
+          - to: 'platform-critical@jpmorgan.com'
+            send_resolved: true
+        slack_configs:
+          - api_url: '${SLACK_WEBHOOK_URL}'
+            channel: '#alerts-critical'
+            title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Service:* {{ .Labels.service }}
+              *Severity:* {{ .Labels.severity }}
+              *Time:* {{ .StartsAt }}
+              *Runbook:* {{ .Annotations.runbook_url }}
+              {{ end }}
+            color: 'danger'
+            footer: 'JPMorgan Financial APIs Monitoring'
+            footer_icon: 'https://grafana.com/assets/img/favicon32x32.png'
+        pagerduty_configs:
+          - service_key: '${PAGERDUTY_SERVICE_KEY}'
+            event_type: trigger
+            severity: critical
+            details:
+              alertname: '{{ .GroupLabels.alertname }}'
+              service: '{{ .Labels.service }}'
+              description: '{{ .Annotations.description }}'
+    
+      #安全预警接收器 - 安全团队 Slack
+      - name: 'security-receiver'
+        email_configs:
+          - to: 'security-team@jpmorgan.com'
+            send_resolved: true
+        slack_configs:
+          - api_url: '${SLACK_WEBHOOK_URL}'
+            channel: '#alerts-security'
+            title: '🔒 Security Alert: {{ .GroupLabels.alertname }}'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Service:* {{ .Labels.service }}
+              *Severity:* {{ .Labels.severity }}
+              *Time:* {{ .StartsAt }}
+              *Runbook:* {{ .Annotations.runbook_url }}
+              {{ end }}
+            color: 'danger'
+            footer: 'JPMorgan Financial APIs Monitoring'
+    
+      #支付服务预警接收器
+      - name: 'payments-receiver'
+        email_configs:
+          - to: 'payments-team@jpmorgan.com'
+            send_resolved: true
+        slack_configs:
+          - api_url: '${SLACK_WEBHOOK_URL}'
+            channel: '#alerts-payments'
+            title: '💳 Payment Alert: {{ .GroupLabels.alertname }}'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Service:* {{ .Labels.service }}
+              *Time:* {{ .StartsAt }}
+              *Runbook:* {{ .Annotations.runbook_url }}
+              {{ end }}
+            color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+            footer: 'JPMorgan Financial APIs Monitoring'
+
+---
+# AlertManager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: jpmorgan
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.25.0
+        args:
+        - --config.file=/etc/alertmanager/alertmanager.yml
+        - --storage.path=/alertmanager
+        - --web.external-url=https://alertmanager.jpmorgan-financial.com
+        - --cluster.peer=alertmanager-0.alertmanager:6783
+        - --cluster.peer=alertmanager-1.alertmanager:6783
+        ports:
+        - containerPort: 9093
+          name: http
+        - containerPort: 6783
+          name: cluster
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/alertmanager
+      volumes:
+      - name: config
+        configMap:
+          name: alertmanager-config
+
+---
+# AlertManager Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: jpmorgan
+spec:
+  selector:
+    app: alertmanager
+  ports:
+  - name: http
+    port: 9093
+    targetPort: 9093
+  - name: cluster
+    port: 6783
+    targetPort: 6783
+    protocol: TCP
+
+---
+# AlertManager Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager
+  namespace: jpmorgan
+spec:
+  rules:
+  - host: alertmanager.jpmorgan-financial.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager
+            port:
+              number: 9093

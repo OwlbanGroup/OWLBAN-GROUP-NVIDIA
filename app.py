@@ -1,11 +1,25 @@
-"""Main Flask application - SYSTEM STATUS ENDPOINT ADDED
+"""Main Flask application - SECURITY MIDDLEWARE AND RATE LIMITING ADDED
 """
 
 from flask import Flask, jsonify
 from datetime import datetime, timezone
 import random
+import os
 
 app = Flask(__name__)
+
+# Initialize rate limiting (early, before request handling)
+limiter = None
+try:
+    from src.rate_limiting import init_limiter, get_limiter
+    # Initialize with Redis if available, otherwise memory
+    redis_url = os.getenv('REDIS_URL', 'memory://')
+    limiter = init_limiter(app, storage_uri=redis_url)
+    print("✅ Rate limiting initialized")
+except ImportError as e:
+    print(f"⚠️ Rate limiting not available: {e}")
+except Exception as e:
+    print(f"⚠️ Rate limiting initialization failed: {e}")
 
 # Register backend blueprints (fix 404 errors)
 from backend.config import config
@@ -24,6 +38,21 @@ app.register_blueprint(audit.audit_bp, url_prefix='/api/audit')
 app.register_blueprint(plaid.plaid_bp, url_prefix='/api/plaid')
 
 print("✅ All backend blueprints registered successfully")
+
+# Initialize security middleware
+try:
+    from src.security_middleware import security_middleware, sanitize_request_data, audit_request
+    from flask import before_request
+    
+    # Register security before_request handlers
+    if not app.config.get('TESTING', False):
+        app.before_request(sanitize_request_data)
+        app.before_request(audit_request)
+    print("✅ Security middleware registered")
+except ImportError as e:
+    print(f"⚠️ Security middleware not available: {e}")
+except Exception as e:
+    print(f"⚠️ Security middleware registration failed: {e}")
 
 # Add health check endpoint (fix /health 404)
 @app.route('/health', methods=['GET'])
@@ -52,9 +81,17 @@ def system_status():
             'cloud_storage': 'healthy'
         }
     })
-    
-# Note: Add limiter decorator if needed after installing flask-limiter
-# from flask_limiter import Limiter
-# limiter = Limiter(app)
-# @limiter.limit("20 per minute")
-# (rest of your routes here...)
+
+
+# Rate limit exceeded handler
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'message': 'Too many requests. Please try again later.',
+        'status': 'error'
+    }), 429
+
+
+# Make limiter available to blueprints
+app.extensions['limiter'] = limiter
