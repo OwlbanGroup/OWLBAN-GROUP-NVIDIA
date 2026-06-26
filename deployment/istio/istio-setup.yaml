@@ -1,0 +1,364 @@
+# Istio Installation and Configuration for JPMorgan Financial APIs
+# Service Mesh Implementation - Phase 7
+
+---
+# Istio Operator Configuration
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: jpmorgan-istio
+  namespace: istio-system
+spec:
+  profile: default
+  meshConfig:
+    enableAutoMtls: true
+    defaultConfig:
+      proxyMetadata:
+        ISTIO_META_DNS_CAPTURE: "true"
+        ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+      tracing:
+        sampling: 10
+        zipkin:
+          address: jaeger-collector.istio-system:9411
+    defaultProviders:
+      tracing:
+      - zipkin
+  components:
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: true
+      k8s:
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        hpaSpec:
+          minReplicas: 2
+          maxReplicas: 10
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: istio-ingressgateway
+    egressGateways:
+    - name: istio-egressgateway
+      enabled: true
+  values:
+    global:
+      imagePullPolicy: IfNotPresent
+      proxy:
+        concurrency: 2
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+
+---
+# PeerAuthentication for mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# Authorization Policy - Default Deny All
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny-all
+  namespace: jpmorgan
+spec:
+  {}
+
+---
+# Authorization Policy - Allow Ingress
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress
+  namespace: jpmorgan
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+
+---
+# RequestAuthentication for JWT
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-rule
+  namespace: jpmorgan
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  jwtRules:
+  - issuer: "jpmorgan-financial-apis"
+    forwardOriginalToken: true
+    audiences:
+    - "jpmorgan-api"
+    fromHeaders:
+    - name: Authorization
+      prefix: "Bearer "
+
+---
+# Telemetry - Enable Tracing
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: tracing-default
+  namespace: jpmorgan
+spec:
+  tracing:
+  - providers:
+    - name: jaeger
+    sampling: 10
+    traceSampling:
+      maxRandomDelay: 100
+    customTags:
+      environment:
+        literal:
+          value: production
+
+---
+# Telemetry - Enable Metrics
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: metrics-default
+  namespace: jpmorgan
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+
+---
+# Telemetry - Enable Access Logging
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: logs-default
+  namespace: jpmorgan
+spec:
+  accessLogging:
+  - providers:
+    - name: envoy
+
+---
+# Gateway Configuration
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: jpmorgan-gateway
+  namespace: jpmorgan
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      protocol: HTTP
+      name: http
+    tls:
+      httpsRedirect: true
+    hosts:
+    - "api.jpmorgan-financial.com"
+    - "*.jpmorgan-financial.com"
+  - port:
+      number: 443
+      protocol: HTTPS
+      name: https
+    tls:
+      mode: SIMPLE
+      credentialName: jpmorgan-tls-cert
+    hosts:
+    - "api.jpmorgan-financial.com"
+    - "*.jpmorgan-financial.com"
+
+---
+# Sidecar - Limit Service Communication
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default-sidecar
+  namespace: jpmorgan
+spec:
+  egress:
+  - hosts:
+    - "./istio-system/*"
+    - "jpmorgan/*"
+    - "postgres-telemetry/*"
+
+---
+# EnvoyFilter - Custom Headers for Tracing
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: add-tracking-headers
+  namespace: jpmorgan
+spec:
+  workloadSelector:
+    labels:
+      app: gateway
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.ext_authz
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+          stat_prefix: ext_authz
+
+---
+# Istio Ingress Gateway Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: istio-ingressgateway
+  namespace: istio-system
+  labels:
+    istio: ingressgateway
+spec:
+  type: LoadBalancer
+  selector:
+    istio: ingressgateway
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: https
+    port: 443
+    targetPort: 8443
+  - name: istio-mtls
+    port: 15090
+    targetPort: 15090
+    protocol: TCP
+
+---
+# Istio Ingress Gateway Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-ingressgateway
+  namespace: istio-system
+  labels:
+    istio: ingressgateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  template:
+    metadata:
+      labels:
+        istio: ingressgateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "15020"
+    spec:
+      serviceAccountName: istio-ingressgateway-service-account
+      containers:
+      - name: istio-proxy
+        image: istio/proxyv2:1.20.0
+        args:
+        - proxy
+        - ingress
+        - --domain
+        - $(POD_NAMESPACE).svc.cluster.local
+        - --proxyLogLevel
+        - warning
+        - --proxyComponentLogLevel
+        - misc:error
+        - --logAsJson
+        env:
+        - name: JWT_POLICY
+          value: third-party-jwt
+        - name: PILOT_CERT_PROVIDER
+          value: istiod
+        - name: CA_ADDR
+          value: istiod.istio-system.svc:15012
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: INSTANCE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: ISTIO_META_REQUESTED_NETWORK_VIEW
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['istio.io/network']
+        - name: ISTIO_METAWORKLOADNAME
+          value: istio-ingressgateway
+        - name: ISTIO_META_CONTAINER_NAME
+          value: istio-proxy
+        ports:
+        - containerPort: 15090
+          name: http-envoy-prom
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+
+---
+# ServiceAccount for Ingress Gateway
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: istio-ingressgateway-service-account
+  namespace: istio-system
