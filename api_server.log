@@ -1,0 +1,12 @@
+2026-07-01 11:24:06,086 - api_server - INFO - Initializing AI systems...
+2026-07-01 11:24:06,122 - DatabaseManager - INFO - SQLite database initialized
+2026-07-01 11:24:06,123 - api_server - INFO - Database manager initialized
+2026-07-01 11:26:58,341 - api_server - INFO - Request: GET /health from 127.0.0.1
+2026-07-01 11:26:58,455 - api_server - INFO - Response: 200 in 0.126s
+2026-07-01 13:16:53,059 - api_server - INFO - Initializing AI systems...
+2026-07-01 13:16:53,089 - DatabaseManager - INFO - SQLite database initialized
+2026-07-01 13:16:53,091 - api_server - INFO - Database manager initialized
+2026-07-01 13:17:30,329 - api_server - INFO - Request: GET /health from 127.0.0.1
+2026-07-01 13:17:30,334 - api_server - INFO - Response: 200 in 0.005s
+2026-07-01 13:17:39,733 - api_server - INFO - Request: GET /health from 127.0.0.1
+2026-07-01 13:17:39,736 - api_server - INFO - Response: 200 in 0.003s

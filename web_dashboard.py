@@ -3,35 +3,32 @@ OWLBAN GROUP AI Web Dashboard
 Streamlit-based web interface for monitoring and controlling AI systems
 """
 
-import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import time
 import requests
-import json
-from typing import Dict, List, Optional, Any
+import streamlit as st
+from typing import Dict, Optional
 
 # Import AI systems
 try:
     from combined_nim_owlban_ai import CombinedSystem
-    combined_system_available = True
+    from combined_nim_owlban_ai.nim import NimManager
+    COMBINED_SYSTEM_AVAILABLE = True
 except ImportError:
-    combined_system_available = False
+    COMBINED_SYSTEM_AVAILABLE = False
+    NimManager = None
 
 try:
     from new_products.revenue_optimizer import NVIDIARevenueOptimizer
-    from combined_nim_owlban_ai.nim import NimManager
-    revenue_optimizer_available = True
+    REVENUE_OPTIMIZER_AVAILABLE = COMBINED_SYSTEM_AVAILABLE and NimManager is not None
 except ImportError:
-    revenue_optimizer_available = False
+    REVENUE_OPTIMIZER_AVAILABLE = False
 
 try:
     from database_manager import DatabaseManager
-    database_available = True
+    DATABASE_AVAILABLE = True
 except ImportError:
-    database_available = False
+    DATABASE_AVAILABLE = False
 
 # Configuration
 API_BASE_URL = "http://localhost:8000"
@@ -79,14 +76,14 @@ class AIDashboard:
 
     def __init__(self):
         self.api_url = API_BASE_URL
-        self.db_manager = DatabaseManager() if database_available else None
+        self.db_manager = DatabaseManager() if DATABASE_AVAILABLE else None
 
         # Initialize AI systems
-        self.combined_system = CombinedSystem() if combined_system_available else None
+        self.combined_system = CombinedSystem() if COMBINED_SYSTEM_AVAILABLE else None
         self.revenue_optimizer = None
         self.nim_manager = None
 
-        if revenue_optimizer_available:
+        if REVENUE_OPTIMIZER_AVAILABLE:
             self.nim_manager = NimManager()
             self.nim_manager.initialize()
             self.revenue_optimizer = NVIDIARevenueOptimizer(self.nim_manager)
@@ -99,8 +96,16 @@ class AIDashboard:
         st.sidebar.title("Navigation")
         page = st.sidebar.radio(
             "Select Page",
-            ["Overview", "AI Inference", "Revenue Optimization", "GPU Monitoring",
-             "Quantum AI", "Database", "System Health", "Settings"]
+            [
+                "Overview",
+                "AI Inference",
+                "Revenue Optimization",
+                "GPU Monitoring",
+                "Quantum AI",
+                "Database",
+                "System Health",
+                "Settings",
+            ],
         )
 
         # Main content
@@ -187,7 +192,7 @@ class AIDashboard:
                                 result,
                                 result.get('confidence', 0.5)
                             )
-                    except Exception as e:
+                    except (AttributeError, RuntimeError, ValueError) as e:
                         st.error(f"Inference failed: {e}")
                 else:
                     st.error("Combined system not available")
@@ -210,7 +215,7 @@ class AIDashboard:
                 try:
                     self.revenue_optimizer.optimize_revenue(iterations)
                     st.success(f"Optimization completed with {iterations} iterations!")
-                except Exception as e:
+                except (AttributeError, RuntimeError, ValueError) as e:
                     st.error(f"Optimization failed: {e}")
 
         with col2:
@@ -270,7 +275,7 @@ class AIDashboard:
                     result = self.revenue_optimizer.optimize_quantum_portfolio()
                     st.success("Quantum portfolio optimization completed!")
                     st.json(result.__dict__)
-                except Exception as e:
+                except (AttributeError, RuntimeError, ValueError) as e:
                     st.error(f"Quantum optimization failed: {e}")
 
         with col2:
@@ -280,7 +285,7 @@ class AIDashboard:
                     result = self.revenue_optimizer.analyze_quantum_risk()
                     st.success("Quantum risk analysis completed!")
                     st.json(result.__dict__)
-                except Exception as e:
+                except (AttributeError, RuntimeError, ValueError) as e:
                     st.error(f"Quantum risk analysis failed: {e}")
 
         # Market prediction
@@ -291,7 +296,7 @@ class AIDashboard:
                 prediction = self.revenue_optimizer.predict_market_with_quantum(symbol)
                 st.success("Quantum market prediction completed!")
                 st.json(prediction.__dict__)
-            except Exception as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 st.error(f"Market prediction failed: {e}")
 
     def show_database(self):
@@ -353,7 +358,7 @@ class AIDashboard:
             response = requests.get(f"{self.api_url}/status", timeout=5)
             if response.status_code == 200:
                 return response.json()
-        except Exception as e:
+        except requests.RequestException as e:
             st.error(f"Failed to get system status: {e}")
         return None
 
@@ -363,7 +368,7 @@ class AIDashboard:
             response = requests.get(f"{self.api_url}/gpu/status", timeout=5)
             if response.status_code == 200:
                 return response.json().get('gpu_status', {})
-        except Exception as e:
+        except requests.RequestException as e:
             st.error(f"Failed to get GPU status: {e}")
         return None
 

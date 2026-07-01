@@ -4,10 +4,11 @@ FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 import secrets
 import time
-from typing import Dict, List, Optional, Any
+from typing import Annotated, Dict, List, Optional, Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
@@ -20,20 +21,24 @@ from starlette.middleware.base import BaseHTTPMiddleware
 try:
     from combined_nim_owlban_ai import CombinedSystem
     COMBINED_SYSTEM_AVAILABLE = True
-except ImportError:
+except Exception:
     COMBINED_SYSTEM_AVAILABLE = False
 
 try:
-    from new_products.revenue_optimizer import NVIDIARevenueOptimizer
     from combined_nim_owlban_ai.nim import NimManager
+except Exception:
+    NimManager = None
+
+try:
+    from new_products.revenue_optimizer import NVIDIARevenueOptimizer
     REVENUE_OPTIMIZER_AVAILABLE = True
-except ImportError:
+except Exception:
     REVENUE_OPTIMIZER_AVAILABLE = False
 
 try:
     from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
     RL_AGENT_AVAILABLE = True
-except ImportError:
+except Exception:
     RL_AGENT_AVAILABLE = False
 
 # Import database manager
@@ -48,8 +53,13 @@ REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 
 # Security
 security = HTTPBasic()
-API_USERNAME = "owlban_admin"
-API_PASSWORD = "quantum_secure_2024"
+API_USERNAME = os.getenv("API_USERNAME", "owlban_admin")
+API_PASSWORD = os.getenv("API_PASSWORD")
+API_HOST = os.getenv("API_HOST", "127.0.0.1")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+
+if API_PASSWORD is None:
+    raise RuntimeError("API_PASSWORD environment variable must be set for API server authentication")
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     """Verify API credentials"""
@@ -122,6 +132,12 @@ fastapi_app = FastAPI(
     version="1.0.0"
 )
 
+fastapi_app.state.combined_system = None
+fastapi_app.state.nim_manager = None
+fastapi_app.state.revenue_optimizer = None
+fastapi_app.state.rl_agent = None
+fastapi_app.state.db_manager = None
+
 # Add middleware
 fastapi_app.add_middleware(MonitoringMiddleware)
 fastapi_app.add_middleware(
@@ -132,50 +148,41 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global instances
-COMBINED_SYSTEM: Optional[Any] = None
-NIM_MANAGER: Optional[Any] = None
-REVENUE_OPTIMIZER: Optional[Any] = None
-RL_AGENT: Optional[Any] = None
-DB_MANAGER: Optional[Any] = None
-
 # Initialize systems
 @fastapi_app.on_event("startup")
 async def startup_event():
     """Initialize AI systems on application startup."""
-    global COMBINED_SYSTEM, NIM_MANAGER, REVENUE_OPTIMIZER, RL_AGENT, DB_MANAGER
-
     logger.info("Initializing AI systems...")
 
-    if COMBINED_SYSTEM_AVAILABLE:
+    if COMBINED_SYSTEM_AVAILABLE and CombinedSystem is not None:
         try:
-            COMBINED_SYSTEM = CombinedSystem()
+            fastapi_app.state.combined_system = CombinedSystem()
             logger.info("CombinedSystem initialized")
-        except Exception as e:
-            logger.error("Failed to initialize CombinedSystem: %s", e)
+        except Exception:
+            logger.exception("Failed to initialize CombinedSystem")
 
-    if REVENUE_OPTIMIZER_AVAILABLE:
+    if REVENUE_OPTIMIZER_AVAILABLE and NimManager is not None and NVIDIARevenueOptimizer is not None:
         try:
-            NIM_MANAGER = NimManager()
-            NIM_MANAGER.initialize()
-            REVENUE_OPTIMIZER = NVIDIARevenueOptimizer(NIM_MANAGER)
+            fastapi_app.state.nim_manager = NimManager()
+            fastapi_app.state.nim_manager.initialize()
+            fastapi_app.state.revenue_optimizer = NVIDIARevenueOptimizer(fastapi_app.state.nim_manager)
             logger.info("Revenue optimizer initialized")
-        except Exception as e:
-            logger.error("Failed to initialize revenue optimizer: %s", e)
+        except Exception:
+            logger.exception("Failed to initialize revenue optimizer")
 
-    if RL_AGENT_AVAILABLE:
+    if RL_AGENT_AVAILABLE and ReinforcementLearningAgent is not None:
         try:
-            RL_AGENT = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
+            fastapi_app.state.rl_agent = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
             logger.info("RL agent initialized")
-        except Exception as e:
-            logger.error("Failed to initialize RL agent: %s", e)
+        except Exception:
+            logger.exception("Failed to initialize RL agent")
 
     if DB_MANAGER_AVAILABLE:
         try:
-            DB_MANAGER = DatabaseManager()
+            fastapi_app.state.db_manager = DatabaseManager()
             logger.info("Database manager initialized")
-        except Exception as e:
-            logger.error("Failed to initialize database manager: %s", e)
+        except Exception:
+            logger.exception("Failed to initialize database manager")
 
 # Pydantic models
 class RevenueOptimizationRequest(BaseModel):
@@ -211,20 +218,20 @@ async def health_check():
 @fastapi_app.get("/status", response_model=SystemStatus)
 async def get_system_status():
     services = {
-        "combined_system": COMBINED_SYSTEM is not None,
-        "revenue_optimizer": REVENUE_OPTIMIZER is not None,
-        "rl_agent": RL_AGENT is not None,
-        "nim_manager": NIM_MANAGER is not None,
-        "db_manager": DB_MANAGER is not None
+        "combined_system": fastapi_app.state.combined_system is not None,
+        "revenue_optimizer": fastapi_app.state.revenue_optimizer is not None,
+        "rl_agent": fastapi_app.state.rl_agent is not None,
+        "nim_manager": fastapi_app.state.nim_manager is not None,
+        "db_manager": fastapi_app.state.db_manager is not None
     }
 
     gpu_status = None
-    if NIM_MANAGER:
-        gpu_status = NIM_MANAGER.get_resource_status()
+    if fastapi_app.state.nim_manager:
+        gpu_status = fastapi_app.state.nim_manager.get_resource_status()
 
     database_status = None
-    if DB_MANAGER:
-        database_status = DB_MANAGER.get_database_status()
+    if fastapi_app.state.db_manager:
+        database_status = fastapi_app.state.db_manager.get_database_status()
 
     uptime = time.time() - getattr(fastapi_app.state, 'start_time', time.time())
     monitoring_stats = _get_monitoring_stats()
@@ -244,121 +251,119 @@ async def get_system_status():
         monitoring=monitoring
     )
 
-@fastapi_app.post("/revenue/optimize")
+@fastapi_app.post("/revenue/optimize", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def optimize_revenue(request: RevenueOptimizationRequest, background_tasks: BackgroundTasks):
-    if not REVENUE_OPTIMIZER:
+    if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        # Run optimization in background
-        background_tasks.add_task(REVENUE_OPTIMIZER.optimize_revenue, request.iterations)
-
+        background_tasks.add_task(fastapi_app.state.revenue_optimizer.optimize_revenue, request.iterations)
         return {
             "message": "Revenue optimization started with %d iterations" % request.iterations,
             "status": "running"
         }
-    except Exception as e:
-        logger.error("Revenue optimization failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Revenue optimization failed")
+        raise HTTPException(status_code=500, detail="Revenue optimization failed")
 
-@fastapi_app.get("/revenue/profit")
+@fastapi_app.get("/revenue/profit", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def get_current_profit():
-    if not REVENUE_OPTIMIZER:
+    if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        profit = REVENUE_OPTIMIZER.get_current_profit()
+        profit = fastapi_app.state.revenue_optimizer.get_current_profit()
         return {"current_profit": profit}
-    except Exception as e:
-        logger.error("Failed to get profit: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Failed to get profit")
+        raise HTTPException(status_code=500, detail="Failed to get profit")
 
-@fastapi_app.post("/inference")
+@fastapi_app.post("/inference", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def run_inference(request: InferenceRequest):
-    if not COMBINED_SYSTEM:
+    if not fastapi_app.state.combined_system:
         raise HTTPException(status_code=503, detail="Combined system not available")
 
     try:
-        result = COMBINED_SYSTEM.run_inference(request.data)
+        result = fastapi_app.state.combined_system.run_inference(request.data)
         return {"result": result}
-    except Exception as e:
-        logger.error("Inference failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Inference failed")
+        raise HTTPException(status_code=500, detail="Inference failed")
 
-@fastapi_app.post("/rl/learn")
+@fastapi_app.post("/rl/learn", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def rl_learn(state: List[float], action: str, reward: float, next_state: List[float]):
-    if not RL_AGENT:
+    if not fastapi_app.state.rl_agent:
         raise HTTPException(status_code=503, detail="RL agent not available")
 
     try:
-        RL_AGENT.learn(state, action, reward, next_state)
+        fastapi_app.state.rl_agent.learn(state, action, reward, next_state)
         return {"message": "RL learning completed"}
-    except Exception as e:
-        logger.error("RL learning failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("RL learning failed")
+        raise HTTPException(status_code=500, detail="RL learning failed")
 
-@fastapi_app.post("/rl/action")
+@fastapi_app.post("/rl/action", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def get_rl_action(state: List[float]):
-    if not RL_AGENT:
+    if not fastapi_app.state.rl_agent:
         raise HTTPException(status_code=503, detail="RL agent not available")
 
     try:
-        action = RL_AGENT.choose_action(state)
+        action = fastapi_app.state.rl_agent.choose_action(state)
         return {"action": action}
-    except Exception as e:
-        logger.error("RL action selection failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("RL action selection failed")
+        raise HTTPException(status_code=500, detail="RL action selection failed")
 
-@fastapi_app.get("/gpu/status")
+@fastapi_app.get("/gpu/status", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def get_gpu_status():
-    if not NIM_MANAGER:
+    if not fastapi_app.state.nim_manager:
         raise HTTPException(status_code=503, detail="NIM manager not available")
 
     try:
-        gpu_status = NIM_MANAGER.get_resource_status()
+        gpu_status = fastapi_app.state.nim_manager.get_resource_status()
         return {"gpu_status": gpu_status}
-    except Exception as e:
-        logger.error("GPU status check failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("GPU status check failed")
+        raise HTTPException(status_code=500, detail="GPU status check failed")
 
-@fastapi_app.get("/quantum/portfolio")
+@fastapi_app.get("/quantum/portfolio", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def get_quantum_portfolio():
-    if not REVENUE_OPTIMIZER:
+    if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        result = REVENUE_OPTIMIZER.optimize_quantum_portfolio()
+        result = fastapi_app.state.revenue_optimizer.optimize_quantum_portfolio()
         return {"portfolio": result.__dict__}
-    except Exception as e:
-        logger.error("Quantum portfolio optimization failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Quantum portfolio optimization failed")
+        raise HTTPException(status_code=500, detail="Quantum portfolio optimization failed")
 
-@fastapi_app.get("/quantum/risk")
+@fastapi_app.get("/quantum/risk", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def get_quantum_risk():
-    if not REVENUE_OPTIMIZER:
+    if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        result = REVENUE_OPTIMIZER.analyze_quantum_risk()
+        result = fastapi_app.state.revenue_optimizer.analyze_quantum_risk()
         return {"risk_analysis": result.__dict__}
-    except Exception as e:
-        logger.error("Quantum risk analysis failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Quantum risk analysis failed")
+        raise HTTPException(status_code=500, detail="Quantum risk analysis failed")
 
-@fastapi_app.get("/quantum/predict/{symbol}")
+@fastapi_app.get("/quantum/predict/{symbol}", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def predict_market(symbol: str):
-    if not REVENUE_OPTIMIZER:
+    if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        prediction = REVENUE_OPTIMIZER.predict_market_with_quantum(symbol)
+        prediction = fastapi_app.state.revenue_optimizer.predict_market_with_quantum(symbol)
         return {"prediction": prediction.__dict__}
-    except Exception as e:
-        logger.error("Quantum market prediction failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Quantum market prediction failed")
+        raise HTTPException(status_code=500, detail="Quantum market prediction failed")
 
 @fastapi_app.get("/logs")
-def get_logs(lines: int = 100, username: str = Depends(verify_credentials)):
+def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int = 100):
     """Get recent log entries (admin only)"""
     logger.info("Logs requested by %s", username)
 
@@ -368,55 +373,51 @@ def get_logs(lines: int = 100, username: str = Depends(verify_credentials)):
         return {"logs": logs, "user": username}
     except FileNotFoundError:
         return {"logs": ["No log file found"], "user": username}
-    except Exception as e:
-        logger.error("Failed to read logs: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Failed to read logs")
+        raise HTTPException(status_code=500, detail="Failed to read logs")
 
 @fastapi_app.post("/logs")
-async def add_log_entry(entry: LogEntry, username: str = Depends(verify_credentials)):
+async def add_log_entry(entry: LogEntry, username: Annotated[str, Depends(verify_credentials)]):
     """Add a log entry"""
     logger.info("Log entry added by %s: %s", username, entry.message)
 
-    # Log the entry
     log_level = getattr(logging, entry.level.upper(), logging.INFO)
     logger.log(log_level, "[%s] %s", entry.source, entry.message)
 
     return {"message": "Log entry added", "user": username}
 
-@fastapi_app.get("/metrics")
-async def get_metrics(username: str = Depends(verify_credentials)):
+@fastapi_app.get("/metrics", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
     """Get system metrics"""
     logger.info("Metrics requested by %s", username)
 
-    if not DB_MANAGER:
+    if not fastapi_app.state.db_manager:
         raise HTTPException(status_code=503, detail="Database manager not available")
 
     try:
-        # Get recent system metrics
-        metrics = DB_MANAGER.get_predictions(limit=50)  # Using predictions as proxy for metrics
+        metrics = fastapi_app.state.db_manager.get_predictions(limit=50)
         return {"metrics": metrics, "user": username}
-    except Exception as e:
-        logger.error("Failed to get metrics: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Failed to get metrics")
+        raise HTTPException(status_code=500, detail="Failed to get metrics")
 
-@fastapi_app.post("/metrics")
-async def save_metric(metric_name: str, value: float, tags: Optional[Dict] = None, username: str = Depends(verify_credentials)):
+@fastapi_app.post("/metrics", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+async def save_metric(metric_name: str, value: float, username: Annotated[str, Depends(verify_credentials)], tags: Optional[Dict] = None):
     """Save a system metric"""
     logger.info("Metric saved by %s: %s = %f", username, metric_name, value)
 
-    if not DB_MANAGER:
+    if not fastapi_app.state.db_manager:
         raise HTTPException(status_code=503, detail="Database manager not available")
 
     try:
-        DB_MANAGER.save_system_metric(metric_name, value, tags)
+        fastapi_app.state.db_manager.save_system_metric(metric_name, value, tags)
         return {"message": "Metric saved", "user": username}
-    except Exception as e:
-        logger.error("Failed to save metric: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception:
+        logger.exception("Failed to save metric")
+        raise HTTPException(status_code=500, detail="Failed to save metric")
 
 if __name__ == "__main__":
-    # Set start time for uptime tracking
     fastapi_app.state.start_time = time.time()
-
     logger.info("Starting OWLBAN GROUP AI API Server")
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+    uvicorn.run(fastapi_app, host=API_HOST, port=API_PORT)
