@@ -1,27 +1,34 @@
-Run the API and dashboard locally
+# Run the API and dashboard locally
 
-Prerequisites
-- Python 3.11+ installed
+## Prerequisites
+
+- Python 3.10+ installed
 - Docker (optional)
 
-Install dependencies
+## Set up the workspace environment
 
 ```powershell
-python -m pip install -r requirements.txt
+./scripts/setup_env.ps1
 ```
 
-Start the API (background or separate terminal)
+## Install dependencies
 
 ```powershell
-python main.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+## Start the API (background or separate terminal)
+
+```powershell
+.\.venv\Scripts\python.exe main.py
 # or
-python -m uvicorn api_server:fastapi_app --host 0.0.0.0 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn api_server:fastapi_app --host 0.0.0.0 --port 8000
 ```
 
-Start the Streamlit dashboard
+## Start the Streamlit dashboard
 
 ```powershell
-python -m streamlit run web_dashboard.py --server.port 8501 --server.address 0.0.0.0
+.\.venv\Scripts\python.exe -m streamlit run web_dashboard.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 Docker (build dashboard image)
