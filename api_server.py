@@ -63,14 +63,19 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
+def _get_monitoring_stats() -> Dict[str, Any]:
+    """Return shared monitoring statistics stored on the FastAPI app state."""
+    if not hasattr(fastapi_app.state, "monitoring"):
+        fastapi_app.state.monitoring = {"request_count": 0, "response_times": []}
+    return fastapi_app.state.monitoring
+
+
 # Monitoring middleware
 class MonitoringMiddleware(BaseHTTPMiddleware):
     """Middleware for request monitoring and logging."""
 
     def __init__(self, app):
         super().__init__(app)
-        self.request_count = 0
-        self.response_times = []
 
     async def dispatch(self, request, call_next):
         start_time = time.time()
@@ -83,12 +88,13 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
 
         # Calculate response time
         process_time = time.time() - start_time
-        self.request_count += 1
-        self.response_times.append(process_time)
+        monitoring_stats = _get_monitoring_stats()
+        monitoring_stats["request_count"] += 1
+        monitoring_stats["response_times"].append(process_time)
 
         # Keep only last 100 response times
-        if len(self.response_times) > 100:
-            self.response_times.pop(0)
+        if len(monitoring_stats["response_times"]) > 100:
+            monitoring_stats["response_times"].pop(0)
 
         # Log response
         logger.info("Response: %s in %.3fs", response.status_code, process_time)
@@ -221,12 +227,12 @@ async def get_system_status():
         database_status = DB_MANAGER.get_database_status()
 
     uptime = time.time() - getattr(fastapi_app.state, 'start_time', time.time())
-    request_count = getattr(fastapi_app.middleware_stack.app.user_middleware[0].app, 'request_count', 0)
-    response_times = getattr(fastapi_app.middleware_stack.app.user_middleware[0].app, 'response_times', [])
+    monitoring_stats = _get_monitoring_stats()
+    response_times = monitoring_stats.get("response_times", [])
     avg_response_time = sum(response_times) / max(len(response_times), 1)
     monitoring = {
         "uptime": uptime,
-        "request_count": request_count,
+        "request_count": monitoring_stats.get("request_count", 0),
         "avg_response_time": avg_response_time
     }
 
