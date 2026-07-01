@@ -6,29 +6,31 @@ Unified database interface for all AI systems with SQL and NoSQL support
 import sqlite3
 import json
 import logging
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
-import os
+import importlib
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from datetime import datetime, timezone
 
-# Optional database drivers
+# Optional database drivers (import dynamically to avoid static-type issues)
+MongoClient = None
+psycopg2 = None
+redis = None
 try:
-    import pymongo
-    from pymongo import MongoClient
-    mongodb_available = True
-except ImportError:
-    mongodb_available = False
-
-try:
-    import psycopg2
-    postgresql_available = True
-except ImportError:
-    postgresql_available = False
+    MongoClient = importlib.import_module("pymongo").MongoClient
+    MONGODB_AVAILABLE = True
+except Exception:
+    MONGODB_AVAILABLE = False
 
 try:
-    import redis
-    redis_available = True
-except ImportError:
-    redis_available = False
+    psycopg2 = importlib.import_module("psycopg2")
+    POSTGRESQL_AVAILABLE = True
+except Exception:
+    POSTGRESQL_AVAILABLE = False
+
+try:
+    redis = importlib.import_module("redis")
+    REDIS_AVAILABLE = True
+except Exception:
+    REDIS_AVAILABLE = False
 
 class DatabaseManager:
     """Unified database manager supporting multiple database types"""
@@ -36,15 +38,15 @@ class DatabaseManager:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.logger = logging.getLogger("DatabaseManager")
         self.config = config or self._default_config()
-        self.connections = {}
+        self.connections: Dict[str, Any] = {}
 
         # Initialize databases
         self._init_sqlite()
-        if mongodb_available:
+        if MONGODB_AVAILABLE:
             self._init_mongodb()
-        if postgresql_available:
+        if POSTGRESQL_AVAILABLE:
             self._init_postgresql()
-        if redis_available:
+        if REDIS_AVAILABLE:
             self._init_redis()
 
     def _default_config(self) -> Dict[str, Any]:
@@ -78,8 +80,8 @@ class DatabaseManager:
             self.connections["sqlite"] = sqlite3.connect(db_path)
             self._create_sqlite_tables()
             self.logger.info("SQLite database initialized")
-        except Exception as e:
-            self.logger.error(f"SQLite initialization failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("SQLite initialization failed: %s", e)
 
     def _create_sqlite_tables(self):
         """Create necessary SQLite tables"""
@@ -141,18 +143,21 @@ class DatabaseManager:
             self.connections["mongodb"] = client[config["database"]]
             self.logger.info("MongoDB connection initialized")
         except Exception as e:
-            self.logger.error(f"MongoDB initialization failed: {e}")
+            self.logger.error("MongoDB initialization failed: %s", e)
 
     def _init_postgresql(self):
         """Initialize PostgreSQL connection"""
         try:
             config = self.config["postgresql"]
-            conn_string = f"host={config['host']} port={config['port']} dbname={config['database']} user={config['user']} password={config['password']}"
+            conn_string = (
+                "host=%s port=%s dbname=%s user=%s password=%s"
+                % (config["host"], config["port"], config["database"], config["user"], config["password"])
+            )
             self.connections["postgresql"] = psycopg2.connect(conn_string)
             self._create_postgresql_tables()
             self.logger.info("PostgreSQL connection initialized")
         except Exception as e:
-            self.logger.error(f"PostgreSQL initialization failed: {e}")
+            self.logger.error("PostgreSQL initialization failed: %s", e)
 
     def _create_postgresql_tables(self):
         """Create PostgreSQL tables if they don't exist"""
@@ -210,7 +215,7 @@ class DatabaseManager:
             )
             self.logger.info("Redis connection initialized")
         except Exception as e:
-            self.logger.error(f"Redis initialization failed: {e}")
+            self.logger.error("Redis initialization failed: %s", e)
 
     # SQLite operations
     def save_prediction_sqlite(self, model_name: str, input_data: Dict, prediction: Any, confidence: float):
@@ -226,8 +231,8 @@ class DatabaseManager:
             )
             self.connections["sqlite"].commit()
             return True
-        except Exception as e:
-            self.logger.error(f"SQLite save prediction failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("SQLite save prediction failed: %s", e)
             return False
 
     def get_predictions_sqlite(self, model_name: Optional[str] = None, limit: int = 100) -> List[Dict]:
@@ -257,8 +262,8 @@ class DatabaseManager:
                 results.append(result)
 
             return results
-        except Exception as e:
-            self.logger.error(f"SQLite get predictions failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("SQLite get predictions failed: %s", e)
             return []
 
     # MongoDB operations
@@ -274,12 +279,12 @@ class DatabaseManager:
                 "input_data": input_data,
                 "prediction": prediction,
                 "confidence": confidence,
-                "timestamp": datetime.utcnow()
+                "timestamp": datetime.now(timezone.utc)
             }
             collection.insert_one(doc)
             return True
         except Exception as e:
-            self.logger.error(f"MongoDB save prediction failed: {e}")
+            self.logger.error("MongoDB save prediction failed: %s", e)
             return False
 
     # Redis operations
@@ -292,7 +297,7 @@ class DatabaseManager:
             self.connections["redis"].setex(key, ttl, json.dumps(prediction))
             return True
         except Exception as e:
-            self.logger.error(f"Redis cache prediction failed: {e}")
+            self.logger.error("Redis cache prediction failed: %s", e)
             return False
 
     def get_cached_prediction_redis(self, key: str) -> Optional[Dict]:
@@ -306,7 +311,7 @@ class DatabaseManager:
                 return json.loads(data)
             return None
         except Exception as e:
-            self.logger.error(f"Redis get cached prediction failed: {e}")
+            self.logger.error("Redis get cached prediction failed: %s", e)
             return None
 
     # Unified interface
@@ -318,18 +323,18 @@ class DatabaseManager:
         results.append(("sqlite", self.save_prediction_sqlite(model_name, input_data, prediction, confidence)))
 
         # Save to MongoDB if available
-        if mongodb_available:
+        if MONGODB_AVAILABLE:
             results.append(("mongodb", self.save_prediction_mongodb(model_name, input_data, prediction, confidence)))
 
         # Cache in Redis if available
-        if redis_available:
-            cache_key = f"prediction:{model_name}:{hash(str(input_data))}"
+        if REDIS_AVAILABLE:
+            cache_key = "prediction:%s:%s" % (model_name, hash(str(input_data)))
             cache_data = {
                 "model_name": model_name,
                 "input_data": input_data,
                 "prediction": prediction,
                 "confidence": confidence,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             results.append(("redis", self.cache_prediction_redis(cache_key, cache_data)))
 
@@ -352,8 +357,8 @@ class DatabaseManager:
             )
             self.connections["sqlite"].commit()
             return True
-        except Exception as e:
-            self.logger.error(f"Save revenue result failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("Save revenue result failed: %s", e)
             return False
 
     def save_system_metric(self, metric_name: str, value: float, tags: Optional[Dict] = None):
@@ -369,8 +374,8 @@ class DatabaseManager:
             )
             self.connections["sqlite"].commit()
             return True
-        except Exception as e:
-            self.logger.error(f"Save system metric failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("Save system metric failed: %s", e)
             return False
 
     def save_quantum_computation(self, algorithm: str, input_parameters: Dict, result: Any, execution_time: float):
@@ -386,8 +391,8 @@ class DatabaseManager:
             )
             self.connections["sqlite"].commit()
             return True
-        except Exception as e:
-            self.logger.error(f"Save quantum computation failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error("Save quantum computation failed: %s", e)
             return False
 
     def get_database_status(self) -> Dict[str, Any]:
@@ -409,7 +414,7 @@ class DatabaseManager:
                     status[db_type] = {"connected": True, "predictions_count": count}
                     cursor.close()
                 elif db_type == "redis":
-                    status[db_type] = {"connected": connection.ping(), "db": connection.connection.db}
+                    status[db_type] = {"connected": connection.ping(), "db": getattr(connection, 'connection', {}).get('db', None)}
             except Exception as e:
                 status[db_type] = {"connected": False, "error": str(e)}
 
@@ -422,9 +427,12 @@ class DatabaseManager:
                 if db_type in ["sqlite", "postgresql"]:
                     connection.close()
                 elif db_type == "mongodb":
-                    connection.client.close()
+                    # pymongo database object holds a client attribute
+                    client = getattr(connection, 'client', None)
+                    if client:
+                        client.close()
                 elif db_type == "redis":
                     connection.close()
-                self.logger.info(f"Closed {db_type} connection")
+                self.logger.info("Closed %s connection", db_type)
             except Exception as e:
-                self.logger.error(f"Error closing {db_type}: {e}")
+                self.logger.error("Error closing %s: %s", db_type, e)
