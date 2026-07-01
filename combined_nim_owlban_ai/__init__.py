@@ -18,6 +18,7 @@ _REQUIRED_EXPORTS = {
     "CombinedSystem": (".integration", "QuantumIntegratedSystem"),
     "NimManager": (".nim", "NimManager"),
     "OwlbanAI": (".owlban_ai", "OwlbanAI"),
+    "NGCatalogManager": (".ngc_catalog", "NGCatalogManager"),
     "QuantumFinancialOmniscientSystem": (
         ".quantum_financial_omniscient_system",
         "QuantumFinancialOmniscientSystem",

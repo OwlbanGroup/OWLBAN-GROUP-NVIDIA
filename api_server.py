@@ -25,6 +25,12 @@ except Exception:
     COMBINED_SYSTEM_AVAILABLE = False
 
 try:
+    from combined_nim_owlban_ai.ngc_catalog import NGCatalogManager
+    NGCATALOG_AVAILABLE = True
+except Exception:
+    NGCATALOG_AVAILABLE = False
+
+try:
     from combined_nim_owlban_ai.nim import NimManager
 except Exception:
     NimManager = None
@@ -137,6 +143,7 @@ fastapi_app.state.nim_manager = None
 fastapi_app.state.revenue_optimizer = None
 fastapi_app.state.rl_agent = None
 fastapi_app.state.db_manager = None
+fastapi_app.state.ngc_catalog_manager = None
 
 # Add middleware
 fastapi_app.add_middleware(MonitoringMiddleware)
@@ -183,6 +190,21 @@ async def startup_event():
             logger.info("Database manager initialized")
         except Exception:
             logger.exception("Failed to initialize database manager")
+
+    if fastapi_app.state.combined_system is not None and hasattr(fastapi_app.state.combined_system, "ngc_catalog_manager"):
+        try:
+            fastapi_app.state.ngc_catalog_manager = fastapi_app.state.combined_system.ngc_catalog_manager
+            fastapi_app.state.ngc_catalog_manager.initialize()
+            logger.info("NGC catalog manager attached to combined system")
+        except Exception:
+            logger.exception("Failed to attach NGC catalog manager")
+    elif NGCATALOG_AVAILABLE:
+        try:
+            fastapi_app.state.ngc_catalog_manager = NGCatalogManager()
+            fastapi_app.state.ngc_catalog_manager.initialize()
+            logger.info("Standalone NGC catalog manager initialized")
+        except Exception:
+            logger.exception("Failed to initialize standalone NGC catalog manager")
 
 # Pydantic models
 class RevenueOptimizationRequest(BaseModel):
@@ -250,6 +272,24 @@ async def get_system_status():
         database_status=database_status,
         monitoring=monitoring
     )
+
+@fastapi_app.get("/catalog/summary")
+async def get_catalog_summary():
+    manager = fastapi_app.state.ngc_catalog_manager
+    if manager is None:
+        raise HTTPException(status_code=503, detail="NGC catalog manager not available")
+
+    return manager.get_catalog_summary() if hasattr(manager, "get_catalog_summary") else {"error": "catalog manager unavailable"}
+
+
+@fastapi_app.get("/catalog/search")
+async def search_catalog(query: str):
+    manager = fastapi_app.state.ngc_catalog_manager
+    if manager is None:
+        raise HTTPException(status_code=503, detail="NGC catalog manager not available")
+
+    return manager.search(query) if hasattr(manager, "search") else []
+
 
 @fastapi_app.post("/revenue/optimize", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
 async def optimize_revenue(request: RevenueOptimizationRequest, background_tasks: BackgroundTasks):

@@ -115,6 +115,7 @@ from new_products.revenue_optimizer import RevenueOptimizer
 from new_products.stripe_integration import StripeIntegration
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
+from combined_nim_owlban_ai.ngc_catalog import NGCatalogManager
 from human_ai_collaboration.collaboration_manager import CollaborationManager
 from combined_nim_owlban_ai.azure_integration_manager import AzureQuantumIntegrationManager
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
@@ -142,6 +143,7 @@ class QuantumIntegratedSystem:
         # Initialize core quantum-enhanced managers
         self.nim_manager = NimManager()
         self.owlban_ai = OwlbanAI()
+        self.ngc_catalog_manager = NGCatalogManager()
 
         # Initialize quantum-integrated AI products
         self.infrastructure_optimizer = InfrastructureOptimizer(self.nim_manager)
@@ -177,6 +179,7 @@ class QuantumIntegratedSystem:
         self.logger.info("Initializing Quantum-Integrated NVIDIA NIM and OWLBAN GROUP AI system...")
         self.nim_manager.initialize()
         self.owlban_ai.load_models()
+        self.ngc_catalog_manager.initialize()
 
         if self.quantum_enabled:
             self.logger.info("Quantum computing capabilities enabled.")
@@ -186,6 +189,16 @@ class QuantumIntegratedSystem:
 
         if self.azure_integration_manager:
             print("Azure Integration Manager initialized with quantum support.")
+
+    def get_ngc_catalog_summary(self) -> Dict[str, Any]:
+        """Expose the NVIDIA NGC Catalog summary to the wider application stack."""
+        self.ngc_catalog_manager.initialize()
+        return self.ngc_catalog_manager.get_catalog_summary()
+
+    def search_ngc_catalog(self, query: str) -> List[Dict[str, Any]]:
+        """Search the NVIDIA NGC Catalog content using a simple text query."""
+        self.ngc_catalog_manager.initialize()
+        return self.ngc_catalog_manager.search(query)
 
     def _initialize_quantum_circuits(self):
         """Initialize quantum circuits for enhanced processing and E2E quantum data sync"""
