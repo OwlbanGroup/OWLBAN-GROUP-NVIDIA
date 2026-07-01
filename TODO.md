@@ -1,6 +1,6 @@
 - [x] Review real audit modules and current tests to map gaps
-- [ ] Refactor tests/test_audit_logging.py to use real audit implementations where feasible
-- [ ] Add focused branch coverage tests for src.audit_logger and src.models.audit_log
-- [ ] Adjust audit-specific pytest config for intended coverage scope
-- [ ] Run thorough test commands and verify coverage gate passes
-- [ ] Summarize fixes and final verification
+- [x] Refactor tests/test_audit_logging.py to use real audit implementations where feasible
+- [x] Add focused branch coverage tests for src.audit_logger and src.models.audit_log
+- [x] Adjust audit-specific pytest config for intended coverage scope
+- [x] Run thorough test commands and verify coverage gate passes
+- [x] Summarize fixes and final verification
