@@ -10,3 +10,21 @@
 2026-07-01 13:17:30,334 - api_server - INFO - Response: 200 in 0.005s
 2026-07-01 13:17:39,733 - api_server - INFO - Request: GET /health from 127.0.0.1
 2026-07-01 13:17:39,736 - api_server - INFO - Response: 200 in 0.003s
+2026-07-01 18:34:24,300 - api_server - INFO - Initializing AI systems...
+2026-07-01 18:34:24,316 - DatabaseManager - INFO - SQLite database initialized
+2026-07-01 18:34:24,317 - api_server - INFO - Database manager initialized
+2026-07-01 18:34:24,317 - api_server - INFO - Standalone NGC catalog manager initialized
+2026-07-01 18:35:10,430 - api_server - INFO - Request: GET /health from 127.0.0.1
+2026-07-01 18:35:10,433 - api_server - INFO - Response: 200 in 0.004s
+2026-07-01 18:38:51,210 - api_server - INFO - Request: GET /status from 127.0.0.1
+2026-07-01 18:38:51,249 - api_server - INFO - Response: 200 in 0.041s
+2026-07-01 18:38:53,332 - api_server - INFO - Request: GET /gpu/status from 127.0.0.1
+2026-07-01 18:38:53,346 - api_server - INFO - Response: 503 in 0.014s
+2026-07-01 18:41:36,034 - api_server - INFO - Request: GET /status from 127.0.0.1
+2026-07-01 18:41:36,050 - api_server - INFO - Response: 200 in 0.015s
+2026-07-01 18:41:38,146 - api_server - INFO - Request: GET /gpu/status from 127.0.0.1
+2026-07-01 18:41:38,173 - api_server - INFO - Response: 503 in 0.026s
+2026-07-01 18:53:58,091 - api_server - INFO - Request: GET /status from 127.0.0.1
+2026-07-01 18:54:00,429 - api_server - INFO - Response: 200 in 2.347s
+2026-07-01 18:54:02,548 - api_server - INFO - Request: GET /gpu/status from 127.0.0.1
+2026-07-01 18:54:02,556 - api_server - INFO - Response: 503 in 0.008s
