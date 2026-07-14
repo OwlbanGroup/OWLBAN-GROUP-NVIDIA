@@ -11,7 +11,21 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Core ML & Quantum
 import numpy as np
-import torch
+
+# torch is optional: many environments running unit tests won't have it installed.
+try:
+    import torch  # type: ignore
+    from torch import nn  # type: ignore
+    import torch.distributed as dist  # type: ignore
+    import torch.multiprocessing as mp  # type: ignore
+    from torch.nn.parallel import DistributedDataParallel as DDP  # type: ignore
+except ModuleNotFoundError:
+    torch = None  # type: ignore
+    nn = None  # type: ignore
+    dist = None  # type: ignore
+    mp = None  # type: ignore
+    DDP = None  # type: ignore
+    logging.warning("torch not available; torch-dependent components disabled")
 
 # Optional quantum imports with fallbacks
 try:
@@ -80,14 +94,11 @@ except ImportError:
     CUDA_AVAILABLE = False
     logging.warning("CUDA runtime not available")
 
-from torch import nn
-import torch.distributed as dist
-import torch.multiprocessing as mp
-from torch.nn.parallel import DistributedDataParallel as DDP
-
 # NVIDIA Collective Communications Library for multi-GPU sync
 try:
-    import torch.distributed.nccl as nccl
+    if torch is None:
+        raise ImportError("torch is not installed")
+    import torch.distributed.nccl as nccl  # type: ignore
     nccl_available = True
 except ImportError:
     nccl_available = False
@@ -95,17 +106,6 @@ except ImportError:
 # Financial Integration
 try:
     import bloombergl  # type: ignore
-    import refinitiv.data as rd  # type: ignore
-    from jpmorgan.quorum import QuantumBridge  # type: ignore
-    from stripe.quantum import SecureProcessor  # type: ignore
-    financial_integrations_available = True
-except ImportError:
-    logging.warning("Some financial integration packages not available")
-    financial_integrations_available = False
-
-# Numba / CUDA availability - Disabled due to compatibility issues
-numba_available = False
-cuda = None
 logging.warning("Numba CUDA disabled due to compatibility issues")
 from new_products.infrastructure_optimizer import InfrastructureOptimizer
 from new_products.telehealth_analytics import NVIDIATelehealthAnalytics

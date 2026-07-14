@@ -2,7 +2,7 @@
 Burn Wall (Breach Containment) - Allow-by-default jailbreak/prompt-injection guardrail.
 
 Goal:
-- Attack grok-injection / jailbreak style requests from being processed.
+- Attack grok-injection / jailbreak codebase requests from being processed.
 - Do NOT block normal safe inference requests.
 - Operate on arbitrary `request.data` shapes (dict/list/str/number/etc).
 """
