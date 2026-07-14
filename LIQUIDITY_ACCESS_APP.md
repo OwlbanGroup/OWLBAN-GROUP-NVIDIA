@@ -16,6 +16,7 @@ The OWLBAN GROUP Liquidity Access Application provides secure, real-time access 
 - **Cold Storage Integration**: Hardware wallet connectivity for enhanced security
 
 ### 2. Banking Integration
+
 - **JPMorgan Chase Integration**: Direct access to banking accounts and services
 - **JPMorgan Private Bank App**: Personal login and data synchronization for private banking
 - **Stripe Payment Processing**: Merchant services and payment facilitation
@@ -24,6 +25,7 @@ The OWLBAN GROUP Liquidity Access Application provides secure, real-time access 
 - **Real-time Balance Monitoring**: Live account balance updates
 
 #### JPMorgan Private Bank App Integration
+
 - **Personal Login**: Secure authentication using JPMorgan Private Bank credentials
 - **Data Synchronization**: Real-time sync of account balances, transactions, and portfolio data
 - **Investment Tracking**: Access to private banking investment accounts and performance
@@ -32,6 +34,7 @@ The OWLBAN GROUP Liquidity Access Application provides secure, real-time access 
 - **Multi-Device Sync**: Seamless data synchronization across devices
 
 #### Plaid Integration Features
+
 - **Account Verification**: Secure connection to bank accounts for identity verification
 - **Proof of Funds**: Automated verification of account balances and transaction history
 - **Proof of Income**: Income verification through payroll deposits and tax documents
@@ -334,16 +337,16 @@ ws.onmessage = (event) => {
 
 ### Support Contacts
 
-- **General Support**: support@owlban.group
-- **Technical Issues**: tech@owlban.group
-- **Security Concerns**: security@owlban.group
-- **Business Inquiries**: business@owlban.group
+- **General Support**: <support@owlban.group>
+- **Technical Issues**: <tech@owlban.group>
+- **Security Concerns**: <security@owlban.group>
+- **Business Inquiries**: <business@owlban.group>
 
 ### Emergency Contacts
 
-- **Security Breach**: emergency@owlban.group
-- **System Outage**: outage@owlban.group
-- **Financial Issues**: finance@owlban.group
+- **Security Breach**: <emergency@owlban.group>
+- **System Outage**: <outage@owlban.group>
+- **Financial Issues**: <finance@owlban.group>
 
 ---
 
