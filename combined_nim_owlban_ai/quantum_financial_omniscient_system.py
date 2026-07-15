@@ -5,7 +5,7 @@ Perfect market prediction and wealth optimization using quantum algorithms
 
 import logging
 import numpy as np
-import pandas as pd
+try:\n    import pandas as pd  # type: ignore\nexcept ModuleNotFoundError:\n    pd = None  # type: ignore
 import torch
 import torch.nn as nn
 from typing import Dict, List, Any, Optional, Tuple

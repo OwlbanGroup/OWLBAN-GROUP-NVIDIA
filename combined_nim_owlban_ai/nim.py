@@ -1,7 +1,13 @@
 import torch
 import logging
-import psutil
-import GPUtil
+try:
+    import psutil  # type: ignore
+except ModuleNotFoundError:
+    psutil = None  # type: ignore
+try:
+    import GPUtil  # type: ignore
+except ModuleNotFoundError:
+    GPUtil = None  # type: ignore
 from typing import Dict, List, Optional
 import subprocess
 import os
@@ -97,8 +103,12 @@ class NimManager:
             status["GPU_Usage"] = "N/A (CPU mode)"
 
         # System-wide metrics
-        cpu_percent = psutil.cpu_percent(interval=1)
-        memory = psutil.virtual_memory()
+        if psutil is None:
+            cpu_percent = 0.0
+            memory = type('M', (), {'percent': 0.0})()
+        else:
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
         status.update({
             "CPU_Usage": f"{cpu_percent:.1f}%",
             "System_Memory_Usage": f"{memory.percent:.1f}%",

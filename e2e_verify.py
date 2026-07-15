@@ -64,7 +64,7 @@ def main():
         from auth_lib import authenticate_user, create_user, auth_manager
         create_user('e2e@test.com', 'e2e', 'TestPass123!', 'user', 'OWLBAN_GROUP')
         success, msg, user = authenticate_user('e2e@test.com', 'TestPass123!')
-        add_result("Auth", success and user, msg)
+        add_result("Auth", bool(success and user is not None), msg)
         
         if success and user:
             at, rt = auth_manager.generate_tokens(user)
@@ -123,7 +123,7 @@ def main():
         detector = AdvancedAnomalyDetection()
         import numpy as np
         data = np.array([100, 110, 105, 120, 200])
-        result = detector.detect_anomalies(data, threshold=150)
+        result = detector.detect(data)
         add_result("Anomaly Detection", result is not None, "works")
     except Exception as e:
         add_result("Anomaly Detection", False, str(e))

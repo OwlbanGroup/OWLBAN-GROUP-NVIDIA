@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass
 from transformers import CLIPProcessor, CLIPModel, BertTokenizer, BertModel
 import cv2
-import pandas as pd
+try:\n    import pandas as pd  # type: ignore\nexcept ModuleNotFoundError:\n    pd = None  # type: ignore
 from datetime import datetime
 
 @dataclass

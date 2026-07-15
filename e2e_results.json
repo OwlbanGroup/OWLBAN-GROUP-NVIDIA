@@ -1,11 +1,11 @@
 {
-  "passed": 12,
-  "failed": 3,
+  "passed": 15,
+  "failed": 1,
   "tests": [
     {
       "test": "Python",
       "passed": true,
-      "message": "3.11.9"
+      "message": "3.12.10"
     },
     {
       "test": "File api_server.py",
@@ -44,13 +44,18 @@
     },
     {
       "test": "Auth",
-      "passed": false,
-      "message": "unindent does not match any outer indentation level (auth_lib.py, line 242)"
+      "passed": true,
+      "message": "Login successful"
+    },
+    {
+      "test": "Tokens",
+      "passed": true,
+      "message": "JWT works"
     },
     {
       "test": "Combined System",
       "passed": false,
-      "message": "No module named 'torch'"
+      "message": "unexpected character after line continuation character (rapids_integration.py, line 15)"
     },
     {
       "test": "Quantum Portfolio",
@@ -69,8 +74,8 @@
     },
     {
       "test": "Anomaly Detection",
-      "passed": false,
-      "message": "No module named 'torch'"
+      "passed": true,
+      "message": "works"
     },
     {
       "test": "API Syntax",

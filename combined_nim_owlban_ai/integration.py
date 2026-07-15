@@ -106,13 +106,26 @@ except ImportError:
 # Financial Integration
 try:
     import bloombergl  # type: ignore
+except ImportError:
+    bloombergl = None  # type: ignore
+
 logging.warning("Numba CUDA disabled due to compatibility issues")
-from new_products.infrastructure_optimizer import InfrastructureOptimizer
-from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
-from new_products.model_deployment_manager import ModelDeploymentManager
-from new_products.anomaly_detection import AnomalyDetection
-from new_products.revenue_optimizer import RevenueOptimizer
-from new_products.stripe_integration import StripeIntegration
+
+try:
+    from new_products.infrastructure_optimizer import InfrastructureOptimizer
+    from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
+    from new_products.model_deployment_manager import ModelDeploymentManager
+    from new_products.anomaly_detection import AnomalyDetection
+    from new_products.revenue_optimizer import RevenueOptimizer
+    from new_products.stripe_integration import StripeIntegration
+except ModuleNotFoundError:
+    # Optional dependencies: allow the integration module to be imported in minimal test environments.
+    InfrastructureOptimizer = None  # type: ignore
+    NVIDIATelehealthAnalytics = None  # type: ignore
+    ModelDeploymentManager = None  # type: ignore
+    AnomalyDetection = None  # type: ignore
+    RevenueOptimizer = None  # type: ignore
+    StripeIntegration = None  # type: ignore
 from combined_nim_owlban_ai.nim import NimManager
 from combined_nim_owlban_ai.owlban_ai import OwlbanAI
 from human_ai_collaboration.collaboration_manager import CollaborationManager

@@ -1,4 +1,3 @@
-[CDATA[
 """
 OWLBAN AI Module - NVIDIA GPU-Accelerated AI System
 
@@ -298,4 +297,4 @@ class OwlbanAI:
                     self.logger.error("Error getting GPU %d memory: %s", i, e)
 
         return memory_usage
-]]>
+
