@@ -1,6 +1,6 @@
 {
-  "passed": 15,
-  "failed": 1,
+  "passed": 16,
+  "failed": 0,
   "tests": [
     {
       "test": "Python",
@@ -54,8 +54,8 @@
     },
     {
       "test": "Combined System",
-      "passed": false,
-      "message": "unexpected character after line continuation character (rapids_integration.py, line 15)"
+      "passed": true,
+      "message": "initialized"
     },
     {
       "test": "Quantum Portfolio",
@@ -70,7 +70,7 @@
     {
       "test": "RL Agent",
       "passed": true,
-      "message": "action: a"
+      "message": "action: c"
     },
     {
       "test": "Anomaly Detection",

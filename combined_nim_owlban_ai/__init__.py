@@ -1,51 +1,80 @@
 """
 OWLBAN GROUP - NVIDIA NIM Integration Package
-Quantum-accelerated AI systems with enterprise monitoring
-"""
 
+E2E-safe: keep imports lightweight and optional dependencies guarded.
+"""
 __version__ = "1.0.0"
 __author__ = "Owlban Group"
-__description__ = "NVIDIA NIM and OWLBAN AI integration with quantum acceleration"
 
-from .integration import QuantumIntegratedSystem as CombinedSystem, QuantumIntegratedSystem
-from .nim import NimManager
-from .owlban_ai import OwlbanAI
-from .quantum_financial_omniscient_system import QuantumFinancialOmniscientSystem
-from .azure_integration_manager import AzureQuantumIntegrationManager
-from .triton_inference_server import TritonInferenceServer, TritonModelManager
-from .rapids_integration import RAPIDSDataProcessor
-from .dcgm_monitor import DCGMMonitor
-from .energy_optimizer import EnergyOptimizer
+from .integration import QuantumIntegratedSystem, QuantumIntegratedSystem as CombinedSystem
 
-# Optional imports for advanced features
-try:
-    from .multi_modal_ai import MultiModalAI, MultiModalInput, MultiModalEmbedding
-    _multi_modal_available = True
-except ImportError:
-    _multi_modal_available = False
-
-try:
-    from .quantum_ai_perfection import QuantumAIPerfection, QuantumCircuitOptimizer, QuantumErrorCorrectionSystem
-    _quantum_perfection_available = True
-except ImportError:
-    _quantum_perfection_available = False
-
+# Optional exports (guarded)
 __all__ = [
     "QuantumIntegratedSystem",
     "CombinedSystem",
-    "NimManager",
-    "OwlbanAI",
-    "QuantumFinancialOmniscientSystem",
-    "AzureQuantumIntegrationManager",
-    "TritonInferenceServer",
-    "TritonModelManager",
-    "RAPIDSDataProcessor",
-    "DCGMMonitor",
-    "EnergyOptimizer"
 ]
 
-if _multi_modal_available:
-    __all__.extend(["MultiModalAI", "MultiModalInput", "MultiModalEmbedding"])
+# Guard optional modules to prevent import-time failures in minimal envs.
+try:
+    from .nim import NimManager
+    __all__.append("NimManager")
+except Exception:
+    pass
 
-if _quantum_perfection_available:
+try:
+    from .owlban_ai import OwlbanAI
+    __all__.append("OwlbanAI")
+except Exception:
+    pass
+
+try:
+    from .quantum_financial_omniscient_system import QuantumFinancialOmniscientSystem
+    __all__.append("QuantumFinancialOmniscientSystem")
+except Exception:
+    pass
+
+try:
+    from .azure_integration_manager import AzureQuantumIntegrationManager
+    __all__.append("AzureQuantumIntegrationManager")
+except Exception:
+    pass
+
+try:
+    from .triton_inference_server import TritonInferenceServer, TritonModelManager
+    __all__.extend(["TritonInferenceServer", "TritonModelManager"])
+except Exception:
+    pass
+
+try:
+    from .rapids_integration import RAPIDSDataProcessor
+    __all__.append("RAPIDSDataProcessor")
+except Exception:
+    pass
+
+try:
+    from .dcgm_monitor import DCGMMonitor
+    __all__.append("DCGMMonitor")
+except Exception:
+    pass
+
+try:
+    from .energy_optimizer import EnergyOptimizer
+    __all__.append("EnergyOptimizer")
+except Exception:
+    pass
+
+try:
+    from .multi_modal_ai import MultiModalAI, MultiModalInput, MultiModalEmbedding
+    __all__.extend(["MultiModalAI", "MultiModalInput", "MultiModalEmbedding"])
+except Exception:
+    pass
+
+try:
+    from .quantum_ai_perfection import (
+        QuantumAIPerfection,
+        QuantumCircuitOptimizer,
+        QuantumErrorCorrectionSystem,
+    )
     __all__.extend(["QuantumAIPerfection", "QuantumCircuitOptimizer", "QuantumErrorCorrectionSystem"])
+except Exception:
+    pass
