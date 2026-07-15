@@ -6,7 +6,7 @@ E2E-safe: keep imports lightweight and optional dependencies guarded.
 __version__ = "1.0.0"
 __author__ = "Owlban Group"
 
-from .integration import QuantumIntegratedSystem, QuantumIntegratedSystem as CombinedSystem
+from .integration import QuantumIntegratedSystem, CombinedSystem
 
 # Optional exports (guarded)
 __all__ = [
