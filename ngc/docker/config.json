@@ -1,9 +1,0 @@
-{
-  "auths": {
-    "nvcr.io": {
-      "username": "$oauthtoken",
-      "password": "${NGC_API_KEY}",
-      "email": "owlban-group@ai.com"
-    }
-  }
-}
