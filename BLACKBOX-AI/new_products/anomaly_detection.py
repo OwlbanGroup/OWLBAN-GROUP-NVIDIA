@@ -7,7 +7,7 @@ from types import ModuleType
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 try:
     _advanced_module = import_module(
@@ -57,7 +57,7 @@ except (ImportError, ModuleNotFoundError):
     TENSORRT_MODULE = None
     TENSORRT_AVAILABLE = False
 
-class NVIDIAAnomalyDetection:
+class NVIDIAAnomalyDetection:  # pylint: disable=too-many-instance-attributes
     """NVIDIA-optimized anomaly detection with GPU acceleration"""
 
     def __init__(self, nim_manager, owlban_ai):
