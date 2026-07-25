@@ -5,5 +5,5 @@
 - [x] Resolve `AdvancedAnomalyDetection` redefinition conflict with a fallback alias approach
 - [x] Fix lint issues: unused imports/args, broad exceptions, unnecessary pass, naming/style/docstrings/line length
 - [x] Re-verify `BLACKBOX-AI/new_products/anomaly_detection.py` current state against reported diagnostics
-- [ ] Apply final targeted fixes for remaining import/docstring/line-length diagnostics
-- [ ] Run targeted checks for the updated file
+- [x] Apply final targeted fixes for remaining import/docstring/line-length diagnostics
+- [x] Run targeted checks for the updated file
