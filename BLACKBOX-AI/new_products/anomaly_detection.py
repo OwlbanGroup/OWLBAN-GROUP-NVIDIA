@@ -2,17 +2,23 @@
 
 import logging
 import time
-from typing import Dict, List, Tuple
+from importlib import import_module
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 
 try:
-    from performance_optimization.advanced_anomaly_detection import (
-        AdvancedAnomalyDetection as _ImportedAdvancedAnomalyDetection,
-    )  # type: ignore[import-not-found]
-except (ImportError, ModuleNotFoundError):
-    _ImportedAdvancedAnomalyDetection = None  # type: ignore[assignment]
+    _advanced_module = import_module(
+        "performance_optimization.advanced_anomaly_detection"
+    )
+    _IMPORTED_ADVANCED_ANOMALY_DETECTION = getattr(
+        _advanced_module,
+        "AdvancedAnomalyDetection",
+    )
+except (ImportError, ModuleNotFoundError, AttributeError):
+    _IMPORTED_ADVANCED_ANOMALY_DETECTION = None
 
 
 class _FallbackAdvancedAnomalyDetection:
@@ -21,32 +27,34 @@ class _FallbackAdvancedAnomalyDetection:
     def __init__(self, use_gpu: bool = True):
         self.use_gpu = use_gpu
 
-    def detect(self, _resource_status):
+    def detect(self, _resource_status: Dict[str, Any]) -> Tuple[bool, float]:
+        """Return safe fallback anomaly result."""
         return False, 0.1
 
-    def get_gpu_status(self):
+    def get_gpu_status(self) -> Dict[str, Any]:
+        """Return fallback GPU status when advanced detector is unavailable."""
         return {"available": False, "fallback": True}
 
 
 AdvancedAnomalyDetection = (
-    _ImportedAdvancedAnomalyDetection
-    if _ImportedAdvancedAnomalyDetection is not None
+    _IMPORTED_ADVANCED_ANOMALY_DETECTION
+    if _IMPORTED_ADVANCED_ANOMALY_DETECTION is not None
     else _FallbackAdvancedAnomalyDetection
 )
 
 # NVIDIA-specific imports
 try:
-    import cupy as cp  # pylint: disable=unused-import
+    CUPY_MODULE: Optional[ModuleType] = import_module("cupy")
     CUPY_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
-    cp = None  # type: ignore[assignment]
+    CUPY_MODULE = None
     CUPY_AVAILABLE = False
 
 try:
-    import tensorrt as trt  # pylint: disable=unused-import
+    TENSORRT_MODULE: Optional[ModuleType] = import_module("tensorrt")
     TENSORRT_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
-    trt = None  # type: ignore[assignment]
+    TENSORRT_MODULE = None
     TENSORRT_AVAILABLE = False
 
 class NVIDIAAnomalyDetection:
@@ -55,7 +63,9 @@ class NVIDIAAnomalyDetection:
     def __init__(self, nim_manager, owlban_ai):
         self.nim_manager = nim_manager
         self.owlban_ai = owlban_ai
-        self.advanced_detector = AdvancedAnomalyDetection(use_gpu=True)  # NVIDIA GPU acceleration
+        self.advanced_detector = AdvancedAnomalyDetection(
+            use_gpu=True
+        )  # NVIDIA GPU acceleration
         self.logger = logging.getLogger("NVIDIAAnomalyDetection")
         self.anomaly_history = []
 
@@ -73,7 +83,10 @@ class NVIDIAAnomalyDetection:
 
     def detect_anomalies(self):
         """Detect anomalies using NVIDIA GPU-accelerated AI"""
-        self.logger.info("Detecting anomalies in infrastructure metrics with NVIDIA GPU-accelerated AI...")
+        self.logger.info(
+            "Detecting anomalies in infrastructure metrics with "
+            "NVIDIA GPU-accelerated AI..."
+        )
 
         # Get real-time NVIDIA resource status
         resource_status = self.nim_manager.get_resource_status()
@@ -98,7 +111,11 @@ class NVIDIAAnomalyDetection:
         if len(self.anomaly_history) > 1000:
             self.anomaly_history = self.anomaly_history[-1000:]
 
-        self.logger.info("NVIDIA GPU anomaly detection result: anomaly=%s, score=%.4f", is_anomaly, score)
+        self.logger.info(
+            "NVIDIA GPU anomaly detection result: anomaly=%s, score=%.4f",
+            is_anomaly,
+            score,
+        )
 
         # Trigger alerts if anomaly detected
         if is_anomaly:
@@ -187,7 +204,9 @@ class NVIDIAAnomalyDetection:
                 if isinstance(value, str):
                     features.append(hash(value) % 100 / 100.0)
                 else:
-                    features.append(float(value) if isinstance(value, (int, float)) else 0.5)
+                    features.append(
+                        float(value) if isinstance(value, (int, float)) else 0.5
+                    )
 
         # Pad or truncate to fixed size
         while len(features) < 10:
@@ -199,7 +218,10 @@ class NVIDIAAnomalyDetection:
         # Placeholder for TensorRT inference implementation
         return self.anomaly_model(input_tensor).item()
 
-    def parallel_anomaly_detection(self, resource_data_batch: List[Dict]) -> List[Tuple[bool, float]]:
+    def parallel_anomaly_detection(
+        self,
+        resource_data_batch: List[Dict],
+    ) -> List[Tuple[bool, float]]:
         """Run parallel anomaly detection across multiple GPUs"""
         if self.gpu_count <= 1:
             return [self.detect_anomalies_with_tensorrt(data) for data in resource_data_batch]
@@ -230,7 +252,11 @@ class NVIDIAAnomalyDetection:
         return {
             "gpu_status": self.advanced_detector.get_gpu_status(),
             "anomaly_history_size": len(self.anomaly_history),
-            "owlban_ai_status": self.owlban_ai.get_model_status() if hasattr(self.owlban_ai, 'get_model_status') else {},
+            "owlban_ai_status": (
+                self.owlban_ai.get_model_status()
+                if hasattr(self.owlban_ai, "get_model_status")
+                else {}
+            ),
             "gpu_count": self.gpu_count,
             "tensorrt_available": TENSORRT_AVAILABLE,
             "cupy_available": CUPY_AVAILABLE
