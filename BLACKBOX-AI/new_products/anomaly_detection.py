@@ -1,35 +1,53 @@
+"""NVIDIA-optimized anomaly detection with safe optional dependencies."""
+
 import logging
 import time
+from typing import Dict, List, Tuple
+
 import torch
 import torch.nn as nn
-from typing import Dict, List, Optional, Tuple
+
 try:
-    from performance_optimization.advanced_anomaly_detection import AdvancedAnomalyDetection
-except ImportError:
-    class AdvancedAnomalyDetection:
-        def __init__(self, use_gpu=True):
-            self.use_gpu = use_gpu
+    from performance_optimization.advanced_anomaly_detection import (
+        AdvancedAnomalyDetection as _ImportedAdvancedAnomalyDetection,
+    )  # type: ignore[import-not-found]
+except (ImportError, ModuleNotFoundError):
+    _ImportedAdvancedAnomalyDetection = None  # type: ignore[assignment]
 
-        def detect(self, resource_status):
-            return False, 0.1
 
-        def get_gpu_status(self):
-            return {"available": False, "fallback": True}
+class _FallbackAdvancedAnomalyDetection:
+    """Fallback detector used when advanced module is unavailable."""
+
+    def __init__(self, use_gpu: bool = True):
+        self.use_gpu = use_gpu
+
+    def detect(self, _resource_status):
+        return False, 0.1
+
+    def get_gpu_status(self):
+        return {"available": False, "fallback": True}
+
+
+AdvancedAnomalyDetection = (
+    _ImportedAdvancedAnomalyDetection
+    if _ImportedAdvancedAnomalyDetection is not None
+    else _FallbackAdvancedAnomalyDetection
+)
 
 # NVIDIA-specific imports
 try:
-    import cupy as cp
-    cupy_available = True
-except ImportError:
-    cp = None
-    cupy_available = False
+    import cupy as cp  # pylint: disable=unused-import
+    CUPY_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    cp = None  # type: ignore[assignment]
+    CUPY_AVAILABLE = False
 
 try:
-    import tensorrt as trt
-    tensorrt_available = True
-except ImportError:
-    trt = None
-    tensorrt_available = False
+    import tensorrt as trt  # pylint: disable=unused-import
+    TENSORRT_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    trt = None  # type: ignore[assignment]
+    TENSORRT_AVAILABLE = False
 
 class NVIDIAAnomalyDetection:
     """NVIDIA-optimized anomaly detection with GPU acceleration"""
@@ -125,7 +143,7 @@ class NVIDIAAnomalyDetection:
 
     def detect_anomalies_with_tensorrt(self, resource_data: Dict) -> Tuple[bool, float]:
         """Detect anomalies using NVIDIA TensorRT for optimized inference"""
-        if not tensorrt_available:
+        if not TENSORRT_AVAILABLE:
             return self.advanced_detector.detect(resource_data)
 
         try:
@@ -145,8 +163,8 @@ class NVIDIAAnomalyDetection:
                 is_anomaly = anomaly_score > 0.7  # Threshold for anomaly detection
                 return is_anomaly, anomaly_score
 
-        except Exception as e:
-            self.logger.error("TensorRT anomaly detection failed: %s", e)
+        except (RuntimeError, ValueError, TypeError) as error:
+            self.logger.error("TensorRT anomaly detection failed: %s", error)
             return self.advanced_detector.detect(resource_data)
 
     def _extract_features(self, resource_data: Dict) -> List[float]:
@@ -203,8 +221,8 @@ class NVIDIAAnomalyDetection:
 
             return results
 
-        except Exception as e:
-            self.logger.error("Parallel anomaly detection failed: %s", e)
+        except (RuntimeError, ValueError, TypeError) as error:
+            self.logger.error("Parallel anomaly detection failed: %s", error)
             return [self.detect_anomalies_with_tensorrt(data) for data in resource_data_batch]
 
     def get_nvidia_anomaly_status(self):
@@ -214,12 +232,11 @@ class NVIDIAAnomalyDetection:
             "anomaly_history_size": len(self.anomaly_history),
             "owlban_ai_status": self.owlban_ai.get_model_status() if hasattr(self.owlban_ai, 'get_model_status') else {},
             "gpu_count": self.gpu_count,
-            "tensorrt_available": tensorrt_available,
-            "cupy_available": cupy_available
+            "tensorrt_available": TENSORRT_AVAILABLE,
+            "cupy_available": CUPY_AVAILABLE
         }
 
 
 # Backward compatibility
 class AnomalyDetection(NVIDIAAnomalyDetection):
-    """Backward compatible wrapper for NVIDIAAnomalyDetection"""
-    pass
+    """Backward compatible wrapper for NVIDIAAnomalyDetection."""
