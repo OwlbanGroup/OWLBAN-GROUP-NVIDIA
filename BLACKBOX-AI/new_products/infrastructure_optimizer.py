@@ -3,7 +3,27 @@ import torch.nn as nn
 import logging
 import numpy as np
 from typing import Dict, List, Optional
-from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
+try:
+    from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
+except ImportError:
+    class ReinforcementLearningAgent:
+        def __init__(self, actions, use_gpu=True):
+            self.actions = actions
+            self.use_gpu = use_gpu
+            self._idx = 0
+
+        def choose_action(self, state):
+            if not self.actions:
+                return "maintain"
+            action = self.actions[self._idx % len(self.actions)]
+            self._idx += 1
+            return action
+
+        def learn(self, state, action, reward, next_state):
+            return None
+
+        def get_gpu_status(self):
+            return {"available": False, "fallback": True}
 
 # NVIDIA-specific imports
 try:

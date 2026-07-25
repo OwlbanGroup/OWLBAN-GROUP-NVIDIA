@@ -3,7 +3,10 @@ import torch.nn as nn
 import logging
 import time
 from typing import Dict, List, Optional
-import docker
+try:
+    import docker
+except ImportError:
+    docker = None
 import subprocess
 
 # NVIDIA-specific imports
@@ -132,6 +135,9 @@ class NVIDIADeploymentManager:
 
     def _init_docker_client(self):
         """Initialize Docker client for NVIDIA container deployment"""
+        if docker is None:
+            self.logger.warning("Docker SDK not installed; running with docker-disabled fallback.")
+            return None
         try:
             return docker.from_env()
         except Exception as e:

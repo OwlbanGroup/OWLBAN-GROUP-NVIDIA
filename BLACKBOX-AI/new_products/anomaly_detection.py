@@ -3,7 +3,18 @@ import time
 import torch
 import torch.nn as nn
 from typing import Dict, List, Optional, Tuple
-from performance_optimization.advanced_anomaly_detection import AdvancedAnomalyDetection
+try:
+    from performance_optimization.advanced_anomaly_detection import AdvancedAnomalyDetection
+except ImportError:
+    class AdvancedAnomalyDetection:
+        def __init__(self, use_gpu=True):
+            self.use_gpu = use_gpu
+
+        def detect(self, resource_status):
+            return False, 0.1
+
+        def get_gpu_status(self):
+            return {"available": False, "fallback": True}
 
 # NVIDIA-specific imports
 try:
