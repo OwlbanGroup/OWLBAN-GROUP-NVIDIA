@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSCAR BROOME Revenue Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .chart-container h2 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+        }
+        .header h1 span {
+            color: #764ba2;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .user-info span {
+            color: #ccc;
+        }
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background: #667eea;
+        }
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .stat-card .value.positive {
+            color: #00c853;
+        }
+        .stat-card .value.negative {
+            color: #d50000;
+        }
+        .section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            margin-bottom: 1.5rem;
+        }
+        .section h2 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eee;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .table th {
+            color: #666;
+            font-weight: 600;
+        }
+        .table td {
+            color: #333;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+.loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00c853;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-dot.green { background: #00c853; }
+        .status-dot.yellow { background: #ffc107; }
+        .status-dot.red { background: #d50000; }
+        .training-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .training-card {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #764ba2;
+        }
+        .training-card h4 {
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+        .training-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .last-update {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>OSCAR <span>BROOME</span> Revenue System</h1>
+        <div class="user-info">
+            <span id="userEmail">user@example.com</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <div class="container">
+<!-- Metrics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Current Profit</h3>
+                <div class="value" id="profitValue">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="value positive" id="revenueValue">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Growth %</h3>
+                <div class="value positive" id="growthValue">0.0%</div>
+            </div>
+            <div class="stat-card">
+                <h3>Sharpe Ratio</h3>
+                <div class="value" id="sharpeValue">0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Risk Score</h3>
+                <div class="value" id="riskScore">0.0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Value at Risk (95%)</h3>
+                <div class="value negative" id="varValue">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Portfolio Value</h3>
+                <div class="value" id="portfolioValue">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>AI Status</h3>
+                <div class="value" id="aiStatus">
+                    <span class="status-indicator"></span>Active
+                </div>
+            </div>
+        </div>
+        
+        <!-- Revenue Operations -->
+        <div class="section">
+            <h2>Revenue Optimization</h2>
+            <button class="btn" onclick="runOptimization()">Run Revenue Optimization</button>
+            <div id="revenueResult" style="margin-top: 1rem;">
+                <div class="loading">Click to run optimization</div>
+            </div>
+        </div>
+        
+        <!-- Portfolio -->
+        <div class="section">
+            <h2>Portfolio Holdings</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Expected Return</th>
+                        <th>Volatility</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="portfolioTable">
+                    <tr><td colspan="6" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+<!-- Risk Analysis -->
+        <div class="section">
+            <h2>Risk Factors</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Factor</th>
+                        <th>Weight</th>
+                        <th>Volatility</th>
+                    </tr>
+                </thead>
+                <tbody id="riskTable">
+                    <tr><td colspan="3" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+<!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h2>Portfolio Distribution</h2>
+                <div class="chart-wrapper">
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h2>Risk Factors</h2>
+                <div class="chart-wrapper">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h2>Profit History</h2>
+                <div class="chart-wrapper">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h2>Risk Trends</h2>
+                <div class="chart-wrapper">
+                    <canvas id="riskTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Training Status Section -->
+        <div class="section">
+            <h2>AI Training Status</h2>
+            <div class="training-grid">
+                <div class="training-card">
+                    <h4><span class="status-dot green"></span>Anomaly Detection</h4>
+                    <p>Status: <span id="anomalyStatus">Training Complete</span></p>
+                    <p>Last trained: <span id="anomalyLastTrained">2 hours ago</span></p>
+                    <div class="last-update" id="anomalyUpdate">Accuracy: 94.5%</div>
+                </div>
+                <div class="training-card">
+                    <h4><span class="status-dot green"></span>RL Agent</h4>
+                    <p>Status: <span id="rlStatus">Training Complete</span></p>
+                    <p>Last trained: <span id="rlLastTrained">1 hour ago</span></p>
+                    <div class="last-update" id="rlUpdate">Episodes: 10,000</div>
+                </div>
+                <div class="training-card">
+                    <h4><span class="status-dot green"></span>Quantum AI</h4>
+                    <p>Status: <span id="quantumStatus">Active</span></p>
+                    <p>Last updated: <span id="quantumLastUpdated">Just now</span></p>
+                    <div class="last-update">Qubits: 8</div>
+                </div>
+                <div class="training-card">
+                    <h4><span class="status-dot yellow"></span>Market Prediction</h4>
+                    <p>Status: <span id="predictionStatus">In Progress</span></p>
+                    <p>Started: <span id="predictionStarted">5 min ago</span></p>
+                    <div class="last-update">Epoch: 45/100</div>
+                </div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button class="btn" onclick="startTraining()">Start Training</button>
+                <button class="btn" style="margin-left: 0.5rem; background: #666;" onclick="stopTraining()">Stop</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            const company = localStorage.getItem('company');
+            
+            if (!token || company !== 'OSCAR_BROOME') {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Load user info
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.email) {
+                document.getElementById('userEmail').textContent = user.email;
+            }
+            
+            return token;
+        }
+        
+// Chart instances
+        let portfolioChart, riskChart, profitChart, riskTrendChart;
+        
+        // Initialize charts
+        function initCharts(portfolioData, riskData) {
+            // Portfolio Distribution (Doughnut)
+            if (portfolioData && portfolioData.assets) {
+                const ctx = document.getElementById('portfolioChart').getContext('2d');
+                portfolioChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: portfolioData.assets.map(a => a.symbol),
+                        datasets: [{
+                            data: portfolioData.assets.map(a => a.price * a.quantity),
+                            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe'],
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+            
+            // Risk Factors (Bar)
+            if (riskData && riskData.risk_factors) {
+                const ctx = document.getElementById('riskChart').getContext('2d');
+                riskChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: riskData.risk_factors.map(f => f.name),
+                        datasets: [{
+                            label: 'Weight',
+                            data: riskData.risk_factors.map(f => f.weight * 100),
+                            backgroundColor: '#764ba2',
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+            
+            // Profit History (Line)
+            const ctx2 = document.getElementById('profitChart').getContext('2d');
+            profitChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Profit',
+                        data: [100, 120, 110, 130, 125, 142],
+                        borderColor: '#667eea',
+                        fill: true,
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            // Risk Trends (Bar)
+            const ctx3 = document.getElementById('riskTrendChart').getContext('2d');
+            riskTrendChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['Market', 'Interest', 'Inflation', 'Currency'],
+                    datasets: [{
+                        label: 'Volatility',
+                        data: [20, 10, 8, 15],
+                        backgroundColor: ['#f5576c', '#f093fb', '#764ba2', '#667eea'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        
+        // Load dashboard data using OSCAR BROOME endpoints
+        async function loadDashboard() {
+            const token = checkAuth();
+            if (!token) return;
+            
+            try {
+                // Load profit using OSCAR endpoint
+                const profitRes = await fetch(`${API_BASE}/oscar/profit`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const profitData = await profitRes.json();
+                
+                if (profitData.success && profitData.profit !== undefined) {
+                    document.getElementById('profitValue').textContent = `$${profitData.profit.toFixed(2)}`;
+                    document.getElementById('sharpeValue').textContent = (profitData.sharpe_ratio || 0).toFixed(2);
+                }
+                
+                // Load portfolio using OSCAR endpoint
+                const portfolioRes = await fetch(`${API_BASE}/oscar/portfolio`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const portfolioData = await portfolioRes.json();
+                
+                if (portfolioData.success && portfolioData.assets) {
+                    let totalValue = 0;
+                    const tbody = document.getElementById('portfolioTable');
+                    tbody.innerHTML = '';
+                    
+                    portfolioData.assets.forEach(asset => {
+                        const value = asset.price * asset.quantity;
+                        totalValue += value;
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${asset.symbol}</td>
+                                <td>${(asset.expected_return * 100).toFixed(1)}%</td>
+                                <td>${(asset.volatility * 100).toFixed(1)}%</td>
+                                <td>$${asset.price.toFixed(2)}</td>
+                                <td>${asset.quantity}</td>
+                                <td>$${value.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    document.getElementById('portfolioValue').textContent = `$${(portfolioData.total_value || totalValue).toFixed(2)}`;
+                    
+                    if (portfolioData.sharpe_ratio) {
+                        document.getElementById('sharpeValue').textContent = portfolioData.sharpe_ratio.toFixed(2);
+                    }
+                }
+                
+                // Load risk using OSCAR endpoint
+                const riskRes = await fetch(`${API_BASE}/oscar/risk`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const riskData = await riskRes.json();
+                
+                if (riskData.success) {
+                    document.getElementById('varValue').textContent = `$${(riskData.value_at_risk || 0).toFixed(2)}`;
+                    
+                    if (riskData.risk_factors) {
+                        const tbody = document.getElementById('riskTable');
+                        tbody.innerHTML = '';
+                        
+                        riskData.risk_factors.forEach(factor => {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${factor.name}</td>
+                                    <td>${(factor.weight * 100).toFixed(1)}%</td>
+                                    <td>${(factor.volatility * 100).toFixed(1)}%</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                }
+                
+                // Initialize charts after data loads
+                initCharts(portfolioData.success ? portfolioData : null, riskData.success ? riskData : null);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+        
+// Run optimization using OSCAR endpoint
+        async function runOptimization() {
+            const token = localStorage.getItem('access_token');
+            const resultDiv = document.getElementById('revenueResult');
+            
+            resultDiv.innerHTML = '<div class="loading">Running optimization...</div>';
+            
+            try {
+                // Use OSCAR-specific optimization endpoint
+                const response = await fetch(`${API_BASE}/oscar/optimize`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.profit !== undefined) {
+                    resultDiv.innerHTML = `
+                        <div style="padding: 1rem; background: #f5f5f5; border-radius: 6px;">
+                            <p><strong>Profit:</strong> $${data.profit.toFixed(2)}</p>
+                            <p><strong>Expected Return:</strong> ${(data.expected_return * 100 || 0).toFixed(1)}%</p>
+                            <p><strong>Sharpe Ratio:</strong> ${data.sharpe_ratio || 0}</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('profitValue').textContent = `$${data.profit.toFixed(2)}`;
+                    document.getElementById('sharpeValue').textContent = (data.sharpe_ratio || 0).toFixed(2);
+                } else {
+                    resultDiv.innerHTML = '<div class="alert error">Optimization failed</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="alert error">Error running optimization</div>';
+            }
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('company');
+            window.location.href = 'login.html';
+        }
+        
+// Training control functions
+        async function startTraining() {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch(`${API_BASE}/oscar/train`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ model_type: 'all' })
+                });
+                const data = await response.json();
+                alert(data.message || 'Training started');
+            } catch (error) {
+                alert('Error starting training');
+            }
+        }
+        
+        function stopTraining() {
+            alert('Training stopped');
+        }
+        
+        // Real-time update indicators
+        function updateRealtime() {
+            const now = new Date();
+            document.getElementById('quantumLastUpdated').textContent = now.toLocaleTimeString();
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(updateRealtime, 30000);
+        setInterval(loadDashboard, 60000);
+        
+        // Initialize
+        loadDashboard();
+    </script>
+</body>
+</html>

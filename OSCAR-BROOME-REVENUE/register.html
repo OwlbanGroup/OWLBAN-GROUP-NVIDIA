@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSCAR BROOME Revenue System - Register</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .register-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 420px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo h1 {
+            color: #1a1a2e;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .logo span {
+            color: #764ba2;
+        }
+        .tagline {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
+        }
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .links a {
+            color: #764ba2;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .alert {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .alert.error {
+            background: #fee;
+            color: #c00;
+            border: 1px solid #fcc;
+        }
+        .alert.success {
+            background: #efe;
+            color: #060;
+            border: 1px solid #cfc;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <h1>OSCAR <span>BROOME</span></h1>
+            <p class="tagline">Create Your Account</p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" required placeholder="John">
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" required placeholder="Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="you@company.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••" minlength="8">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required placeholder="••••••••" minlength="8">
+            </div>
+            
+            <button type="submit" class="btn-primary">Create Account</button>
+        </form>
+        
+        <div class="links">
+            <a href="#" onclick="goToLogin()">Already have an account? Sign In</a>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        // Handle registration form submission
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const firstName = document.getElementById('first_name').value;
+            const lastName = document.getElementById('last_name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showAlert('Password must be at least 8 characters', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        first_name: firstName,
+                        last_name: lastName,
+                        company: 'OSCAR_BROOME'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Account created! Redirecting to login...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                } else {
+                    showAlert(data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Unable to connect to server', 'error');
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+        }
+        
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

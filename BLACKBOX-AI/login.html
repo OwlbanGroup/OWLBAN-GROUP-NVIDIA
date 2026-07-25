@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLACKBOX AI - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: #1a1a1a;
+            padding: 2.5rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 420px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo h1 {
+            color: #fff;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+        .logo span {
+            color: #00ff88;
+        }
+        .tagline {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #333;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: #0a0a0a;
+            color: #fff;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #0a0a0a;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,255,136,0.3);
+        }
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .links a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .alert {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .alert.error {
+            background: rgba(255,0,0,0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+        .alert.success {
+            background: rgba(0,255,136,0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>BLACKBOX <span>AI</span></h1>
+            <p class="tagline">Advanced Intelligence System</p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="you@company.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="btn-primary">Authenticate</button>
+        </form>
+        
+        <div class="links">
+            <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+            <a href="#" onclick="showRegister()">Create Account</a>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const alert = document.getElementById('alert');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store tokens
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('company', 'BLACKBOX_AI');
+                    
+                    showAlert('Authentication successful! Redirecting...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Unable to connect to server', 'error');
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+        }
+        
+        function showForgotPassword() {
+            const email = prompt('Please enter your email address for password reset:');
+            if (email) {
+                requestPasswordReset(email);
+            }
+        }
+        
+        async function requestPasswordReset(email) {
+            try {
+                const response = await fetch(`${API_BASE}/auth/password-reset/request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('If the email exists, a password reset link will be sent', 'success');
+                } else {
+                    showAlert(data.message || 'Password reset request failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Unable to connect to server', 'error');
+            }
+        }
+        
+        function showRegister() {
+            window.location.href = 'register.html';
+        }
+    </script>
+</body>
+</html>
