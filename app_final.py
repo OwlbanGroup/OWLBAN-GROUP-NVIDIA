@@ -823,16 +823,25 @@ def train_ml_model():
         telemetry_logger.log_error(e, {'context': 'train_ml_endpoint'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
-@app.route('/storage/files', methods=['GET'])
-@conditional_limit("30 per minute")
-def storage_files_alias():
-    """Gateway compatibility route for storage service listing."""
-    return jsonify({
+def get_storage_files_logic():
+    """Backend logic for storage alias route, separated for test monkeypatching."""
+    return {
         'status': 'success',
         'files': [],
         'service': 'storage',
         'timestamp': datetime.now(timezone.utc).isoformat()
-    }), 200
+    }, 200
+
+@app.route('/storage/files', methods=['GET'])
+@conditional_limit("30 per minute")
+def storage_files_alias():
+    """Gateway compatibility route for storage service listing."""
+    try:
+        payload, status_code = get_storage_files_logic()
+        return jsonify(payload), status_code
+    except Exception as e:
+        telemetry_logger.log_error(e, {'context': 'storage_files_alias'})
+        return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.route('/benefits', methods=['GET'])
 @conditional_limit("30 per minute")

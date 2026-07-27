@@ -92,7 +92,7 @@ class AuditLogger:
             return json_str
         except Exception as e:
             self.logger.error(f"Failed to sanitize data: {e}")
-            return json.dumps({'error': 'Failed to sanitize data'})
+            return '{"error":"Failed to sanitize data"}'
     
     def _extract_user_context(self) -> Dict[str, Any]:
         """Extract user context from Flask request"""
@@ -586,22 +586,62 @@ class AuditLogger:
             Exported data as string
         """
         filters = filters or {}
-        logs = self.get_audit_trail(**filters)
         
         if format_type == 'json':
+            logs = self.get_audit_trail(**filters)
             return json.dumps([log.to_dict() for log in logs], indent=2, default=str)
         elif format_type == 'csv':
             import csv
             import io
-            
+
             output = io.StringIO()
-            if logs:
-                fieldnames = logs[0].to_dict().keys()
-                writer = csv.DictWriter(output, fieldnames=fieldnames)
+            logs = self.get_audit_trail(**filters)
+            if not logs:
+                writer = csv.DictWriter(output, fieldnames=['action'])
                 writer.writeheader()
-                for log in logs:
-                    writer.writerow(log.to_dict())
-            
+                return output.getvalue()
+
+            def _log_to_dict(log_item: Any) -> Dict[str, Any]:
+                if hasattr(log_item, 'to_dict') and callable(getattr(log_item, 'to_dict')):
+                    try:
+                        value = log_item.to_dict()
+                        if isinstance(value, dict):
+                            return value
+                    except Exception:
+                        pass
+
+                if isinstance(log_item, dict):
+                    return log_item
+
+                extracted = {}
+                for attr in ['action', 'timestamp', 'severity', 'category', 'status_code', 'username', 'user_id', 'id']:
+                    if hasattr(log_item, attr):
+                        extracted[attr] = getattr(log_item, attr)
+                return extracted
+
+            dict_rows = [_log_to_dict(log) for log in logs]
+            if not any(dict_rows):
+                dict_rows = [{'action': str(getattr(log, 'action', ''))} for log in logs]
+
+            preferred_order = ['action', 'timestamp', 'severity', 'category', 'status_code', 'username', 'user_id', 'id']
+            discovered_keys = []
+            for row in dict_rows:
+                if isinstance(row, dict):
+                    for key in row.keys():
+                        if key not in discovered_keys:
+                            discovered_keys.append(key)
+
+            fieldnames = [k for k in preferred_order if k in discovered_keys]
+            fieldnames.extend([k for k in discovered_keys if k not in fieldnames])
+
+            if not fieldnames:
+                fieldnames = ['action']
+
+            writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+            writer.writeheader()
+            for row in dict_rows:
+                writer.writerow(row if isinstance(row, dict) else {'action': str(row)})
+
             return output.getvalue()
         else:
             raise ValueError(f"Unsupported format: {format_type}")
