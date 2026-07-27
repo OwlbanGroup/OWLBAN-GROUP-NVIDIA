@@ -63,12 +63,10 @@ def test_mcp_llm_tool(model_runner_container):
     assert "risk" in content.lower() or "analysis" in content.lower()
     subprocess.run(["make", "mcp-down"], check=True)
 
-@pytest.fixture(scope="function")
-def runslow(request):
-    return request.config.getoption("--runslow")
-
-@pytest.mark.skipif(not runslow(pytestconfig=pytest.config), reason="use pytest --runslow")
-def test_gpu_usage(model_runner_container):
+@pytest.mark.slow
+def test_gpu_usage(model_runner_container, request):
     """Test GPU in model-runner (slow)."""
+    if not request.config.getoption("--runslow"):
+        pytest.skip("use pytest --runslow")
     logs = model_runner_container.logs().decode()
     assert "CUDA" in logs or "GPU" in logs or "nvidia" in logs
