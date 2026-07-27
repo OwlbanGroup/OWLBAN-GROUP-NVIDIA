@@ -49,8 +49,8 @@ def pfm_test_app():
     app = Flask(__name__)
     app.config['TESTING'] = True
     
-    # Mock globals for tests
-    from jpmorgan_financial_apis.blueprints.pfm import _mock_accounts, _mock_budgets  # noqa
+    # Mock globals for tests (import from same module path used by tests)
+    from blueprints.pfm import _mock_accounts, _mock_budgets  # noqa
     app._mock_accounts = _mock_accounts
     app._mock_budgets = _mock_budgets
     

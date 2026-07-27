@@ -315,7 +315,8 @@ def link_financial_account():
             return jsonify({'error': 'User ID, institution ID, and account name are required', 'status': 'error'}), 400
 
         # Mock account linking process
-        account_id = str(uuid.uuid4())
+        account_id_obj = uuid.uuid4()
+        account_id = str(account_id_obj)
 
         # Simulate different account types with realistic balances
         if account_type == 'checking':
@@ -340,7 +341,7 @@ def link_financial_account():
             'institution_id': institution_id,
             'account_type': account_type,
             'account_name': account_name,
-            'account_number': f"****{str(uuid.uuid4().hex[:4]).upper()}",  # Masked account number
+            'account_number': f"****{str(uuid.uuid4())[-4:].upper()}",  # Masked account number
             'routing_number': '123456789',
             'balance': balance,
             'available_balance': available_balance,
@@ -1853,11 +1854,11 @@ def mark_bill_paid(bill_id):
         if bill['frequency'] != 'one_time':
             current_due = datetime.fromisoformat(bill['next_due_date'].replace('Z', '+00:00'))
             if bill['frequency'] == 'monthly':
-                next_due = current_due.replace(month=current_due.month + 1)
+                next_due = current_due + relativedelta(months=1)
             elif bill['frequency'] == 'quarterly':
-                next_due = current_due.replace(month=current_due.month + 3)
+                next_due = current_due + relativedelta(months=3)
             elif bill['frequency'] == 'annually':
-                next_due = current_due.replace(year=current_due.year + 1)
+                next_due = current_due + relativedelta(years=1)
             else:
                 next_due = current_due
 
