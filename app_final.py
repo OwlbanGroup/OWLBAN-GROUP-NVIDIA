@@ -324,11 +324,19 @@ limiter = Limiter(
 )
 
 # Conditional limiter for testing
+def _limits_enabled():
+    """Centralized feature-flag check for request limits."""
+    return not app.config.get('TESTING') and app.config.get('RATELIMIT_ENABLED', True)
+
 def conditional_limit(limit_str):
     def decorator(f):
-        if app.config.get('TESTING'):
-            return f
-        return limiter.limit(limit_str)(f)
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            # Evaluate at request time so tests/runtime can toggle RATELIMIT_ENABLED dynamically.
+            if _limits_enabled():
+                return limiter.limit(limit_str)(f)(*args, **kwargs)
+            return f(*args, **kwargs)
+        return wrapped
     return decorator
 
 # Initialize token manager
@@ -681,7 +689,7 @@ def get_telemetry_metrics():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.route('/telemetry/export', methods=['GET'])
-@limiter.limit("5 per minute")
+@conditional_limit("5 per minute")
 def export_telemetry():
     """
     Export telemetry data
@@ -724,7 +732,7 @@ def export_telemetry():
 
 @app.route('/ml/anomalies', methods=['POST'])
 @app.route('/ml/analyze', methods=['POST'])
-@limiter.limit("2 per minute")
+@conditional_limit("2 per minute")
 @require_auth
 def detect_anomalies():
     """
@@ -753,7 +761,7 @@ def detect_anomalies():
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
 @app.route('/ml/train', methods=['POST'])
-@limiter.limit("1 per hour")
+@conditional_limit("1 per hour")
 @require_auth
 def train_ml_model():
     """
@@ -887,7 +895,7 @@ def bill_pay_alias():
     }), 200
 
 @app.route('/data/convert', methods=['POST'])
-@limiter.limit("5 per minute")
+@conditional_limit("5 per minute")
 def convert_data_format():
     """
     Convert data between different formats
@@ -1625,10 +1633,7 @@ def get_sync_status():
         telemetry_logger.log_error(e, {'context': 'get_sync_status'})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
-@app.route('/sync/run/<job_id>', methods=['POST'])
-@token_auth_required
-@conditional_limit("2 per minute")
-def run_sync_job(job_id):
+def _run_sync_job_impl(job_id):
     """
     Run a specific synchronization job immediately
     """
@@ -1658,6 +1663,14 @@ def run_sync_job(job_id):
     except Exception as e:
         telemetry_logger.log_error(e, {'context': 'run_sync_job', 'job_id': job_id})
         return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
+
+@app.route('/sync/run/<job_id>', methods=['POST'])
+@token_auth_required
+def run_sync_job(job_id):
+    # Evaluate limits at request time so tests can disable rate limits after import.
+    if _limits_enabled():
+        return limiter.limit("2 per minute")(_run_sync_job_impl)(job_id)
+    return _run_sync_job_impl(job_id)
 
 @app.route('/sync/logs', methods=['GET'])
 @token_auth_required

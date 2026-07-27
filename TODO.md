@@ -1,6 +1,9 @@
-# TODO - Docker-unavailable graceful handling for model runner tests
+# Coverage Raise Plan TODO
 
-- [x] Analyze failing test output and identify root cause (Docker daemon unavailable).
-- [ ] Update `tests/test_model_runner.py` fixture to skip when Docker is unavailable.
-- [ ] Run `pytest tests/test_model_runner.py -q --no-cov` and verify behavior.
-- [ ] Summarize results and remaining optional coverage.
+- [x] Analyze current failing coverage output and identify high-impact uncovered modules
+- [x] Review existing tests for app_final and audit_logger
+- [ ] Add targeted tests for uncovered `src.audit_logger` branches
+- [ ] Add targeted tests for uncovered `app_final` branches/routes
+- [ ] Run full test suite with required coverage flags
+- [ ] Verify total coverage is >= 78%
+- [ ] Finalize and report results
