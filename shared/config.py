@@ -15,6 +15,31 @@ class Settings(BaseSettings):
         extra='allow'
     )
 
+    @property
+    def environment(self) -> str:
+        """Backward-compatible lowercase alias expected by older tests/modules."""
+        return self.FLASK_ENV
+
+    @property
+    def debug(self) -> bool:
+        """Backward-compatible lowercase alias expected by older tests/modules."""
+        return self.DEBUG
+
+    @property
+    def version(self) -> str:
+        """Backward-compatible lowercase alias expected by older tests/modules."""
+        return self.VERSION
+
+    @property
+    def max_concurrent_requests(self) -> int:
+        """Backward-compatible lowercase alias expected by telemetry processor."""
+        return self.MAX_CONCURRENT_REQUESTS
+
+    @property
+    def max_batch_size(self) -> int:
+        """Backward-compatible lowercase alias expected by telemetry batch processor."""
+        return self.TELEMETRY_BATCH_SIZE
+
     # Application
     APP_NAME: str = "JPMorgan Financial APIs"
     DEBUG: bool = False
@@ -44,6 +69,7 @@ class Settings(BaseSettings):
 
     # Telemetry
     TELEMETRY_BATCH_SIZE: int = 100
+    MAX_CONCURRENT_REQUESTS: int = 100
 
     # Additional settings for compatibility
     OAUTH_CLIENT_SECRET: str = ""

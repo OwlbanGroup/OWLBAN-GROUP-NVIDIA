@@ -109,5 +109,18 @@ class MetricsCollector:
         }
 
 
+class HealthChecker:
+    """Basic health checker for shared services."""
+
+    def __init__(self, service_name: str = "shared") -> None:
+        self.service_name = service_name
+
+    def check_health(self) -> Dict[str, Any]:
+        return {
+            "service": self.service_name,
+            "status": "healthy",
+        }
+
+
 # Global metrics collector instance
 metrics_collector = MetricsCollector()

@@ -79,3 +79,27 @@ async def optional_auth(
         return verify_token(token)
     except HTTPException:
         return None
+
+
+class AuthService:
+    """Authentication service wrapper for token operations."""
+
+    def create_token(self, data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        return create_access_token(data, expires_delta)
+
+    def verify_token(self, token: str) -> TokenData:
+        return verify_token(token)
+
+
+class AuthorizationService:
+    """Authorization service wrapper for role/scope checks."""
+
+    def __init__(self):
+        self.auth_service = AuthService()
+
+    def has_scope(self, token_data: TokenData, required_scope: str) -> bool:
+        return required_scope in (token_data.scopes or [])
+
+    def has_any_scope(self, token_data: TokenData, required_scopes: list[str]) -> bool:
+        token_scopes = set(token_data.scopes or [])
+        return any(scope in token_scopes for scope in required_scopes)
