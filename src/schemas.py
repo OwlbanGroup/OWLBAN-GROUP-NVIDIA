@@ -3,15 +3,15 @@ Pydantic schemas for API request/response validation
 """
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from enum import Enum
 
 
 class TelemetryEvent(BaseModel):
     """Schema for individual telemetry events"""
-    ver: str = Field(..., description="Telemetry version", example="4.0")
-    name: str = Field(..., description="Event name", example="Microsoft.Windows.ApplicationModel.Store.Telemetry.BeginOperation")
-    time: str = Field(..., description="Event timestamp in ISO format", example="2025-09-22T19:42:10.2549325Z")
+    ver: str = Field(..., description="Telemetry version", json_schema_extra={"example": "4.0"})
+    name: str = Field(..., description="Event name", json_schema_extra={"example": "Microsoft.Windows.ApplicationModel.Store.Telemetry.BeginOperation"})
+    time: str = Field(..., description="Event timestamp in ISO format", json_schema_extra={"example": "2025-09-22T19:42:10.2549325Z"})
     data: Dict[str, Any] = Field(..., description="Event data payload")
     ext: Dict[str, Any] = Field(default_factory=dict, description="Extended metadata")
 
@@ -40,7 +40,7 @@ class TelemetryEvent(BaseModel):
 
 class TelemetryBatchRequest(BaseModel):
     """Schema for batch telemetry processing requests"""
-    telemetry_data: List[TelemetryEvent] = Field(..., min_items=1, max_items=1000,
+    telemetry_data: List[TelemetryEvent] = Field(..., min_length=1, max_length=1000,
                                                     description="List of telemetry events to process")
 
     @field_validator('telemetry_data')
@@ -66,7 +66,7 @@ class ExportRequest(BaseModel):
 
 class AnomalyDetectionRequest(BaseModel):
     """Schema for anomaly detection requests"""
-    telemetry_data: List[TelemetryEvent] = Field(..., min_items=1, max_items=500,
+    telemetry_data: List[TelemetryEvent] = Field(..., min_length=1, max_length=500,
                                                     description="Telemetry data for anomaly detection")
 
 
@@ -92,7 +92,7 @@ class CloudExportRequest(BaseModel):
 
 class DataConversionRequest(BaseModel):
     """Schema for data format conversion requests"""
-    data: List[Dict[str, Any]] = Field(..., min_items=1, description="Data to convert")
+    data: List[Dict[str, Any]] = Field(..., min_length=1, description="Data to convert")
     from_format: str = Field(..., pattern="^(json|csv|xml|yaml)$", description="Source format")
     to_format: str = Field(..., pattern="^(json|csv|xml|yaml|excel|parquet)$", description="Target format")
     options: Dict[str, Any] = Field(default_factory=dict, description="Conversion options")
@@ -157,8 +157,7 @@ class BusinessResponse(BaseModel):
     created_at: Union[str, datetime] = Field(..., description="Creation timestamp")
     updated_at: Union[str, datetime] = Field(..., description="Last update timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('contact_info', mode='before')
     @classmethod
@@ -242,8 +241,7 @@ class AssetResponse(BaseModel):
     created_at: Optional[str] = Field(None, description="Creation timestamp")
     updated_at: Optional[str] = Field(None, description="Last update timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('acquisition_date', 'created_at', 'updated_at', mode='before')
     @classmethod
@@ -299,8 +297,7 @@ class OrganizationResponse(BaseModel):
     created_at: str = Field(..., description="Creation timestamp")
     updated_at: str = Field(..., description="Last update timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrganizationMemberCreate(BaseModel):
@@ -322,8 +319,7 @@ class OrganizationMemberResponse(BaseModel):
     role: str = Field(..., description="Member role")
     joined_at: str = Field(..., description="Join timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConvertUserToOrganizationRequest(BaseModel):
