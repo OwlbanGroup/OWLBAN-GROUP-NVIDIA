@@ -3,10 +3,14 @@ import httpx
 import subprocess
 import time
 import docker
+from docker.errors import DockerException
 
 @pytest.fixture(scope="session")
 def docker_client():
-    return docker.from_env()
+    try:
+        return docker.from_env()
+    except DockerException as e:
+        pytest.skip(f"Docker daemon unavailable: {e}")
 
 @pytest.fixture(scope="session")
 def model_runner_container(docker_client):
