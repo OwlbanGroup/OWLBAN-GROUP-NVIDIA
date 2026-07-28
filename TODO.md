@@ -1,12 +1,14 @@
-# Coverage Boost TODO (>=78%)
+# TODO - Additional Thorough Test Coverage
 
-- [x] Review existing coverage-focused tests for easy missed branches in `app_final.py`
-- [ ] Add targeted tests in `tests/test_app_final_coverage_boost.py` for:
-  - [ ] GitHub API status mapping branches (`/api/github/orgs` and `/api/github/repos` for 401/404/502/other)
-  - [ ] GitHub API `requests.RequestException` error branch
-  - [ ] lightweight deterministic fallback/error branch in dashboard or sync path
-- [ ] Run targeted test file first without coverage:
-  - `pytest -q tests/test_app_final_coverage_boost.py --no-cov`
-- [ ] Run full required coverage gate:
-  - `pytest -q tests/test_audit_logger_additional_coverage.py tests/test_app_final_mass_coverage.py tests/test_app_final_coverage_boost.py tests/test_audit_logging.py tests/test_revenue_service.py --cov=app_final --cov=src.audit_logger --cov=src.models.audit_log --cov=src.revenue_service --cov-report=term-missing --cov-fail-under=78`
-- [ ] If still below threshold, add one more focused test for highest-yield uncovered branch and re-run
+- [x] Add focused audit logger tests in `tests/test_audit_logger_additional_coverage.py`
+  - [x] Cover `_sanitize_data(None)` return path.
+  - [x] Cover CSV export fallback for objects without `to_dict`.
+  - [x] Cover CSV export path when `to_dict()` raises and attribute-extraction fallback is used.
+- [x] Add focused revenue service tests in `tests/test_revenue_service.py`
+  - [x] Cover `update_daily_metrics()` default-date branch when `date=None`.
+  - [x] Cover existing-metric update branch (mutating an existing `RevenueMetrics` row).
+- [ ] Add/extend high-impact `app_final.py` branch tests in `tests/test_app_final_coverage_boost.py`
+  - [ ] Append only low-coupling branch tests consistent with existing test style.
+- [ ] Run full tests
+  - [ ] `cd c:\Users\bizle\Desktop\jpmorgan_financial_apis; pytest -ra`
+- [ ] Report final pass/skip/coverage summary.

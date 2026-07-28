@@ -143,6 +143,11 @@ def test_sanitize_data_error_path(patched_module, monkeypatch):
     assert "Failed to sanitize data" in out
 
 
+def test_sanitize_data_none_returns_none(patched_module):
+    logger = al.AuditLogger(FakeDBManager(FakeSession(FakeQuery())))
+    assert logger._sanitize_data(None) is None
+
+
 def test_extract_user_context_outside_request_context(patched_module):
     logger = al.AuditLogger(FakeDBManager(FakeSession(FakeQuery())))
     ctx = logger._extract_user_context()
@@ -197,6 +202,31 @@ def test_export_audit_logs_json_csv_and_invalid(patched_module):
 
     with pytest.raises(ValueError):
         logger.export_audit_logs("xml")
+
+
+def test_export_audit_logs_csv_fallback_object_and_to_dict_failure(monkeypatch, patched_module):
+    class ObjOnly:
+        def __init__(self):
+            self.action = "obj_action"
+            self.status_code = 204
+            self.username = "u"
+
+    class BadToDict:
+        def __init__(self):
+            self.action = "bad_to_dict_action"
+            self.severity = "warning"
+
+        def to_dict(self):
+            raise RuntimeError("nope")
+
+    logger = al.AuditLogger(FakeDBManager(FakeSession(FakeQuery(rows=[]))))
+    monkeypatch.setattr(logger, "get_audit_trail", lambda **_k: [ObjOnly(), BadToDict()])
+
+    c = logger.export_audit_logs("csv")
+
+    assert "action" in c
+    assert "obj_action" in c
+    assert "bad_to_dict_action" in c
 
 
 def test_log_event_handles_db_exception(patched_module):

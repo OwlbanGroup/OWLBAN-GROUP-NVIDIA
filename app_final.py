@@ -25,7 +25,7 @@ from flask_limiter.util import get_remote_address
 from flask_restx import Api  # type: ignore
 from flask import Blueprint
 from flask_talisman import Talisman  # type: ignore
-from prometheus_client import Counter, Histogram, Gauge
+from prometheus_client import Counter, Histogram, Gauge, REGISTRY
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -240,13 +240,36 @@ except Exception as e:
 
 
 # Prometheus metrics (app_final version to avoid conflicts)
-REQUEST_COUNT_FINAL = Counter('http_requests_total_final', 'Total HTTP requests (final)', ['method', 'endpoint', 'status_code'])
-REQUEST_LATENCY_FINAL = Histogram('http_request_duration_seconds_final', 'HTTP request duration (final)', ['method', 'endpoint'])
-ACTIVE_CONNECTIONS_FINAL = Gauge('active_connections_final', 'Number of active connections (final)')
-ERROR_COUNT_FINAL = Counter('errors_total_final', 'Total errors (final)', ['type', 'endpoint'])
-TELEMETRY_EVENTS_PROCESSED_FINAL = Counter('telemetry_events_processed_total_final', 'Total telemetry events processed (final)', ['status'])
-BATCH_SIZE_FINAL = Histogram('telemetry_batch_size_final', 'Size of telemetry batches processed (final)')
-ANOMALY_DETECTIONS_FINAL = Counter('anomaly_detections_total_final', 'Total anomaly detections performed (final)', ['result'])
+def _get_or_create_metric(metric_cls, name, documentation, labelnames=None):
+    """Create Prometheus metric once; reuse existing collector on repeated imports."""
+    if labelnames is None:
+        labelnames = []
+    existing = REGISTRY._names_to_collectors.get(name)
+    if existing is not None:
+        return existing
+    return metric_cls(name, documentation, labelnames)
+
+REQUEST_COUNT_FINAL = _get_or_create_metric(
+    Counter, 'http_requests_total_final', 'Total HTTP requests (final)', ['method', 'endpoint', 'status_code']
+)
+REQUEST_LATENCY_FINAL = _get_or_create_metric(
+    Histogram, 'http_request_duration_seconds_final', 'HTTP request duration (final)', ['method', 'endpoint']
+)
+ACTIVE_CONNECTIONS_FINAL = _get_or_create_metric(
+    Gauge, 'active_connections_final', 'Number of active connections (final)'
+)
+ERROR_COUNT_FINAL = _get_or_create_metric(
+    Counter, 'errors_total_final', 'Total errors (final)', ['type', 'endpoint']
+)
+TELEMETRY_EVENTS_PROCESSED_FINAL = _get_or_create_metric(
+    Counter, 'telemetry_events_processed_total_final', 'Total telemetry events processed (final)', ['status']
+)
+BATCH_SIZE_FINAL = _get_or_create_metric(
+    Histogram, 'telemetry_batch_size_final', 'Size of telemetry batches processed (final)'
+)
+ANOMALY_DETECTIONS_FINAL = _get_or_create_metric(
+    Counter, 'anomaly_detections_total_final', 'Total anomaly detections performed (final)', ['result']
+)
 
 # Lightweight in-memory request history for dashboard trend graph
 REQUEST_HISTORY = deque(maxlen=3600)  # ~ up to 1h of per-second samples

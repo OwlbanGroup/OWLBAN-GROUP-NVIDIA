@@ -289,3 +289,38 @@ def test_update_daily_metrics_create_update_empty_and_error(monkeypatch):
 
     monkeypatch.setattr(rev_mod, "db_manager", DummyDBManager(BadSession()))
     assert svc.update_daily_metrics(datetime.now(timezone.utc)) is False
+
+
+def test_update_daily_metrics_default_date_and_existing_metric_update(monkeypatch):
+    tx = types.SimpleNamespace(
+        amount=50.0, fee_amount=1.0, tax_amount=4.0, net_amount=45.0, status=TransactionStatus.COMPLETED
+    )
+
+    existing_metric = types.SimpleNamespace(
+        total_amount=0.0,
+        total_fees=0.0,
+        total_taxes=0.0,
+        net_revenue=0.0,
+        transaction_count=0,
+        successful_transactions=0,
+        failed_transactions=0,
+        average_transaction_value=0.0,
+        updated_at=None,
+    )
+
+    tx_q = FakeQuery(all_result=[tx])
+    metrics_q = FakeQuery(first_result=existing_metric)
+    session = FakeSession(query_sequence=[tx_q, metrics_q] * len(list(RevenueType)))
+    monkeypatch.setattr(rev_mod, "db_manager", DummyDBManager(session))
+
+    svc = rev_mod.RevenueService()
+    assert svc.update_daily_metrics() is True
+    assert existing_metric.total_amount == 50.0
+    assert existing_metric.total_fees == 1.0
+    assert existing_metric.total_taxes == 4.0
+    assert existing_metric.net_revenue == 45.0
+    assert existing_metric.transaction_count == 1
+    assert existing_metric.successful_transactions == 1
+    assert existing_metric.failed_transactions == 0
+    assert existing_metric.average_transaction_value == 50.0
+    assert existing_metric.updated_at is not None
