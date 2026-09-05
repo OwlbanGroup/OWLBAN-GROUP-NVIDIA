@@ -1,0 +1,101 @@
+...................................                                      [100%]
+============================== warnings summary ===============================
+api_server.py:159
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:159: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @fastapi_app.on_event("startup")
+
+..\..\..\..\..\..\..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\fastapi\applications.py:4579
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\fastapi\applications.py:4579: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_ai.py::TestQuantumAISystems::test_market_predictor
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_market_predictor.py:155: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_new.cpp:256.)
+    return torch.tensor(x_features, dtype=torch.float32), torch.tensor(y_returns, dtype=torch.float32)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_ai.py::TestQuantumAISystems::test_market_predictor
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_ai.py::TestQuantumAISystems::test_market_predictor
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_market_predictor.py:221: DeprecationWarning: __array_wrap__ must accept context and return_scalar arguments (positionally) in the future. (Deprecated NumPy 2.0)
+    valid_indices = ~np.isnan(x_features).any(axis=(1,2)) & ~np.isnan(y_returns)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_ai.py::TestQuantumAISystems::test_market_predictor
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_market_predictor.py:222: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\aten\src\ATen/native/IndexingUtils.h:38.)
+    x_features = x_features[valid_indices]
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_ai.py::TestQuantumAISystems::test_market_predictor
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_market_predictor.py:223: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\aten\src\ATen/native/IndexingUtils.h:38.)
+    y_returns = y_returns[valid_indices]
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_encoding_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_feature_map
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_machine_learning_pipeline.py:68: DeprecationWarning: The class ``qiskit.circuit.library.data_preparation._zz_feature_map.ZZFeatureMap`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the zz_feature_map function as a replacement. Note that this will no longer return a BlueprintCircuit, but just a plain QuantumCircuit.
+    self.feature_map = ZZFeatureMap(n_qubits, reps=2)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_encoding_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_feature_map
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_training
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_training
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit\circuit\library\data_preparation\_zz_feature_map.py:143: DeprecationWarning: The class ``qiskit.circuit.library.data_preparation.pauli_feature_map.PauliFeatureMap`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the pauli_feature_map function as a replacement. Note that this will no longer return a BlueprintCircuit, but just a plain QuantumCircuit.
+    super().__init__(
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_encoding_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_feature_map
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_training
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_training
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit\circuit\library\data_preparation\pauli_feature_map.py:518: DeprecationWarning: The class ``qiskit.circuit.library.n_local.n_local.NLocal`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. This applies to NLocal subclasses too. Use the corresponding function from the module qiskit.circuit.library.n_local instead.
+    super().__init__(
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_encoding_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumFeatureEncoder::test_feature_map
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_training
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_training
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit\circuit\library\n_local\n_local.py:379: DeprecationWarning: The class ``qiskit.circuit.library.blueprintcircuit.BlueprintCircuit`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. There is no direct replacement other than the QuantumCircuit class.
+    super().__init__(name=name)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py: 11 warnings
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit_aer\backends\qasm_simulator.py:433: PendingDeprecationWarning: The `QasmSimulator` backend will be deprecated in the future. It has been superseded by the `AerSimulator` backend.
+    warn(
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_training
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_prediction
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestQuantumMLPipeline::test_training
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_machine_learning_pipeline.py:120: DeprecationWarning: The class ``qiskit.circuit.library.data_preparation._zz_feature_map.ZZFeatureMap`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the zz_feature_map function as a replacement. Note that this will no longer return a BlueprintCircuit, but just a plain QuantumCircuit.
+    feature_map = ZZFeatureMap(X_train.shape[1], reps=2)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_machine_learning_pipeline.py:180: DeprecationWarning: The class ``qiskit.circuit.library.data_preparation._zz_feature_map.ZZFeatureMap`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the zz_feature_map function as a replacement. Note that this will no longer return a BlueprintCircuit, but just a plain QuantumCircuit.
+    feature_map = ZZFeatureMap(self.n_qubits, reps=1)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+  C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\quantum_financial_ai\quantum_machine_learning_pipeline.py:183: DeprecationWarning: The class ``qiskit.circuit.library.n_local.real_amplitudes.RealAmplitudes`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the function qiskit.circuit.library.real_amplitudes instead.
+    ansatz = RealAmplitudes(self.n_qubits, reps=self.n_layers)
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit\circuit\library\n_local\real_amplitudes.py:292: DeprecationWarning: The class ``qiskit.circuit.library.n_local.two_local.TwoLocal`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. Use the function qiskit.circuit.library.n_local instead.
+    super().__init__(
+
+.github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py::TestVariationalQuantumClassifier::test_circuit_creation
+  C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit\circuit\library\n_local\two_local.py:217: DeprecationWarning: The class ``qiskit.circuit.library.n_local.n_local.NLocal`` is deprecated as of Qiskit 2.1. It will be removed in Qiskit 3.0. This applies to NLocal subclasses too. Use the corresponding function from the module qiskit.circuit.library.n_local instead.
+    super().__init__(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
