@@ -152,7 +152,9 @@ class QuantumMarketPredictor:
             x_features.append(feature_matrix[i:i+self.sequence_length])
             y_returns.append(returns[i+self.sequence_length])
 
-        return torch.tensor(x_features, dtype=torch.float32), torch.tensor(y_returns, dtype=torch.float32)
+        x_arr = np.asarray(x_features, dtype=np.float32)
+        y_arr = np.asarray(y_returns, dtype=np.float32)
+        return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
     def _calculate_sma(self, data: np.ndarray, period: int) -> np.ndarray:
         """Calculate Simple Moving Average"""
@@ -218,9 +220,7 @@ class QuantumMarketPredictor:
         x_features, y_returns = self._preprocess_data(symbol)
 
         # Remove NaN values
-        valid_indices = ~np.isnan(x_features).any(axis=(1,2)) & ~np.isnan(y_returns)
-        # Index tensors with an explicit bool mask (uint8 indexing is deprecated in torch)
-        valid_indices = torch.as_tensor(valid_indices, dtype=torch.bool)
+        valid_indices = ~torch.isnan(x_features).any(dim=(1, 2)) & ~torch.isnan(y_returns)
         x_features = x_features[valid_indices]
         y_returns = y_returns[valid_indices]
 

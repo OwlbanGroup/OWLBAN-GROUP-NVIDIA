@@ -5,6 +5,7 @@ FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 
 import logging
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import secrets
 import time
@@ -132,10 +133,66 @@ logging.basicConfig(
 )
 logger = logging.getLogger("api_server")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize AI systems on application startup."""
+    logger.info("Initializing AI systems...")
+
+    if COMBINED_SYSTEM_AVAILABLE and CombinedSystem is not None:
+        try:
+            app.state.combined_system = CombinedSystem()
+            logger.info("CombinedSystem initialized")
+        except Exception:
+            logger.exception("Failed to initialize CombinedSystem")
+
+    if REVENUE_OPTIMIZER_AVAILABLE and NimManager is not None and NVIDIARevenueOptimizer is not None:
+        try:
+            app.state.nim_manager = NimManager()
+            app.state.nim_manager.initialize()
+            app.state.revenue_optimizer = NVIDIARevenueOptimizer(app.state.nim_manager)
+            logger.info("Revenue optimizer initialized")
+        except Exception:
+            logger.exception("Failed to initialize revenue optimizer")
+
+    if RL_AGENT_AVAILABLE and ReinforcementLearningAgent is not None:
+        try:
+            app.state.rl_agent = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
+            logger.info("RL agent initialized")
+        except Exception:
+            logger.exception("Failed to initialize RL agent")
+
+    if DB_MANAGER_AVAILABLE:
+        try:
+            app.state.db_manager = DatabaseManager()
+            logger.info("Database manager initialized")
+        except Exception:
+            logger.exception("Failed to initialize database manager")
+
+    if app.state.combined_system is not None and hasattr(app.state.combined_system, "ngc_catalog_manager"):
+        try:
+            app.state.ngc_catalog_manager = app.state.combined_system.ngc_catalog_manager
+            app.state.ngc_catalog_manager.initialize()
+            logger.info("NGC catalog manager attached to combined system")
+        except Exception:
+            logger.exception("Failed to attach NGC catalog manager")
+    elif NGCATALOG_AVAILABLE:
+        try:
+            app.state.ngc_catalog_manager = NGCatalogManager()
+            app.state.ngc_catalog_manager.initialize()
+            logger.info("Standalone NGC catalog manager initialized")
+        except Exception:
+            logger.exception("Failed to initialize standalone NGC catalog manager")
+
+    yield
+
+    logger.info("Shutting down AI systems...")
+
+
 fastapi_app = FastAPI(
     title="OWLBAN GROUP AI API",
     description="Unified API for NVIDIA-accelerated AI services",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 fastapi_app.state.combined_system = None
@@ -154,57 +211,6 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize systems
-@fastapi_app.on_event("startup")
-async def startup_event():
-    """Initialize AI systems on application startup."""
-    logger.info("Initializing AI systems...")
-
-    if COMBINED_SYSTEM_AVAILABLE and CombinedSystem is not None:
-        try:
-            fastapi_app.state.combined_system = CombinedSystem()
-            logger.info("CombinedSystem initialized")
-        except Exception:
-            logger.exception("Failed to initialize CombinedSystem")
-
-    if REVENUE_OPTIMIZER_AVAILABLE and NimManager is not None and NVIDIARevenueOptimizer is not None:
-        try:
-            fastapi_app.state.nim_manager = NimManager()
-            fastapi_app.state.nim_manager.initialize()
-            fastapi_app.state.revenue_optimizer = NVIDIARevenueOptimizer(fastapi_app.state.nim_manager)
-            logger.info("Revenue optimizer initialized")
-        except Exception:
-            logger.exception("Failed to initialize revenue optimizer")
-
-    if RL_AGENT_AVAILABLE and ReinforcementLearningAgent is not None:
-        try:
-            fastapi_app.state.rl_agent = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
-            logger.info("RL agent initialized")
-        except Exception:
-            logger.exception("Failed to initialize RL agent")
-
-    if DB_MANAGER_AVAILABLE:
-        try:
-            fastapi_app.state.db_manager = DatabaseManager()
-            logger.info("Database manager initialized")
-        except Exception:
-            logger.exception("Failed to initialize database manager")
-
-    if fastapi_app.state.combined_system is not None and hasattr(fastapi_app.state.combined_system, "ngc_catalog_manager"):
-        try:
-            fastapi_app.state.ngc_catalog_manager = fastapi_app.state.combined_system.ngc_catalog_manager
-            fastapi_app.state.ngc_catalog_manager.initialize()
-            logger.info("NGC catalog manager attached to combined system")
-        except Exception:
-            logger.exception("Failed to attach NGC catalog manager")
-    elif NGCATALOG_AVAILABLE:
-        try:
-            fastapi_app.state.ngc_catalog_manager = NGCatalogManager()
-            fastapi_app.state.ngc_catalog_manager.initialize()
-            logger.info("Standalone NGC catalog manager initialized")
-        except Exception:
-            logger.exception("Failed to initialize standalone NGC catalog manager")
 
 # Pydantic models
 class RevenueOptimizationRequest(BaseModel):
