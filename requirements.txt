@@ -6,3 +6,18 @@ Pillow==10.3.0
 uvicorn==0.24.0
 fastapi==0.115.0
 pydantic==2.6.0
+
+# AI / GPU / quantum stack (imported by api_server, combined_nim_owlban_ai, quantum_financial_ai)
+GPUtil
+pynvml
+psutil
+torch
+numpy
+scikit-learn
+qiskit>=2.0
+qiskit-aer
+qiskit-machine-learning>=0.9
+
+# Testing
+pytest
+pytest-timeout

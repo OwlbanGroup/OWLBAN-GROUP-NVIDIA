@@ -1,4 +1,20 @@
-node_modules
-node_modules
-node_modules
-node_modules
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Logs and temp files
+*.log
+pytest_*.txt
+pytest_*.err
+qml_result.txt
+qml_err.txt
+result_*.txt
+per_file_results.txt
+run_per_file.ps1
+.pytest_cache/
+
