@@ -19,6 +19,10 @@ qiskit-aer
 qiskit-machine-learning>=0.9
 qiskit-algorithms>=0.4
 
+# Authentication
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+
 # Testing
 pytest
 pytest-timeout

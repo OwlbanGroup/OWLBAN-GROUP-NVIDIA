@@ -213,7 +213,9 @@ class AuthManager:
             permissions = ['read']
 
         user = User(
-            id=f"{company.lower()}-{secrets.token_hex(4)}",
+            # 64-bit random ID namespace: supports up to ~18 quintillion unique IDs,
+            # scaling comfortably beyond the 10B-user target.
+            id=f"{company.lower()}-{secrets.token_hex(8)}",
             email=email,
             username=username,
             password_hash=self.hash_password(password),
@@ -234,6 +236,11 @@ class AuthManager:
         if not user:
             logger.warning(f"Login attempt for non-existent user: {email}")
             return False, "Invalid credentials", None
+
+        # Check if account is active
+        if not user.active:
+            logger.warning(f"Login attempt for inactive user: {email}")
+            return False, "Account is deactivated", None
 
         # Check if account is locked
         if user.locked_until and datetime.now(timezone.utc) < user.locked_until:
@@ -263,6 +270,9 @@ class AuthManager:
         now = datetime.now(timezone.utc)
 
         access_token_payload = {
+            # jti (JWT ID) guarantees per-token uniqueness even within the same
+            # second, and provides a revocation index for scale-out deployments.
+            'jti': secrets.token_hex(8),
             'user_id': user.id,
             'email': user.email,
             'username': user.username,
@@ -275,6 +285,7 @@ class AuthManager:
         }
 
         refresh_token_payload = {
+            'jti': secrets.token_hex(8),
             'user_id': user.id,
             'email': user.email,
             'type': 'refresh',

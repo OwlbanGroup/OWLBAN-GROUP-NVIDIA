@@ -278,6 +278,114 @@ services:
       - owlban-network
     restart: unless-stopped
 
+  # OWLBAN GROUP Website - Auth Service
+  owlban-website:
+    build:
+      context: ./owlbangroup.io
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-owlban_group_jwt_secret_change_me}
+      - API_SERVER_URL=http://api-server:8000
+    volumes:
+      - ./owlbangroup.io/users.json:/app/users.json
+      - ./owlbangroup.io/tokens.json:/app/tokens.json
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/subscription/plans"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.owlban.rule=Host(`owlban.group`)"
+        - "traefik.http.routers.owlban.entrypoints=websecure"
+        - "traefik.http.routers.owlban.tls.certresolver=letsencrypt"
+        - "traefik.http.services.owlban.loadbalancer.server.port=3000"
+
+  # OSCAR BROOME Revenue System - Auth Service
+  oscar-broome:
+    build:
+      context: ./OSCAR-BROOME-REVENUE
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - OSCAR_PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-oscar_broome_jwt_secret_change_me}
+      - API_SERVER_URL=http://api-server:8000
+    volumes:
+      - ./OSCAR-BROOME-REVENUE/users.json:/app/users.json
+      - ./OSCAR-BROOME-REVENUE/tokens.json:/app/tokens.json
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/auth/profile", "-H", "Authorization: Bearer health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.oscar.rule=Host(`oscar.owlban.group`)"
+        - "traefik.http.routers.oscar.entrypoints=websecure"
+        - "traefik.http.routers.oscar.tls.certresolver=letsencrypt"
+        - "traefik.http.services.oscar.loadbalancer.server.port=3001"
+
+  # BLACKBOX AI - Auth Service
+  blackbox-ai:
+    build:
+      context: ./BLACKBOX-AI
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - BLACKBOX_PORT=3002
+      - JWT_SECRET=${JWT_SECRET:-blackbox_ai_jwt_secret_change_me}
+      - API_SERVER_URL=http://api-server:8000
+    volumes:
+      - ./BLACKBOX-AI/users.json:/app/users.json
+      - ./BLACKBOX-AI/tokens.json:/app/tokens.json
+    networks:
+      - owlban-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/api/ai/status", "-H", "Authorization: Bearer health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.blackbox.rule=Host(`ai.owlban.group`)"
+        - "traefik.http.routers.blackbox.entrypoints=websecure"
+        - "traefik.http.routers.blackbox.tls.certresolver=letsencrypt"
+        - "traefik.http.services.blackbox.loadbalancer.server.port=3002"
+
 volumes:
   postgres_data:
   redis_data:

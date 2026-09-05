@@ -20,5 +20,65 @@
     "login_attempts": 0,
     "locked_until": null,
     "active": true
+  },
+  "demo@owlban.com": {
+    "id": "owlban_group-f464fb3b",
+    "email": "demo@owlban.com",
+    "username": "demouser",
+    "password_hash": "$2b$12$HWsgDhorSf5i1zPXIV.kaOAJZ/XkVJbm3yJzkuqNzmA4KryIc6UI6",
+    "role": "user",
+    "company": "OWLBAN_GROUP",
+    "permissions": [
+      "read",
+      "write"
+    ],
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "created_at": "2026-09-05T23:02:07.769729+00:00",
+    "last_login": null,
+    "login_attempts": 0,
+    "locked_until": null,
+    "active": true
+  },
+  "oscar@owlban.com": {
+    "id": "oscar_broome-c583a615",
+    "email": "oscar@owlban.com",
+    "username": "oscaruser",
+    "password_hash": "$2b$12$b3dN75PBSNOsqIs1f9LEke3g/2/fYXYWhubZJ0aPuiNXnxIzxAJ4a",
+    "role": "executive",
+    "company": "OSCAR_BROOME",
+    "permissions": [
+      "read",
+      "write",
+      "view_reports"
+    ],
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "created_at": "2026-09-05T23:02:13.724580+00:00",
+    "last_login": null,
+    "login_attempts": 0,
+    "locked_until": null,
+    "active": true
+  },
+  "ai@owlban.com": {
+    "id": "blackbox_ai-17174c4d",
+    "email": "ai@owlban.com",
+    "username": "aiuser",
+    "password_hash": "$2b$12$jU1wOXnpuqYxIToyzTDG5enGSWRN5rK4gRGwhlKHv7PyeBw9iWkCK",
+    "role": "developer",
+    "company": "BLACKBOX_AI",
+    "permissions": [
+      "read",
+      "write",
+      "api_access",
+      "model_deploy"
+    ],
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "created_at": "2026-09-05T23:03:12.635419+00:00",
+    "last_login": null,
+    "login_attempts": 0,
+    "locked_until": null,
+    "active": true
   }
 }
