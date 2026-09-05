@@ -7,12 +7,15 @@ import jwt
 import bcrypt
 import secrets
 import hashlib
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 import logging
 import json
 import os
 from dataclasses import dataclass, asdict
+
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -191,6 +194,9 @@ class AuthManager:
         """Create a new user"""
         if email in self.users:
             return False, "User already exists"
+
+        if not EMAIL_REGEX.match(email):
+            return False, "Invalid email format"
 
         if role not in self.config.ROLES:
             return False, f"Invalid role. Must be one of: {', '.join(self.config.ROLES)}"

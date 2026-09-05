@@ -40,6 +40,88 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- Streamlit Auth Overlay ---
+def _get_query_params():
+    """Safely get query parameters (Streamlit compatible)."""
+    try:
+        return st.query_params.to_dict()
+    except Exception:
+        try:
+            return dict(st.experimental_get_query_params())
+        except Exception:
+            return {}
+
+def _st_login_form():
+    """Render a login form in the sidebar. Returns True if authenticated."""
+    if "auth_token" not in st.session_state:
+        st.session_state["auth_token"] = None
+    if "auth_user" not in st.session_state:
+        st.session_state["auth_user"] = None
+
+    # Check query param for token (SSO link)
+    params = _get_query_params()
+    if params.get("token"):
+        st.session_state["auth_token"] = params["token"]
+        st.rerun()
+
+    if st.session_state["auth_token"]:
+        return True
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🔐 Authentication")
+    with st.sidebar.form("login_form"):
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_pass")
+        submitted = st.form_submit_button("Sign In")
+        if submitted and email and password:
+            try:
+                import requests as _req
+                resp = _req.post(
+                    f"{API_BASE_URL}/auth/login",
+                    json={"email": email, "password": password},
+                    timeout=10,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    st.session_state["auth_token"] = data["access_token"]
+                    st.session_state["auth_user"] = email
+                    st.sidebar.success("Signed in!")
+                    st.rerun()
+                else:
+                    st.sidebar.error("Invalid credentials")
+            except Exception as e:
+                st.sidebar.error(f"Auth error: {e}")
+
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔑 Forgot Password"):
+        st.session_state["show_reset"] = True
+    if st.session_state.get("show_reset"):
+        with st.sidebar.form("reset_form"):
+            reset_email = st.text_input("Email for reset", key="reset_email")
+            if st.form_submit_button("Send Reset Link") and reset_email:
+                try:
+                    import requests as _req
+                    _req.post(f"{API_BASE_URL}/auth/reset-request",
+                              json={"email": reset_email}, timeout=10)
+                    st.sidebar.info("Reset link sent (if email exists)")
+                except Exception:
+                    st.sidebar.error("Failed to send reset")
+    return False
+
+# Require authentication before loading the dashboard
+if not _st_login_form():
+    st.title("🔐 OWLBAN GROUP AI Dashboard")
+    st.info("Please sign in using the sidebar to access the dashboard.")
+    st.stop()
+
+# Show logged-in user in sidebar
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"Logged in: **{st.session_state.get('auth_user', 'user')}**")
+if st.sidebar.button("🚪 Sign Out"):
+    for key in ("auth_token", "auth_user", "show_reset"):
+        st.session_state.pop(key, None)
+    st.rerun()
+
 # Custom CSS
 st.markdown("""
 <style>
