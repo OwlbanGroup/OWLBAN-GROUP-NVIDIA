@@ -52,6 +52,11 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         bucket = self.buckets[client_ip]
         if not bucket.consume():
             logger.warning(f"Rate limit exceeded for {client_ip}")
+            try:
+                from monitoring.auth_metrics import auth_metrics
+                auth_metrics.record_rate_limit(request.url.path)
+            except Exception:
+                pass
             return JSONResponse(
                 status_code=429,
                 content={"detail": "Too many requests. Please slow down."},

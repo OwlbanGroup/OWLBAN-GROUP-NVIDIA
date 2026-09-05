@@ -1,0 +1,138 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "title": "OWLBAN GROUP - Authentication Monitoring",
+  "uid": "owlban-auth",
+  "tags": ["owlban", "auth"],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Successful Logins (rate)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(owlban_auth_login_total{outcome=\"success\"}[5m]))",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Failed Logins (rate)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(owlban_auth_login_total{outcome=\"invalid_credentials\"}[5m]))",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Active Sessions",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "owlban_auth_active_sessions",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Locked Accounts",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "owlban_auth_account_lockouts",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Login Outcomes by Company",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (company) (rate(owlban_auth_login_total{outcome=\"success\"}[5m]))",
+          "legendFormat": "{{company}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token Generation Rate",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (type) (rate(owlban_auth_token_generated_total[5m]))",
+          "legendFormat": "{{type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate Limit Rejections",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum by (action) (rate(owlban_auth_rate_limit_total[5m]))",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Audit & API Key Activity",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(owlban_auth_audit_events_total[5m]))",
+          "legendFormat": "audit_events"
+        },
+        {
+          "expr": "owlban_auth_api_keys_active",
+          "legendFormat": "api_keys_active"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Login Outcome Distribution",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (increase(owlban_auth_login_total[1h]))",
+          "legendFormat": "{{outcome}}",
+          "format": "time_series"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 27,
+  "version": 1
+}

@@ -99,3 +99,48 @@ groups:
       annotations:
         summary: "High memory usage"
         description: "System memory usage is above 90%."
+
+    - alert: BruteForceAttackDetected
+      expr: rate(owlban_auth_login_total{outcome="invalid_credentials"}[5m]) > 20
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Possible brute force attack"
+        description: "More than 20 failed logins per 5 minutes."
+
+    - alert: HighAccountLockouts
+      expr: owlban_auth_account_lockouts > 5
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High number of locked accounts"
+        description: "More than 5 accounts are currently locked out."
+
+    - alert: RateLimitRejectionsHigh
+      expr: rate(owlban_auth_rate_limit_total[5m]) > 200
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High rate-limit rejections"
+        description: "More than 200 requests rejected per 5 minutes."
+
+    - alert: AbnormalLoginSuccessDrop
+      expr: rate(owlban_auth_login_total{outcome="success"}[15m]) == 0
+      for: 15m
+      labels:
+        severity: info
+      annotations:
+        summary: "No successful logins"
+        description: "No successful logins in the last 15 minutes — possible auth outage."
+
+    - alert: ApiKeyGenerationSpike
+      expr: rate(owlban_auth_api_key_generated_total[5m]) > 50
+      for: 5m
+      labels:
+        severity: info
+      annotations:
+        summary: "API key generation spike"
+        description: "More than 50 API keys generated per 5 minutes — possible abuse."

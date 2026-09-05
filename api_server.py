@@ -63,6 +63,13 @@ try:
 except ImportError:
     AUTH_AVAILABLE = False
 
+# Import monitoring metrics
+try:
+    from monitoring.auth_metrics import auth_metrics
+    AUTH_METRICS_AVAILABLE = True
+except ImportError:
+    AUTH_METRICS_AVAILABLE = False
+
 # Import security middleware
 try:
     from middleware.rate_limiter import RateLimiterMiddleware
@@ -308,6 +315,8 @@ async def register(req: RegisterRequest):
     if not success:
         raise HTTPException(status_code=400, detail=message)
     auth_manager.log_audit_event("user_registered", req.email, {"company": req.company})
+    if AUTH_METRICS_AVAILABLE:
+        auth_metrics.record_audit_event("user_registered", "info")
     return {"message": message}
 
 @fastapi_app.post("/auth/login", response_model=TokenResponse)
@@ -317,9 +326,22 @@ async def login(req: LoginRequest):
         raise HTTPException(status_code=503, detail="Auth system not available")
     success, message, user = authenticate_user(req.email, req.password)
     if not success or user is None:
+        # Record the failed/login outcome for observability (get the user to
+        # know their company; fall back to a generic attribution).
+        company = "OWLBAN_GROUP"
+        source = auth_manager.get_user_by_email(req.email)
+        if source is not None:
+            company = source.company
+        outcome = "locked" if "locked" in (message or "") else "invalid_credentials"
+        if AUTH_METRICS_AVAILABLE:
+            auth_metrics.record_login(outcome, company)
         raise HTTPException(status_code=401, detail=message)
     access_token, refresh_token = auth_manager.generate_tokens(user)
     auth_manager.log_audit_event("user_login", req.email, {})
+    if AUTH_METRICS_AVAILABLE:
+        auth_metrics.record_login("success", user.company)
+        auth_metrics.record_token_generated("access")
+        auth_metrics.record_token_generated("refresh")
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 @fastapi_app.post("/auth/refresh", response_model=dict)
@@ -330,6 +352,9 @@ async def refresh_token(refresh_token: str):
     new_access = auth_manager.refresh_access_token(refresh_token)
     if not new_access:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if AUTH_METRICS_AVAILABLE:
+        auth_metrics.record_token_refreshed()
+        auth_metrics.record_token_generated("access")
     return {"access_token": new_access, "token_type": "bearer"}
 
 @fastapi_app.post("/auth/reset-request", response_model=dict)
@@ -371,6 +396,10 @@ async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
     key = generate_api_key(user["email"], req.name)
     if not key:
         raise HTTPException(status_code=400, detail="Failed to generate API key")
+    if AUTH_METRICS_AVAILABLE:
+        db_user = auth_manager.get_user_by_email(user["email"])
+        company = db_user.company if db_user else "OWLBAN_GROUP"
+        auth_metrics.record_api_key_generated(company)
     return {"api_key": key, "name": req.name}
 
 @fastapi_app.get("/auth/api-keys", response_model=dict)
@@ -400,6 +429,23 @@ async def get_audit(user=Depends(get_current_user)):
     if not db_user or db_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return {"audit_log": auth_manager.get_audit_log()}
+
+@fastapi_app.get("/prometheus/metrics", response_model=str)
+async def prometheus_metrics():
+    """Prometheus TEXT-format auth metrics endpoint (scraped by Prometheus)."""
+    if AUTH_METRICS_AVAILABLE and AUTH_AVAILABLE:
+        # Keep gauges in sync with live auth state before scraping.
+        try:
+            auth_metrics.set_active_sessions(len(auth_manager.sessions))
+            auth_metrics.set_account_lockouts(
+                sum(1 for u in auth_manager.users.values()
+                    if getattr(u, "locked_until", None) is not None)
+            )
+            auth_metrics.set_api_keys_active(len(auth_manager._api_keys or {}))
+        except Exception:
+            logger.exception("Failed to sync auth metric gauges")
+        return auth_metrics.render()
+    return "# TYPE owlban_auth_up gauge\nowlban_auth_up 0\n"
 
 # API endpoints
 @fastapi_app.get("/")
