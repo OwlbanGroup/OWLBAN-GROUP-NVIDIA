@@ -1,39 +1,4 @@
-.....................FF..F...FF....                                      [100%]
-================================== FAILURES ===================================
-__________________ TestQuantumSVMClassifier.test_prediction ___________________
-tests\test_quantum_machine_learning.py:67: in test_prediction
-    self.classifier.fit(X, y)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:121: in fit
-    quantum_kernel = QuantumKernel(feature_map=feature_map, quantum_instance=self.quantum_instance)
-E   TypeError: FidelityQuantumKernel.__init__() got an unexpected keyword argument 'quantum_instance'
-___________________ TestQuantumSVMClassifier.test_training ____________________
-tests\test_quantum_machine_learning.py:56: in test_training
-    self.classifier.fit(X, y)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:121: in fit
-    quantum_kernel = QuantumKernel(feature_map=feature_map, quantum_instance=self.quantum_instance)
-E   TypeError: FidelityQuantumKernel.__init__() got an unexpected keyword argument 'quantum_instance'
-_______________ TestQuantumNeuralNetwork.test_circuit_creation ________________
-tests\test_quantum_machine_learning.py:106: in test_circuit_creation
-    qnn_circuit = self.qnn._create_qnn_circuit()
-quantum_financial_ai\quantum_machine_learning_pipeline.py:265: in _create_qnn_circuit
-    qnn = EstimatorQNN(
-E   TypeError: EstimatorQNN.__init__() got an unexpected keyword argument 'observable'
-____________________ TestQuantumMLPipeline.test_prediction ____________________
-tests\test_quantum_machine_learning.py:144: in test_prediction
-    self.pipeline.train(data)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:357: in train
-    self.model.fit(X_train_split, y_train_split)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:121: in fit
-    quantum_kernel = QuantumKernel(feature_map=feature_map, quantum_instance=self.quantum_instance)
-E   TypeError: FidelityQuantumKernel.__init__() got an unexpected keyword argument 'quantum_instance'
-_____________________ TestQuantumMLPipeline.test_training _____________________
-tests\test_quantum_machine_learning.py:133: in test_training
-    result = self.pipeline.train(data)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:357: in train
-    self.model.fit(X_train_split, y_train_split)
-quantum_financial_ai\quantum_machine_learning_pipeline.py:121: in fit
-    quantum_kernel = QuantumKernel(feature_map=feature_map, quantum_instance=self.quantum_instance)
-E   TypeError: FidelityQuantumKernel.__init__() got an unexpected keyword argument 'quantum_instance'
+...................................                                      [100%]
 ============================== warnings summary ===============================
 api_server.py:159
   C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:159: DeprecationWarning: 
@@ -134,9 +99,3 @@ api_server.py:159
     super().__init__(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ===========================
-FAILED tests\test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_prediction
-FAILED tests\test_quantum_machine_learning.py::TestQuantumSVMClassifier::test_training
-FAILED tests\test_quantum_machine_learning.py::TestQuantumNeuralNetwork::test_circuit_creation
-FAILED tests\test_quantum_machine_learning.py::TestQuantumMLPipeline::test_prediction
-FAILED tests\test_quantum_machine_learning.py::TestQuantumMLPipeline::test_training

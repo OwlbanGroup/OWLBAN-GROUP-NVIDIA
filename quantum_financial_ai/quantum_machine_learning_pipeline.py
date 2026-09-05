@@ -267,7 +267,7 @@ class QuantumNeuralNetwork:
             estimator=estimator,
             input_params=input_params,
             weight_params=weight_params,
-            observable=observable
+            observables=observable
         )
 
         return qnn
