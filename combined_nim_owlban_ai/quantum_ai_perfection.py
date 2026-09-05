@@ -1,25 +1,23 @@
 """
 OWLBAN GROUP - Advanced Quantum Circuit Optimization
-Quantum algorithms for circuit optimization, error correction, and performance enhancement
+
+Quantum algorithms for circuit optimization, error correction, and
+performance enhancement
 """
 
 import numpy as np
-import torch
-import torch.nn as nn
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, Any
 import logging
 from dataclasses import dataclass
-from qiskit import QuantumCircuit, transpile, Aer, execute
-from qiskit.providers.aer import QasmSimulator
-from qiskit.algorithms.optimizers import COBYLA, SPSA
-from qiskit.algorithms import VQE, QAOA
-from qiskit.utils import QuantumInstance
-from qiskit.op_flow import I, X, Z, Y
-from qiskit.circuit.library import TwoLocal, EfficientSU2
-from qiskit.algorithms.minimum_eigensolvers import VQE as VQE_new
-from qiskit.primitives import Estimator
+from qiskit import QuantumCircuit, transpile
+from qiskit_aer import AerSimulator
+from qiskit_algorithms.optimizers import COBYLA, SPSA
+from qiskit_algorithms import VQE, QAOA
+from qiskit.primitives import StatevectorEstimator, StatevectorSampler
+from qiskit.circuit.library import TwoLocal
 import networkx as nx
 from datetime import datetime
+
 
 @dataclass
 class QuantumCircuitOptimization:
@@ -32,6 +30,7 @@ class QuantumCircuitOptimization:
     execution_time: float
     optimization_method: str
 
+
 @dataclass
 class QuantumErrorCorrection:
     """Quantum error correction code result"""
@@ -40,15 +39,16 @@ class QuantumErrorCorrection:
     error_threshold: float
     correction_efficiency: float
 
+
 class QuantumCircuitOptimizer:
     """
     Advanced quantum circuit optimization using machine learning and quantum algorithms
     """
 
     def __init__(self, backend: str = "aer_simulator", optimization_level: int = 3):
-        self.backend = Aer.get_backend(backend)
+        self.backend = AerSimulator()
         self.optimization_level = optimization_level
-        self.quantum_instance = QuantumInstance(self.backend, shots=1024)
+        self.shots = 1024
         self.logger = logging.getLogger("QuantumCircuitOptimizer")
 
         # Initialize optimizers
@@ -59,19 +59,20 @@ class QuantumCircuitOptimizer:
 
         self.logger.info("Initialized Quantum Circuit Optimizer")
 
-    def optimize_circuit_depth(self, circuit: QuantumCircuit) -> QuantumCircuitOptimization:
+    def optimize_circuit_depth(
+        self, circuit: QuantumCircuit
+    ) -> QuantumCircuitOptimization:
         """Optimize quantum circuit for minimal depth using ML techniques"""
         start_time = datetime.utcnow()
 
         original_depth = circuit.depth()
-        original_size = circuit.size()
 
         # Apply Qiskit's built-in optimization
         optimized_circuit = transpile(
             circuit,
             backend=self.backend,
             optimization_level=self.optimization_level,
-            basis_gates=['u1', 'u2', 'u3', 'cx']
+            basis_gates=['rz', 'sx', 'x', 'cx']
         )
 
         # Advanced optimization: Gate commutation and cancellation
@@ -107,17 +108,23 @@ class QuantumCircuitOptimizer:
         # This is a simplified implementation
         # In practice, would use sophisticated commutation analysis
 
-        optimized_instructions = []
+        optimized_instructions: list = []
 
         for instruction in circuit.data:
             gate = instruction[0]
-            qubits = instruction[1]
 
             # Simple commutation: consecutive single-qubit gates
-            if optimized_instructions and self._can_commute(gate, optimized_instructions[-1][0]):
+            if optimized_instructions and self._can_commute(
+                gate, optimized_instructions[-1][0]
+            ):
                 # Swap if beneficial
-                if self._commutation_beneficial(gate, optimized_instructions[-1][0]):
-                    optimized_instructions[-1], instruction = instruction, optimized_instructions[-1]
+                if self._commutation_beneficial(
+                    gate, optimized_instructions[-1][0]
+                ):
+                    (optimized_instructions[-1], instruction) = (
+                        instruction,
+                        optimized_instructions[-1],
+                    )
 
             optimized_instructions.append(instruction)
 
@@ -150,7 +157,9 @@ class QuantumCircuitOptimizer:
         # Simplified implementation
         return circuit
 
-    def _optimize_toffoli_decomposition(self, circuit: QuantumCircuit) -> QuantumCircuit:
+    def _optimize_toffoli_decomposition(
+        self, circuit: QuantumCircuit
+    ) -> QuantumCircuit:
         """Optimize Toffoli gate decompositions"""
         return circuit
 
@@ -167,7 +176,9 @@ class QuantumCircuitOptimizer:
         """Check if commuting gates is beneficial"""
         return False
 
-    def _calculate_circuit_fidelity(self, circuit1: QuantumCircuit, circuit2: QuantumCircuit) -> float:
+    def _calculate_circuit_fidelity(
+        self, circuit1: QuantumCircuit, circuit2: QuantumCircuit
+    ) -> float:
         """Calculate fidelity between two circuits (simplified)"""
         # In practice, would use quantum process tomography
         depth_diff = abs(circuit1.depth() - circuit2.depth())
@@ -176,6 +187,7 @@ class QuantumCircuitOptimizer:
         # Simple heuristic
         fidelity = max(0.5, 1.0 - (depth_diff + size_diff) / 100.0)
         return min(1.0, fidelity)
+
 
 class QuantumErrorCorrectionSystem:
     """
@@ -186,7 +198,9 @@ class QuantumErrorCorrectionSystem:
         self.error_threshold = error_threshold
         self.logger = logging.getLogger("QuantumErrorCorrectionSystem")
 
-    def apply_surface_code(self, logical_circuit: QuantumCircuit) -> QuantumErrorCorrection:
+    def apply_surface_code(
+        self, logical_circuit: QuantumCircuit
+    ) -> QuantumErrorCorrection:
         """Apply surface code error correction"""
         # Simplified surface code implementation
         num_logical_qubits = logical_circuit.num_qubits
@@ -215,7 +229,9 @@ class QuantumErrorCorrectionSystem:
             correction_efficiency=0.95  # Estimated
         )
 
-    def apply_shor_code(self, logical_circuit: QuantumCircuit) -> QuantumErrorCorrection:
+    def apply_shor_code(
+        self, logical_circuit: QuantumCircuit
+    ) -> QuantumErrorCorrection:
         """Apply Shor code for phase and bit flip correction"""
         num_logical_qubits = logical_circuit.num_qubits
         num_physical_qubits = 9 * num_logical_qubits
@@ -249,6 +265,7 @@ class QuantumErrorCorrectionSystem:
             correction_efficiency=0.98  # Shor code is very effective
         )
 
+
 class VariationalQuantumOptimizer:
     """
     Variational quantum algorithms for optimization problems
@@ -256,49 +273,68 @@ class VariationalQuantumOptimizer:
 
     def __init__(self, num_qubits: int = 4):
         self.num_qubits = num_qubits
-        self.estimator = Estimator()
+        self.estimator = StatevectorEstimator()
         self.logger = logging.getLogger("VariationalQuantumOptimizer")
 
-    def optimize_portfolio_vqe(self, returns: np.ndarray, covariance: np.ndarray) -> Dict[str, Any]:
+    def optimize_portfolio_vqe(
+        self, returns: np.ndarray, covariance: np.ndarray
+    ) -> Dict[str, Any]:
         """Use VQE to optimize quantum portfolio"""
         # Define Hamiltonian for portfolio optimization
         hamiltonian = self._create_portfolio_hamiltonian(returns, covariance)
 
         # Variational ansatz
-        ansatz = TwoLocal(num_qubits=self.num_qubits, rotation_blocks='ry', entanglement_blocks='cz')
+        ansatz = TwoLocal(
+            num_qubits=self.num_qubits,
+            rotation_blocks='ry',
+            entanglement_blocks='cz'
+        )
 
         # VQE algorithm
-        vqe = VQE_new(estimator=self.estimator, ansatz=ansatz, optimizer=COBYLA(maxiter=100))
+        vqe = VQE(
+            estimator=self.estimator,
+            ansatz=ansatz,
+            optimizer=COBYLA(maxiter=100)
+        )
 
         # Run optimization
-        result = vqe.compute_eigenvalue(hamiltonian)
+        result = vqe.compute_minimum_eigenvalue(hamiltonian)
 
         return {
             "optimal_value": result.eigenvalue,
-            "optimal_parameters": result.optimal_parameters,
-            "optimal_circuit": result.optimal_circuit,
-            "optimizer_evals": result.optimizer_evals
+            "optimal_parameters": getattr(result, "optimal_parameters", None),
+            "optimal_circuit": getattr(result, "optimal_circuit", None),
+            "optimizer_evals": getattr(result, "optimizer_evals", None)
         }
 
-    def _create_portfolio_hamiltonian(self, returns: np.ndarray, covariance: np.ndarray):
+    def _create_portfolio_hamiltonian(
+        self, returns: np.ndarray, covariance: np.ndarray
+    ):
         """Create Hamiltonian for portfolio optimization"""
         # Simplified Hamiltonian construction
         from qiskit.quantum_info import SparsePauliOp
 
         # Create Pauli operators for portfolio constraints
         pauli_list = []
+        num_qubits = len(returns)
 
         # Expected return term
-        for i in range(len(returns)):
-            pauli_list.append(("Z", [i], -returns[i]))
+        for i in range(num_qubits):
+            label = ["I"] * num_qubits
+            label[i] = "Z"
+            pauli_list.append(("".join(label), -returns[i]))
 
         # Risk term (variance)
         for i in range(len(covariance)):
             for j in range(len(covariance)):
                 if covariance[i, j] != 0:
-                    pauli_list.append(("ZZ", [i, j], covariance[i, j]))
+                    label = ["I"] * num_qubits
+                    label[i] = "Z"
+                    label[j] = "Z"
+                    pauli_list.append(("".join(label), covariance[i, j]))
 
-        return SparsePauliOp.from_list(pauli_list)
+        return SparsePauliOp.from_list(pauli_list).simplify()
+
 
 class QuantumApproximateOptimization:
     """
@@ -315,35 +351,48 @@ class QuantumApproximateOptimization:
         cost_operator = self._create_max_cut_hamiltonian(graph)
 
         # QAOA ansatz
-        qaoa = QAOA(optimizer=COBYLA(maxiter=100), reps=2, quantum_instance=self._get_quantum_instance())
+        qaoa = QAOA(
+            sampler=StatevectorSampler(),
+            optimizer=COBYLA(maxiter=100),
+            reps=2
+        )
 
         # Run QAOA
-        result = qaoa.run(cost_operator)
+        result = qaoa.compute_minimum_eigenvalue(cost_operator)
 
         return {
             "optimal_value": result.eigenvalue,
-            "optimal_parameters": result.optimal_parameters,
+            "optimal_parameters": getattr(result, "optimal_parameters", None),
             "cut_size": -result.eigenvalue,  # Convert back to maximization
-            "solution": result.eigenstate
+            "solution": getattr(result, "eigenstate", None)
         }
 
     def _create_max_cut_hamiltonian(self, graph: nx.Graph):
         """Create Hamiltonian for Max-Cut problem"""
-        from qiskit.op_flow import PauliSumOp
+        from qiskit.quantum_info import SparsePauliOp
 
+        if graph.number_of_nodes() == 0:
+            raise ValueError("Graph has no nodes")
+
+        num_qubits = max(graph.nodes()) + 1
+        identity = SparsePauliOp("I" * num_qubits)
         cost_terms = []
 
         for edge in graph.edges():
             i, j = edge
             # Cost term: (1 - Z_i * Z_j) / 2
-            cost_terms.append(0.5 * (I ^ I) - 0.5 * (Z ^ I)[i] @ (Z ^ I)[j])
+            label = ["I"] * num_qubits
+            label[i] = "Z"
+            label[j] = "Z"
+            zz = SparsePauliOp("".join(label))
+            cost_terms.append(0.5 * identity - 0.5 * zz)
 
-        return sum(cost_terms)
+        if not cost_terms:
+            # No edges: trivial Hamiltonian
+            return identity
 
-    def _get_quantum_instance(self):
-        """Get quantum instance for QAOA"""
-        backend = Aer.get_backend('aer_simulator')
-        return QuantumInstance(backend, shots=1024)
+        return sum(cost_terms).simplify()
+
 
 class QuantumCircuitCompiler:
     """
@@ -354,7 +403,9 @@ class QuantumCircuitCompiler:
         self.logger = logging.getLogger("QuantumCircuitCompiler")
         self.compilation_cache = {}
 
-    def compile_with_ml_optimization(self, high_level_circuit: QuantumCircuit) -> QuantumCircuit:
+    def compile_with_ml_optimization(
+        self, high_level_circuit: QuantumCircuit
+    ) -> QuantumCircuit:
         """Compile circuit using ML-optimized strategies"""
         # Check cache
         circuit_hash = hash(str(high_level_circuit))
@@ -380,13 +431,16 @@ class QuantumCircuitCompiler:
         """High-level circuit optimizations"""
         return circuit  # Placeholder
 
-    def _gate_decomposition_optimization(self, circuit: QuantumCircuit) -> QuantumCircuit:
+    def _gate_decomposition_optimization(
+        self, circuit: QuantumCircuit
+    ) -> QuantumCircuit:
         """Optimize gate decompositions"""
         return circuit  # Placeholder
 
     def _routing_optimization(self, circuit: QuantumCircuit) -> QuantumCircuit:
         """Optimize qubit routing"""
         return circuit  # Placeholder
+
 
 class QuantumAIPerfection:
     """
@@ -404,7 +458,9 @@ class QuantumAIPerfection:
         self.logger = logging.getLogger("QuantumAIPerfection")
         self.logger.info("Initialized Quantum AI Perfection System")
 
-    def optimize_quantum_algorithm(self, algorithm_type: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def optimize_quantum_algorithm(
+        self, algorithm_type: str, parameters: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Optimize quantum algorithm performance"""
         if algorithm_type == "vqe":
             return self._optimize_vqe(parameters)
@@ -418,7 +474,7 @@ class QuantumAIPerfection:
     def _optimize_vqe(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Optimize VQE algorithm"""
         num_qubits = parameters.get('num_qubits', 4)
-        hamiltonian_params = parameters.get('hamiltonian', {})
+        hamiltonian_params = parameters.get('hamiltonian', {})  # noqa: F841
 
         # Create VQE optimizer with custom settings
         self.vqe_optimizer.num_qubits = num_qubits
@@ -471,14 +527,22 @@ class QuantumAIPerfection:
             "optimization_method": "circuit_depth_optimization",
             "original_depth": optimization_result.original_depth,
             "optimized_depth": optimization_result.optimized_depth,
-            "depth_reduction": optimization_result.original_depth - optimization_result.optimized_depth,
+            "depth_reduction": (
+                optimization_result.original_depth
+                - optimization_result.optimized_depth
+            ),
             "fidelity": optimization_result.fidelity,
-            "improvement_factor": optimization_result.original_depth / max(1, optimization_result.optimized_depth)
+            "improvement_factor": (
+                optimization_result.original_depth
+                / max(1, optimization_result.optimized_depth)
+            )
         }
 
         return result
 
-    def apply_error_correction(self, circuit: QuantumCircuit, correction_type: str = "surface") -> QuantumErrorCorrection:
+    def apply_error_correction(
+        self, circuit: QuantumCircuit, correction_type: str = "surface"
+    ) -> QuantumErrorCorrection:
         """Apply quantum error correction to circuit"""
         if correction_type == "surface":
             return self.error_corrector.apply_surface_code(circuit)
@@ -505,7 +569,11 @@ class QuantumAIPerfection:
         """Get system capabilities and optimization features"""
         return {
             "circuit_optimization": {
-                "methods": ["depth_minimization", "gate_count_reduction", "fidelity_optimization"],
+                "methods": [
+                    "depth_minimization",
+                    "gate_count_reduction",
+                    "fidelity_optimization"
+                ],
                 "supported_gates": ["u1", "u2", "u3", "cx", "cz", "ry", "rz"],
                 "max_qubits": 50
             },
@@ -586,7 +654,8 @@ class QuantumAIPerfection:
         # Circuit optimization score
         if "circuit_optimization" in results:
             opt = results["circuit_optimization"]
-            circuit_score = min(1.0, opt["improvement"] / 2.0)  # Max improvement of 2x = perfect score
+            # Max improvement of 2x = perfect score
+            circuit_score = min(1.0, opt["improvement"] / 2.0)
             score_components.append(circuit_score)
 
         # Error correction score
@@ -599,13 +668,15 @@ class QuantumAIPerfection:
         for algo in ["vqe_optimization", "qaoa_optimization"]:
             if algo in results:
                 improvement = results[algo].get("improvement_factor", 1.0)
-                algo_score = min(1.0, improvement / 3.0)  # Max improvement of 3x = perfect score
+                # Max improvement of 3x = perfect score
+                algo_score = min(1.0, improvement / 3.0)
                 score_components.append(algo_score)
 
         if score_components:
-            return np.mean(score_components)
+            return float(np.mean(score_components))
         else:
             return 0.0
+
 
 if __name__ == "__main__":
     # Initialize perfection system
@@ -616,14 +687,25 @@ if __name__ == "__main__":
 
     print("Quantum AI Perfection Test Results:")
     print(f"Perfection Score: {test_results['perfection_score']:.3f}")
-    print(f"Circuit Optimization Improvement: {test_results['test_results']['circuit_optimization']['improvement']:.2f}x")
-    print(f"Error Correction Efficiency: {test_results['test_results']['error_correction']['correction_efficiency']:.3f}")
-    print(f"VQE Improvement: {test_results['test_results']['vqe_optimization']['improvement_factor']:.1f}x")
-    print(f"QAOA Solution Quality: {test_results['test_results']['qaoa_optimization']['solution_quality']:.3f}")
+    opt = test_results['test_results']['circuit_optimization']
+    ec = test_results['test_results']['error_correction']
+    vqe = test_results['test_results']['vqe_optimization']
+    qaoa = test_results['test_results']['qaoa_optimization']
+    print(f"Circuit Optimization Improvement: {opt['improvement']:.2f}x")
+    print(f"Error Correction Efficiency: {ec['correction_efficiency']:.3f}")
+    print(f"VQE Improvement: {vqe['improvement_factor']:.1f}x")
+    print(f"QAOA Solution Quality: {qaoa['solution_quality']:.3f}")
 
     print("\nSystem Capabilities:")
     caps = test_results['capabilities']
-    print(f"- Circuit Optimization: {len(caps['circuit_optimization']['methods'])} methods")
+    va = caps['variational_algorithms']
+    print(
+        "- Circuit Optimization: "
+        f"{len(caps['circuit_optimization']['methods'])} methods"
+    )
     print(f"- Error Correction: {len(caps['error_correction']['codes'])} codes")
-    print(f"- Variational Algorithms: {sum(caps['variational_algorithms'].values())} implemented")
-    print(f"- Quantum Advantage: {caps['performance_metrics']['quantum_advantage']:.0f}x")
+    print(f"- Variational Algorithms: {sum(va.values())} implemented")
+    print(
+        "- Quantum Advantage: "
+        f"{caps['performance_metrics']['quantum_advantage']:.0f}x"
+    )
