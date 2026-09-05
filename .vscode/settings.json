@@ -4,5 +4,7 @@
     "${workspaceFolder}"
   ],
   "python.terminal.activateEnvironment": true,
-  "python.terminal.envFile": "${workspaceFolder}\\.env"
+  "python.terminal.envFile": "${workspaceFolder}\\.env",
+  "ansible.mcpServer.enabled": true,
+  "ansible.ansible.reuseTerminal": true
 }
