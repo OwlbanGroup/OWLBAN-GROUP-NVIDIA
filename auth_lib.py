@@ -405,7 +405,157 @@ class AuthManager:
             self._save_data()
             logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
 
-# Global auth manager instance
+    def create_password_reset_token(self, email: str) -> Optional[str]:
+        """Create a password reset token for a user. Returns the token or None."""
+        user = self.users.get(email)
+        if not user:
+            return None
+        reset_token = secrets.token_urlsafe(48)
+        if not hasattr(self, '_password_reset_tokens'):
+            self._password_reset_tokens = {}
+        self._password_reset_tokens[reset_token] = {
+            'email': email,
+            'expires_at': datetime.now(timezone.utc) + timedelta(hours=1),
+            'used': False,
+        }
+        logger.info(f"Password reset token created for {email}")
+        return reset_token
+
+    def verify_password_reset_token(self, reset_token: str) -> Optional[str]:
+        """Verify a reset token. Returns the associated email if valid, else None."""
+        tokens = getattr(self, '_password_reset_tokens', {})
+        record = tokens.get(reset_token)
+        if not record or record['used']:
+            return None
+        if datetime.now(timezone.utc) > record['expires_at']:
+            return None
+        return record['email']
+
+    def reset_password(self, reset_token: str, new_password: str) -> Tuple[bool, str]:
+        """Reset a user's password using a valid reset token."""
+        email = self.verify_password_reset_token(reset_token)
+        if not email:
+            return False, "Invalid or expired reset token"
+        valid, message = self.validate_password_policy(new_password)
+        if not valid:
+            return False, message
+        user = self.users.get(email)
+        if not user:
+            return False, "User not found"
+        user.password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self._password_reset_tokens[reset_token]['used'] = True
+        for session in self.sessions.values():
+            if session.user_id == user.id:
+                session.active = False
+        self._save_data()
+        logger.info(f"Password reset successful for {email}")
+        return True, "Password reset successful"
+
+    def log_audit_event(self, event_type: str, user_email: str, details: Dict[str, Any],
+                        ip_address: str = None, severity: str = "info"):
+        """Log an audit event for security tracking."""
+        if not hasattr(self, '_audit_log'):
+            self._audit_log = []
+        event = {
+            'event_id': secrets.token_hex(16),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'event_type': event_type,
+            'user_email': user_email,
+            'ip_address': ip_address,
+            'details': details,
+            'severity': severity,
+        }
+        self._audit_log.append(event)
+        if len(self._audit_log) > 10000:
+            self._audit_log = self._audit_log[-10000:]
+        try:
+            audit_file = self.user_store_file.replace('.json', '_audit.json')
+            with open(audit_file, 'w', encoding='utf-8') as f:
+                json.dump(self._audit_log, f, indent=2)
+        except Exception:
+            logger.warning("Failed to persist audit log to file")
+        logger.info(f"Audit event: {event_type} for {user_email}")
+
+    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get recent audit log entries."""
+        log = getattr(self, '_audit_log', [])
+        return log[-limit:]
+
+    def generate_api_key(self, email: str, name: str = "default") -> Optional[str]:
+        """Generate a new API key for a user."""
+        user = self.users.get(email)
+        if not user:
+            return None
+        api_key = f"owlban_{secrets.token_urlsafe(48)}"
+        if not hasattr(self, '_api_keys'):
+            self._api_keys = {}
+        self._api_keys[api_key] = {
+            'email': email,
+            'name': name,
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'active': True,
+            'last_used': None,
+        }
+        self._save_api_keys()
+        logger.info(f"API key created for {email}")
+        return api_key
+
+    def verify_api_key(self, api_key: str) -> Optional[Dict[str, Any]]:
+        """Verify an API key. Returns user info if valid."""
+        keys = getattr(self, '_api_keys', {})
+        record = keys.get(api_key)
+        if not record or not record['active']:
+            return None
+        user = self.users.get(record['email'])
+        if not user or not user.active:
+            return None
+        record['last_used'] = datetime.now(timezone.utc).isoformat()
+        return {'email': record['email'], 'name': record['name'], 'user': user}
+
+    def revoke_api_key(self, email: str, api_key: str) -> bool:
+        """Revoke a user's API key."""
+        keys = getattr(self, '_api_keys', {})
+        record = keys.get(api_key)
+        if not record or record['email'] != email:
+            return False
+        record['active'] = False
+        self._save_api_keys()
+        logger.info(f"API key revoked for {email}")
+        return True
+
+    def list_api_keys(self, email: str) -> List[Dict[str, Any]]:
+        """List all API keys for a user."""
+        keys = getattr(self, '_api_keys', {})
+        result = []
+        for key, record in keys.items():
+            if record['email'] == email:
+                result.append({
+                    'name': record['name'],
+                    'created_at': record['created_at'],
+                    'active': record['active'],
+                    'last_used': record['last_used'],
+                    'key_preview': key[:12] + '...',
+                })
+        return result
+
+    def _save_api_keys(self):
+        """Persist API keys to file."""
+        try:
+            keys_file = self.user_store_file.replace('.json', '_apikeys.json')
+            with open(keys_file, 'w', encoding='utf-8') as f:
+                json.dump(getattr(self, '_api_keys', {}), f, indent=2)
+        except Exception:
+            logger.warning("Failed to save API keys")
+
+    def _load_api_keys(self):
+        """Load API keys from file."""
+        try:
+            keys_file = self.user_store_file.replace('.json', '_apikeys.json')
+            with open(keys_file, 'r', encoding='utf-8') as f:
+                self._api_keys = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._api_keys = {}
+
 auth_manager = AuthManager()
 
 # Convenience functions
@@ -421,6 +571,18 @@ def create_user(email: str, username: str, password: str, role: str = 'user',
 
 def get_user_by_email(email: str):
     return auth_manager.get_user_by_email(email)
+
+def request_password_reset(email: str):
+    return auth_manager.create_password_reset_token(email)
+
+def reset_password(reset_token: str, new_password: str):
+    return auth_manager.reset_password(reset_token, new_password)
+
+def generate_api_key(email: str, name: str = "default"):
+    return auth_manager.generate_api_key(email, name)
+
+def verify_api_key(api_key: str):
+    return auth_manager.verify_api_key(api_key)
 
 if __name__ == '__main__':
     # Test the auth system

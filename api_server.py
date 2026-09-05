@@ -12,9 +12,9 @@ import time
 from typing import Annotated, Dict, List, Optional, Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security import HTTPBasic, HTTPBasicCredentials, HTTPBearer, OAuth2PasswordBearer
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -54,6 +54,22 @@ try:
     DB_MANAGER_AVAILABLE = True
 except ImportError:
     DB_MANAGER_AVAILABLE = False
+
+# Import auth library
+try:
+    from auth_lib import authenticate_user, verify_token, create_user, auth_manager
+    from auth_lib import request_password_reset, reset_password, generate_api_key, verify_api_key
+    AUTH_AVAILABLE = True
+except ImportError:
+    AUTH_AVAILABLE = False
+
+# Import security middleware
+try:
+    from middleware.rate_limiter import RateLimiterMiddleware
+    from middleware.security_headers import SecurityHeadersMiddleware
+    MIDDLEWARE_AVAILABLE = True
+except ImportError:
+    MIDDLEWARE_AVAILABLE = False
 
 # Constants
 REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
@@ -204,6 +220,9 @@ fastapi_app.state.ngc_catalog_manager = None
 
 # Add middleware
 fastapi_app.add_middleware(MonitoringMiddleware)
+if MIDDLEWARE_AVAILABLE:
+    fastapi_app.add_middleware(SecurityHeadersMiddleware)
+    fastapi_app.add_middleware(RateLimiterMiddleware)
 fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -233,6 +252,154 @@ class LogEntry(BaseModel):
     message: str
     timestamp: str
     source: str
+
+# --- Auth Pydantic Models ---
+class RegisterRequest(BaseModel):
+    email: str
+    username: str
+    password: str
+    company: str = "OWLBAN_GROUP"
+    role: str = "user"
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+class ResetRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class APIKeyRequest(BaseModel):
+    name: str = "default"
+
+class UserProfile(BaseModel):
+    email: str
+    username: str
+    role: str
+    company: str
+
+# JWT Bearer token dependency
+bearer_scheme = HTTPBearer(auto_error=False)
+
+def get_current_user(credentials: HTTPBearer = Depends(bearer_scheme)):
+    """Extract and verify JWT token from Authorization header."""
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    payload = verify_token(credentials.credentials)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return payload
+
+# --- Auth Endpoints ---
+@fastapi_app.post("/auth/register", response_model=dict, status_code=201)
+async def register(req: RegisterRequest):
+    """Register a new user account."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success, message = create_user(req.email, req.username, req.password, req.role, req.company)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    auth_manager.log_audit_event("user_registered", req.email, {"company": req.company})
+    return {"message": message}
+
+@fastapi_app.post("/auth/login", response_model=TokenResponse)
+async def login(req: LoginRequest):
+    """Authenticate user and return JWT tokens."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success, message, user = authenticate_user(req.email, req.password)
+    if not success or user is None:
+        raise HTTPException(status_code=401, detail=message)
+    access_token, refresh_token = auth_manager.generate_tokens(user)
+    auth_manager.log_audit_event("user_login", req.email, {})
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+@fastapi_app.post("/auth/refresh", response_model=dict)
+async def refresh_token(refresh_token: str):
+    """Refresh an access token using a valid refresh token."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    new_access = auth_manager.refresh_access_token(refresh_token)
+    if not new_access:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    return {"access_token": new_access, "token_type": "bearer"}
+
+@fastapi_app.post("/auth/reset-request", response_model=dict)
+async def reset_request(req: ResetRequest):
+    """Request a password reset token."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    token = request_password_reset(req.email)
+    response = {"message": "If the email exists, a reset link has been sent"}
+    if token:
+        response["reset_token"] = token  # Demo only; production sends via email
+    return response
+
+@fastapi_app.post("/auth/reset-password", response_model=dict)
+async def reset_password_endpoint(req: ResetPasswordRequest):
+    """Reset password using a valid reset token."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success, message = reset_password(req.token, req.new_password)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": message}
+
+@fastapi_app.get("/auth/profile", response_model=dict)
+async def get_profile(user=Depends(get_current_user)):
+    """Get current user profile."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    db_user = auth_manager.get_user_by_email(user["email"])
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"email": db_user.email, "username": db_user.username, "role": db_user.role, "company": db_user.company, "mfa_enabled": db_user.mfa_enabled}
+
+@fastapi_app.post("/auth/api-keys", response_model=dict)
+async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
+    """Generate a new API key for the authenticated user."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    key = generate_api_key(user["email"], req.name)
+    if not key:
+        raise HTTPException(status_code=400, detail="Failed to generate API key")
+    return {"api_key": key, "name": req.name}
+
+@fastapi_app.get("/auth/api-keys", response_model=dict)
+async def list_api_keys(user=Depends(get_current_user)):
+    """List all API keys for the authenticated user."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    keys = auth_manager.list_api_keys(user["email"])
+    return {"api_keys": keys}
+
+@fastapi_app.delete("/auth/api-keys/{api_key}", response_model=dict)
+async def delete_api_key(api_key: str, user=Depends(get_current_user)):
+    """Revoke an API key."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success = auth_manager.revoke_api_key(user["email"], api_key)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to revoke key")
+    return {"message": "API key revoked"}
+
+@fastapi_app.get("/auth/audit-log", response_model=dict)
+async def get_audit(user=Depends(get_current_user)):
+    """Get audit log (admin only)."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    db_user = auth_manager.get_user_by_email(user["email"])
+    if not db_user or db_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return {"audit_log": auth_manager.get_audit_log()}
 
 # API endpoints
 @fastapi_app.get("/")
