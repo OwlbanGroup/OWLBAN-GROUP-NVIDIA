@@ -59,6 +59,7 @@ except ImportError:
 try:
     from auth_lib import authenticate_user, verify_token, create_user, auth_manager
     from auth_lib import request_password_reset, reset_password, generate_api_key, verify_api_key
+    from auth_lib import setup_mfa, enable_mfa, disable_mfa, verify_mfa_code, mfa_required
     AUTH_AVAILABLE = True
 except ImportError:
     AUTH_AVAILABLE = False
@@ -74,6 +75,7 @@ except ImportError:
 try:
     from middleware.rate_limiter import RateLimiterMiddleware
     from middleware.security_headers import SecurityHeadersMiddleware
+    from middleware.csrf import CSRFProtectionMiddleware, generate_csrf_token, validate_csrf_token
     MIDDLEWARE_AVAILABLE = True
 except ImportError:
     MIDDLEWARE_AVAILABLE = False
@@ -230,6 +232,9 @@ fastapi_app.add_middleware(MonitoringMiddleware)
 if MIDDLEWARE_AVAILABLE:
     fastapi_app.add_middleware(SecurityHeadersMiddleware)
     fastapi_app.add_middleware(RateLimiterMiddleware)
+    # CSRF protect cookie-authenticated surfaces; auth/API routes are exempt
+    # because they use stateless bearer tokens (no CSRF cookie dependency).
+    fastapi_app.add_middleware(CSRFProtectionMiddleware)
 fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -271,6 +276,7 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+    mfa_code: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -286,6 +292,9 @@ class ResetPasswordRequest(BaseModel):
 
 class APIKeyRequest(BaseModel):
     name: str = "default"
+
+class MFACodeRequest(BaseModel):
+    code: str
 
 class UserProfile(BaseModel):
     email: str
@@ -336,6 +345,19 @@ async def login(req: LoginRequest):
         if AUTH_METRICS_AVAILABLE:
             auth_metrics.record_login(outcome, company)
         raise HTTPException(status_code=401, detail=message)
+    # Enforce MFA if enabled: require a valid TOTP code on this step.
+    if mfa_required(req.email):
+        if not req.mfa_code:
+            if AUTH_METRICS_AVAILABLE:
+                auth_metrics.record_audit_event("mfa_challenge_required", req.email)
+            raise HTTPException(
+                status_code=428,  # Precondition Required
+                detail="MFA code required",
+            )
+        if not verify_mfa_code(req.email, req.mfa_code):
+            if AUTH_METRICS_AVAILABLE:
+                auth_metrics.record_login("mfa_failed", user.company)
+            raise HTTPException(status_code=401, detail="Invalid MFA code")
     access_token, refresh_token = auth_manager.generate_tokens(user)
     auth_manager.log_audit_event("user_login", req.email, {})
     if AUTH_METRICS_AVAILABLE:
@@ -429,6 +451,49 @@ async def get_audit(user=Depends(get_current_user)):
     if not db_user or db_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return {"audit_log": auth_manager.get_audit_log()}
+
+
+@fastapi_app.post("/auth/mfa/setup", response_model=dict)
+async def mfa_setup(user=Depends(get_current_user)):
+    """Generate a TOTP secret and provisioning URI for the current user."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    result = setup_mfa(user["email"])
+    if not result:
+        raise HTTPException(status_code=400, detail="MFA is already enabled or user not found")
+    if AUTH_METRICS_AVAILABLE:
+        auth_metrics.record_audit_event("mfa_setup", user["email"])
+    return {"secret": result["secret"], "provisioning_uri": result["provisioning_uri"]}
+
+
+@fastapi_app.post("/auth/mfa/enable", response_model=dict)
+async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
+    """Verify a TOTP code and enable MFA for the current user."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success, message = enable_mfa(user["email"], req.code)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": message}
+
+
+@fastapi_app.post("/auth/mfa/disable", response_model=dict)
+async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
+    """Disable MFA for the current user after verifying a TOTP code."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    success, message = disable_mfa(user["email"], req.code)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": message}
+
+
+@fastapi_app.get("/auth/mfa/status", response_model=dict)
+async def mfa_status(user=Depends(get_current_user)):
+    """Return whether MFA is enabled for the current user."""
+    if not AUTH_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Auth system not available")
+    return {"mfa_required": mfa_required(user["email"])}
 
 @fastapi_app.get("/prometheus/metrics", response_model=str)
 async def prometheus_metrics():

@@ -198,3 +198,55 @@ node src/server.js
 # Run all tests
 .\.venv\Scripts\python.exe -m pytest tests/ -v
 ```
+
+---
+
+## Security Hardening: MFA
+
+Multi-Factor Authentication (TOTP, RFC 6238) protects accounts with a
+dependency-free stdlib implementation compatible with Google/Microsoft
+authenticator apps.
+
+**API endpoints:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/auth/mfa/setup` | Generate a TOTP secret + provisioning URI (scan with an authenticator) |
+| POST | `/auth/mfa/enable` | Verify a code and enable MFA (`{"code":"123456"}`) |
+| POST | `/auth/mfa/disable` | Verify a code and disable MFA |
+| GET  | `/auth/mfa/status` | Return whether MFA is required |
+
+**MFA login flow:**
+
+1. `POST /auth/login` with email + password.
+2. If MFA is enabled and no `mfa_code` is present, the API returns `HTTP 428`
+   (`{"detail":"MFA code required"}`).
+3. Re-submit login including the `mfa_code` from the authenticator app.
+4. On success, JWT access/refresh tokens are returned.
+
+**Pairing (library):**
+
+```python
+from auth_lib import TOTP, auth_manager
+setup = auth_manager.setup_mfa("user@owlban.com")
+print(setup["secret"])
+print(setup["provisioning_uri"])  # scan with authenticator, then:
+ok, msg = auth_manager.enable_mfa("user@owlban.com", "123456")
+```
+
+---
+
+## Security Hardening: CSRF
+
+Cookie-authenticated web surfaces use the double-submit-cookie pattern
+(stateless). A `csrf_token` cookie (`samesite=lax`) is set on every response;
+state-changing methods must echo it in the `X-CSRF-Token` header (or a
+`csrf_token` form field). API auth routes (`/auth/*`) and `/prometheus/metrics`
+are exempt because they use stateless bearer tokens.
+
+```python
+from middleware.csrf import generate_csrf_token, validate_csrf_token
+token = generate_csrf_token()
+assert validate_csrf_token(token, token)     # True
+assert validate_csrf_token(token, "attack")  # False (timing-safe)
+```

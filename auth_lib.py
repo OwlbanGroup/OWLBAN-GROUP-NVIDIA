@@ -7,6 +7,9 @@ import jwt
 import bcrypt
 import secrets
 import hashlib
+import hmac
+import base64
+import struct
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
@@ -20,6 +23,68 @@ EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class TOTP:
+    """RFC 6238 TOTP (dependency-free, stdlib only).
+
+    Time-based one-time password generation and verification compatible with
+    standard authenticator apps. Uses SHA-1, a 30s period, and 6-digit codes
+    per the common authenticator profile (RFC 4226/6238).
+    """
+
+    DIGITS = 6
+    PERIOD = 30
+    ALGORITHM = hashlib.sha1
+
+    @staticmethod
+    def generate_secret(byte_length: int = 20) -> str:
+        """Return a base32-encoded random secret suitable for OTP."""
+        return base64.b32encode(secrets.token_bytes(byte_length)).decode().rstrip('=')
+
+    @staticmethod
+    def _hotp(secret: bytes, counter: int) -> str:
+        """RFC 4226 HOTP for the given 8-byte big-endian counter."""
+        msg = struct.pack('>Q', counter)
+        digest = hmac.new(secret, msg, TOTP.ALGORITHM).digest()
+        offset = digest[-1] & 0x0F
+        binary = struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF
+        return str(binary % (10 ** TOTP.DIGITS)).zfill(TOTP.DIGITS)
+
+    @staticmethod
+    def _secret_to_bytes(secret: str) -> bytes:
+        padded = secret.upper() + '=' * ((8 - len(secret) % 8) % 8)
+        return base64.b32decode(padded)
+
+    @classmethod
+    def code_for_time(cls, secret: str, at_time: Optional[float] = None) -> str:
+        """Generate the current (or given epoch) TOTP code for a secret."""
+        import time as _time
+        now = at_time if at_time is not None else _time.time()
+        counter = int(now // cls.PERIOD)
+        return cls._hotp(cls._secret_to_bytes(secret), counter)
+
+    @classmethod
+    def verify(cls, secret: str, code: str, window: int = 1) -> bool:
+        """Verify a TOTP code, allowing `window` steps of clock drift."""
+        import time as _time
+        if not code or not code.isdigit():
+            return False
+        current_counter = int(_time.time() // cls.PERIOD)
+        for counter in range(current_counter - window, current_counter + window + 1):
+            expected = cls._hotp(cls._secret_to_bytes(secret), counter)
+            if hmac.compare_digest(expected, code):
+                return True
+        return False
+
+    @classmethod
+    def provisioning_uri(cls, secret: str, email: str, issuer: str = "OWLBAN GROUP") -> str:
+        """Return an otpauth:// provisioning URI for authenticator apps."""
+        from urllib.parse import quote
+        otpauth = f"otpauth://totp/{quote(issuer)}:{quote(email)}?secret={secret}"
+        otpauth += f"&issuer={quote(issuer)}&period={cls.PERIOD}&digits={cls.DIGITS}"
+        return otpauth
+
 
 @dataclass
 class User:
@@ -564,6 +629,74 @@ class AuthManager:
         except Exception:
             logger.warning("Failed to save API keys")
 
+    # -------------------- Multi-Factor Authentication (TOTP) --------------------
+
+    def setup_mfa(self, email: str) -> Optional[Dict[str, Any]]:
+        """Generate and store a TOTP secret for a user.
+
+        Returns dict with 'secret' and 'provisioning_uri', or None if the user
+        does not exist or MFA is already enabled.
+        """
+        user = self.users.get(email)
+        if not user:
+            return None
+        if user.mfa_enabled:
+            return None
+        secret = TOTP.generate_secret()
+        user.mfa_secret = secret
+        uri = TOTP.provisioning_uri(secret, email)
+        self._save_data()
+        logger.info(f"MFA setup initiated for {email}")
+        return {"secret": secret, "provisioning_uri": uri}
+
+    def enable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
+        """Verify a TOTP code and enable MFA for the user."""
+        user = self.users.get(email)
+        if not user:
+            return False, "User not found"
+        if not user.mfa_secret:
+            return False, "MFA not initialized. Call setup_mfa first."
+        if not TOTP.verify(user.mfa_secret, code):
+            self.log_audit_event("mfa_enable_failed", email, {}, severity="warning")
+            return False, "Invalid TOTP code"
+        user.mfa_enabled = True
+        self._save_data()
+        self.log_audit_event("mfa_enabled", email, {})
+        logger.info(f"MFA enabled for {email}")
+        return True, "MFA enabled"
+
+    def disable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
+        """Disable MFA for a user after verifying a valid TOTP code."""
+        user = self.users.get(email)
+        if not user:
+            return False, "User not found"
+        if not user.mfa_enabled:
+            return False, "MFA not enabled"
+        if not TOTP.verify(user.mfa_secret, code):
+            self.log_audit_event("mfa_disable_failed", email, {}, severity="warning")
+            return False, "Invalid TOTP code"
+        user.mfa_enabled = False
+        user.mfa_secret = None
+        self._save_data()
+        self.log_audit_event("mfa_disabled", email, {})
+        logger.info(f"MFA disabled for {email}")
+        return True, "MFA disabled"
+
+    def verify_mfa_code(self, email: str, code: str) -> bool:
+        """Verify a TOTP code for a user (used during MFA login step)."""
+        user = self.users.get(email)
+        if not user or not user.mfa_secret:
+            return False
+        ok = TOTP.verify(user.mfa_secret, code)
+        if not ok:
+            self.log_audit_event("mfa_login_failed", email, {}, severity="warning")
+        return ok
+
+    def mfa_required(self, email: str) -> bool:
+        """Return whether MFA is required for a user."""
+        user = self.users.get(email)
+        return bool(user and user.mfa_enabled)
+
     def _load_api_keys(self):
         """Load API keys from file."""
         try:
@@ -600,6 +733,21 @@ def generate_api_key(email: str, name: str = "default"):
 
 def verify_api_key(api_key: str):
     return auth_manager.verify_api_key(api_key)
+
+def setup_mfa(email: str):
+    return auth_manager.setup_mfa(email)
+
+def enable_mfa(email: str, code: str):
+    return auth_manager.enable_mfa(email, code)
+
+def disable_mfa(email: str, code: str):
+    return auth_manager.disable_mfa(email, code)
+
+def verify_mfa_code(email: str, code: str):
+    return auth_manager.verify_mfa_code(email, code)
+
+def mfa_required(email: str):
+    return auth_manager.mfa_required(email)
 
 if __name__ == '__main__':
     # Test the auth system
