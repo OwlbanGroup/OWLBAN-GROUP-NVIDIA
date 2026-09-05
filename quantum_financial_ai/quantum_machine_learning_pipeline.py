@@ -22,9 +22,8 @@ try:
 except ImportError:  # qiskit-machine-learning < 0.7
     from qiskit_machine_learning.kernels import QuantumKernel
 from qiskit_machine_learning.neural_networks import EstimatorQNN, SamplerQNN
-from qiskit_machine_learning.circuit.library import QNNCircuit
 from qiskit_machine_learning.optimizers import COBYLA, SPSA
-from qiskit.primitives import Sampler, Estimator
+from qiskit.primitives import StatevectorSampler, StatevectorEstimator
 from qiskit_aer import Aer
 
 # Classical ML for comparison
@@ -119,7 +118,7 @@ class QuantumSVMClassifier:
 
         # Create quantum kernel
         feature_map = ZZFeatureMap(X_train.shape[1], reps=2)
-        quantum_kernel = QuantumKernel(feature_map=feature_map, quantum_instance=self.quantum_instance)
+        quantum_kernel = QuantumKernel(feature_map=feature_map)
 
         # Train quantum SVM
         self.qsvc = QSVC(quantum_kernel=quantum_kernel, C=self.C)
@@ -198,7 +197,7 @@ class VariationalQuantumClassifier:
         vqc_circuit = self._create_vqc_circuit()
 
         # Create VQC
-        sampler = Sampler()
+        sampler = StatevectorSampler()
         self.vqc = VQC(
             sampler=sampler,
             feature_map=ZZFeatureMap(self.n_qubits, reps=1),
@@ -262,7 +261,7 @@ class QuantumNeuralNetwork:
         observable = SparsePauliOp.from_list([("Z", 1.0)])
 
         # Create QNN
-        estimator = Estimator()
+        estimator = StatevectorEstimator()
         qnn = EstimatorQNN(
             circuit=qc,
             estimator=estimator,
