@@ -15,7 +15,7 @@ import time
 # Quantum ML imports
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit import Parameter, ParameterVector
-from qiskit.circuit.library import ZZFeatureMap, RealAmplitudes, EfficientSU2
+from qiskit.circuit.library import zz_feature_map, real_amplitudes
 from qiskit_machine_learning.algorithms import QSVC, VQC
 try:
     from qiskit_machine_learning.kernels import FidelityQuantumKernel as QuantumKernel
@@ -24,7 +24,7 @@ except ImportError:  # qiskit-machine-learning < 0.7
 from qiskit_machine_learning.neural_networks import EstimatorQNN, SamplerQNN
 from qiskit_machine_learning.optimizers import COBYLA, SPSA
 from qiskit.primitives import StatevectorSampler, StatevectorEstimator
-from qiskit_aer import Aer
+from qiskit_aer import AerSimulator
 
 # Classical ML for comparison
 from sklearn.svm import SVC
@@ -65,9 +65,9 @@ class QuantumFeatureEncoder:
         self.scaler = StandardScaler()
 
         if encoding_type == "zz_feature_map":
-            self.feature_map = ZZFeatureMap(n_qubits, reps=2)
+            self.feature_map = zz_feature_map(n_qubits, reps=2)
         elif encoding_type == "real_amplitudes":
-            self.feature_map = RealAmplitudes(n_qubits, reps=2)
+            self.feature_map = real_amplitudes(n_qubits, reps=2)
         else:
             raise ValueError(f"Unknown encoding type: {encoding_type}")
 
@@ -107,7 +107,7 @@ class QuantumSVMClassifier:
     def __init__(self, C: float = 1.0, kernel_type: str = "rbf", quantum_instance=None):
         self.C = C
         self.kernel_type = kernel_type
-        self.quantum_instance = quantum_instance or Aer.get_backend('qasm_simulator')
+        self.quantum_instance = quantum_instance or AerSimulator()
         self.qsvc = None
         self.classical_svm = SVC(C=C, kernel=kernel_type, probability=True)
         self.training_time = 0.0
@@ -117,7 +117,7 @@ class QuantumSVMClassifier:
         start_time = time.time()
 
         # Create quantum kernel
-        feature_map = ZZFeatureMap(X_train.shape[1], reps=2)
+        feature_map = zz_feature_map(X_train.shape[1], reps=2)
         quantum_kernel = QuantumKernel(feature_map=feature_map)
 
         # Train quantum SVM
@@ -169,7 +169,7 @@ class VariationalQuantumClassifier:
     def __init__(self, n_qubits: int = 4, n_layers: int = 3, optimizer=None, quantum_instance=None):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
-        self.quantum_instance = quantum_instance or Aer.get_backend('qasm_simulator')
+        self.quantum_instance = quantum_instance or AerSimulator()
         self.optimizer = optimizer or COBYLA(maxiter=100)
         self.vqc = None
         self.training_time = 0.0
@@ -177,10 +177,10 @@ class VariationalQuantumClassifier:
     def _create_vqc_circuit(self) -> QuantumCircuit:
         """Create variational quantum circuit"""
         # Feature map
-        feature_map = ZZFeatureMap(self.n_qubits, reps=1)
+        feature_map = zz_feature_map(self.n_qubits, reps=1)
 
         # Variational ansatz
-        ansatz = RealAmplitudes(self.n_qubits, reps=self.n_layers)
+        ansatz = real_amplitudes(self.n_qubits, reps=self.n_layers)
 
         # Combine into VQC circuit
         qc = QuantumCircuit(self.n_qubits)
@@ -200,8 +200,8 @@ class VariationalQuantumClassifier:
         sampler = StatevectorSampler()
         self.vqc = VQC(
             sampler=sampler,
-            feature_map=ZZFeatureMap(self.n_qubits, reps=1),
-            ansatz=RealAmplitudes(self.n_qubits, reps=self.n_layers),
+            feature_map=zz_feature_map(self.n_qubits, reps=1),
+            ansatz=real_amplitudes(self.n_qubits, reps=self.n_layers),
             optimizer=self.optimizer
         )
 

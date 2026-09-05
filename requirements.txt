@@ -17,6 +17,7 @@ scikit-learn
 qiskit>=2.0
 qiskit-aer
 qiskit-machine-learning>=0.9
+qiskit-algorithms>=0.4
 
 # Testing
 pytest

@@ -219,6 +219,8 @@ class QuantumMarketPredictor:
 
         # Remove NaN values
         valid_indices = ~np.isnan(x_features).any(axis=(1,2)) & ~np.isnan(y_returns)
+        # Index tensors with an explicit bool mask (uint8 indexing is deprecated in torch)
+        valid_indices = torch.as_tensor(valid_indices, dtype=torch.bool)
         x_features = x_features[valid_indices]
         y_returns = y_returns[valid_indices]
 

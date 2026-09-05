@@ -19,10 +19,12 @@ import hashlib
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit import Parameter, ParameterVector
 from qiskit_machine_learning.algorithms import VQC
-from qiskit_machine_learning.kernels import QuantumKernel
+try:
+    from qiskit_machine_learning.kernels import FidelityQuantumKernel as QuantumKernel
+except ImportError:  # qiskit-machine-learning < 0.7
+    from qiskit_machine_learning.kernels import QuantumKernel
 from qiskit_machine_learning.optimizers import COBYLA, SPSA
-from qiskit.primitives import Sampler, Estimator
-from qiskit_aer import Aer
+from qiskit_aer import AerSimulator
 
 # Local imports
 from .quantum_machine_learning_pipeline import (
@@ -99,7 +101,7 @@ class QuantumFederatedClient:
                  quantum_instance=None, privacy_mechanism=None):
         self.client_id = client_id
         self.local_data = local_data
-        self.quantum_instance = quantum_instance or Aer.get_backend('qasm_simulator')
+        self.quantum_instance = quantum_instance or AerSimulator()
         self.privacy = privacy_mechanism or QuantumDifferentialPrivacy()
         self.logger = logging.getLogger(f"QuantumFederatedClient-{client_id}")
 
