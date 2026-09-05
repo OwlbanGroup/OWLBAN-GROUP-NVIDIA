@@ -139,6 +139,47 @@ class Session:
     user_agent: Optional[str] = None
     active: bool = True
 
+
+@dataclass
+class OAuthClient:
+    """Registered OAuth2 client (confidential or public)."""
+    client_id: str
+    client_secret: Optional[str]
+    name: str
+    redirect_uris: List[str]
+    scopes: List[str]
+    created_at: datetime = None
+    active: bool = True
+
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.now(timezone.utc)
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = asdict(self)
+        if isinstance(data.get("created_at"), datetime):
+            data["created_at"] = data["created_at"].isoformat()
+        return data
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "OAuthClient":
+        if data.get("created_at") and isinstance(data["created_at"], str):
+            data["created_at"] = datetime.fromisoformat(data["created_at"])
+        return cls(**data)
+
+
+def pkce_s256_challenge(verifier: str) -> str:
+    """Return the PKCE S256 code_challenge for a code_verifier (RFC 7636)."""
+    import hashlib as _hashlib
+    digest = _hashlib.sha256(verifier.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def generate_pkce_verifier() -> str:
+    """Generate a high-entropy PKCE code_verifier (43-128 chars)."""
+    return secrets.token_urlsafe(64)[:64]
+
+
 class AuthConfig:
     """Authentication configuration"""
     JWT_SECRET = os.getenv('JWT_SECRET', secrets.token_hex(32))
@@ -706,6 +747,196 @@ class AuthManager:
         except (FileNotFoundError, json.JSONDecodeError):
             self._api_keys = {}
 
+    # -------------------- OAuth2 Authorization Server --------------------
+
+    def register_oauth_client(self, name: str, redirect_uris: List[str],
+                              scopes: List[str], confidential: bool = True) -> Dict[str, str]:
+        """Register a new OAuth2 client. Returns client_id/client_secret."""
+        client_id = f"oac_{secrets.token_urlsafe(24)}"
+        client_secret = secrets.token_urlsafe(48) if confidential else None
+        client = OAuthClient(
+            client_id=client_id,
+            client_secret=client_secret,
+            name=name,
+            redirect_uris=redirect_uris,
+            scopes=scopes,
+        )
+        self._oauth_clients[client_id] = client
+        self._save_oauth_clients()
+        logger.info(f"OAuth2 client registered: {name} ({client_id})")
+        return {"client_id": client_id, "client_secret": client_secret}
+
+    def get_oauth_client(self, client_id: str) -> Optional[OAuthClient]:
+        """Fetch a registered OAuth2 client by ID."""
+        client = self._oauth_clients.get(client_id)
+        if client and client.active:
+            return client
+        return None
+
+    def revoke_oauth_client(self, client_id: str) -> bool:
+        """Deactivate an OAuth2 client."""
+        client = self._oauth_clients.get(client_id)
+        if not client:
+            return False
+        client.active = False
+        self._save_oauth_clients()
+        logger.info(f"OAuth2 client revoked: {client_id}")
+        return True
+
+    def list_oauth_clients(self) -> List[Dict[str, Any]]:
+        """Return registered OAuth clients (excluding client_secret)."""
+        return [
+            {
+                "client_id": c.client_id,
+                "name": c.name,
+                "redirect_uris": c.redirect_uris,
+                "scopes": c.scopes,
+                "created_at": c.created_at.isoformat(),
+                "active": c.active,
+            }
+            for c in self._oauth_clients.values()
+        ]
+
+    def preauthorize_code(self, client_id: str, user_email: str, redirect_uri: str,
+                          code_challenge: Optional[str] = None,
+                          code_challenge_method: str = "S256",
+                          scope: Optional[List[str]] = None,
+                          expires_seconds: int = 600) -> Optional[str]:
+        """Create a short-lived, single-use authorization code for a user.
+
+        Called after the resource owner authenticates and grants consent.
+        Returns the opaque code, or None if the client/redirect is invalid.
+        """
+        client = self.get_oauth_client(client_id)
+        if not client:
+            return None
+        if redirect_uri not in client.redirect_uris:
+            logger.warning(f"OAuth redirect_uri not registered: {redirect_uri}")
+            return None
+        if code_challenge_method not in ("S256", "plain"):
+            return None
+
+        code = secrets.token_urlsafe(48)
+        self._oauth_codes[code] = {
+            "client_id": client_id,
+            "user_email": user_email,
+            "redirect_uri": redirect_uri,
+            "scope": scope or client.scopes,
+            "code_challenge": code_challenge,
+            "code_challenge_method": code_challenge_method,
+            "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_seconds),
+            "used": False,
+        }
+        self._save_oauth_codes()
+        logger.info(f"OAuth authorization code issued to {client_id} for {user_email}")
+        return code
+
+    # === OAuth methods continue below ===
+
+    def exchange_code_for_tokens(self, code: str, redirect_uri: str,
+                                 code_verifier: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Exchange an authorization code for JWT access/refresh tokens (RFC 6749 §4.1.3).
+
+        Enforces single-use, expiry, redirect_uri match, and PKCE verification.
+        Returns a dict with access_token/refresh_token/token_type/expires_in and
+        user context, or None on any validation failure.
+        """
+        record = self._oauth_codes.get(code)
+        if not record or record["used"]:
+            return None
+        if datetime.now(timezone.utc) > record["expires_at"]:
+            return None
+        if record["redirect_uri"] != redirect_uri:
+            logger.warning("OAuth token exchange redirect_uri mismatch")
+            return None
+
+        if record.get("code_challenge"):
+            if not code_verifier:
+                logger.warning("OAuth token exchange missing PKCE code_verifier")
+                return None
+            if record["code_challenge_method"] == "S256":
+                if pkce_s256_challenge(code_verifier) != record["code_challenge"]:
+                    logger.warning("OAuth PKCE S256 verification failed")
+                    return None
+            else:  # plain
+                if code_verifier != record["code_challenge"]:
+                    logger.warning("OAuth PKCE plain verification failed")
+                    return None
+
+        record["used"] = True
+        self._save_oauth_codes()
+
+        user = self.users.get(record["user_email"])
+        if not user or not user.active:
+            return None
+
+        access_token, refresh_token = self.generate_tokens(user)
+        granted = record["scope"] or user.permissions
+        self.log_audit_event("oauth_token_exchange", user.email,
+                             {"client_id": record["client_id"], "scope": granted})
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "expires_in": self.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "scope": granted,
+            "email": user.email,
+        }
+
+    @property
+    def _oauth_clients(self) -> Dict[str, OAuthClient]:
+        if not hasattr(self, "_oauth_clients_store"):
+            self._oauth_clients_store = {}
+            fname = self.user_store_file.replace('.json', '_oauth_clients.json')
+            try:
+                if os.path.exists(fname):
+                    with open(fname, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                        self._oauth_clients_store = {
+                            cid: OAuthClient.from_dict(data) for cid, data in raw.items()
+                        }
+            except Exception:
+                self._oauth_clients_store = {}
+        return self._oauth_clients_store
+
+    @property
+    def _oauth_codes(self) -> Dict[str, Dict[str, Any]]:
+        if not hasattr(self, "_oauth_codes_store"):
+            self._oauth_codes_store = {}
+            fname = self.user_store_file.replace('.json', '_oauth_codes.json')
+            try:
+                if os.path.exists(fname):
+                    with open(fname, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                        for rec in raw.values():
+                            if rec.get("expires_at") and isinstance(rec["expires_at"], str):
+                                rec["expires_at"] = datetime.fromisoformat(rec["expires_at"])
+                        self._oauth_codes_store = raw
+            except Exception:
+                self._oauth_codes_store = {}
+        return self._oauth_codes_store
+
+    def _save_oauth_clients(self):
+        try:
+            fname = self.user_store_file.replace('.json', '_oauth_clients.json')
+            data = {cid: c.to_dict() for cid, c in self._oauth_clients.items()}
+            with open(fname, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            logger.warning("Failed to save OAuth clients")
+
+    def _save_oauth_codes(self):
+        try:
+            fname = self.user_store_file.replace('.json', '_oauth_codes.json')
+            data = dict(self._oauth_codes)
+            for rec in data.values():
+                if isinstance(rec.get("expires_at"), datetime):
+                    rec["expires_at"] = rec["expires_at"].isoformat()
+            with open(fname, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            logger.warning("Failed to save OAuth authorization codes")
+
 auth_manager = AuthManager()
 
 # Convenience functions
@@ -748,6 +979,29 @@ def verify_mfa_code(email: str, code: str):
 
 def mfa_required(email: str):
     return auth_manager.mfa_required(email)
+
+def register_oauth_client(name: str, redirect_uris: List[str], scopes: List[str],
+                          confidential: bool = True):
+    return auth_manager.register_oauth_client(name, redirect_uris, scopes, confidential)
+
+def get_oauth_client(client_id: str):
+    return auth_manager.get_oauth_client(client_id)
+
+def list_oauth_clients():
+    return auth_manager.list_oauth_clients()
+
+def revoke_oauth_client(client_id: str):
+    return auth_manager.revoke_oauth_client(client_id)
+
+def preauthorize_code(client_id: str, user_email: str, redirect_uri: str,
+                      code_challenge: str = None, code_challenge_method: str = "S256",
+                      scope: List[str] = None, expires_seconds: int = 600):
+    return auth_manager.preauthorize_code(client_id, user_email, redirect_uri,
+                                          code_challenge, code_challenge_method,
+                                          scope, expires_seconds)
+
+def exchange_code_for_tokens(code: str, redirect_uri: str, code_verifier: str = None):
+    return auth_manager.exchange_code_for_tokens(code, redirect_uri, code_verifier)
 
 if __name__ == '__main__':
     # Test the auth system
