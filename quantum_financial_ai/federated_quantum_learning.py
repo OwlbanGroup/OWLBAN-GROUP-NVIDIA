@@ -3,39 +3,29 @@ Federated Quantum Learning
 OWLBAN GROUP - Privacy-preserving distributed quantum machine learning
 """
 
-# Add logger attribute to QuantumFederatedClient
-# This was missing in the class definition
+import hashlib
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from typing import List, Dict, Optional, Any
 
 import numpy as np
-import torch
-import logging
-from typing import List, Dict, Tuple, Optional, Any, Union
-from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import time
-import hashlib
 
 # Quantum ML imports
-from qiskit import QuantumCircuit, transpile
-from qiskit.circuit import Parameter, ParameterVector
-from qiskit_machine_learning.algorithms import VQC
-try:
-    from qiskit_machine_learning.kernels import FidelityQuantumKernel as QuantumKernel
-except ImportError:  # qiskit-machine-learning < 0.7
-    from qiskit_machine_learning.kernels import QuantumKernel
-from qiskit_machine_learning.optimizers import COBYLA, SPSA
-from qiskit_aer import AerSimulator
+from qiskit_aer import AerSimulator  # type: ignore[import-not-found]
 
 # Local imports
 from .quantum_machine_learning_pipeline import (
     QuantumMLPipeline,
     FinancialFeatureData,
-    QuantumFeatureEncoder
 )
+
 
 @dataclass
 class FederatedQuantumModel:
     """Represents a quantum model in the federated learning network"""
+
     client_id: str
     model_parameters: np.ndarray
     local_data_size: int
@@ -43,9 +33,11 @@ class FederatedQuantumModel:
     quantum_advantage: float
     checksum: str  # For integrity verification
 
+
 @dataclass
 class FederatedQuantumUpdate:
     """Update from a client in federated learning"""
+
     client_id: str
     model_update: np.ndarray
     data_size: int
@@ -53,9 +45,11 @@ class FederatedQuantumUpdate:
     timestamp: float
     signature: str  # For security
 
+
 @dataclass
 class FederatedQuantumResult:
     """Result of federated quantum learning"""
+
     global_model: np.ndarray
     client_updates: List[FederatedQuantumUpdate]
     convergence_metric: float
@@ -63,6 +57,7 @@ class FederatedQuantumResult:
     quantum_federation_advantage: float
     total_training_time: float
     participating_clients: int
+
 
 class QuantumDifferentialPrivacy:
     """
@@ -74,7 +69,9 @@ class QuantumDifferentialPrivacy:
         self.delta = delta
         self.privacy_budget_used = 0.0
 
-    def add_gaussian_noise(self, gradients: np.ndarray, sensitivity: float) -> np.ndarray:
+    def add_gaussian_noise(
+        self, gradients: np.ndarray, sensitivity: float
+    ) -> np.ndarray:
         """Add Gaussian noise to gradients for differential privacy"""
         sigma = sensitivity * np.sqrt(2 * np.log(1.25 / self.delta)) / self.epsilon
         noise = np.random.normal(0, sigma, gradients.shape)
@@ -92,13 +89,19 @@ class QuantumDifferentialPrivacy:
         """Get remaining privacy budget"""
         return max(0, self.epsilon - self.privacy_budget_used)
 
+
 class QuantumFederatedClient:
     """
     Client participating in federated quantum learning
     """
 
-    def __init__(self, client_id: str, local_data: FinancialFeatureData,
-                 quantum_instance=None, privacy_mechanism=None):
+    def __init__(
+        self,
+        client_id: str,
+        local_data: FinancialFeatureData,
+        quantum_instance=None,
+        privacy_mechanism=None,
+    ):
         self.client_id = client_id
         self.local_data = local_data
         self.quantum_instance = quantum_instance or AerSimulator()
@@ -107,11 +110,12 @@ class QuantumFederatedClient:
 
         # Initialize local quantum model
         self.local_model = QuantumMLPipeline(model_type="vqc", n_qubits=4)
-        self.local_parameters = None
+        self.local_parameters: Optional[np.ndarray] = None
         self.training_round = 0
 
-    def train_local_model(self, global_parameters: Optional[np.ndarray] = None,
-                         rounds: int = 1) -> FederatedQuantumUpdate:
+    def train_local_model(
+        self, global_parameters: Optional[np.ndarray] = None, rounds: int = 1
+    ) -> FederatedQuantumUpdate:
         """Train local quantum model on private data"""
         start_time = time.time()
 
@@ -120,8 +124,13 @@ class QuantumFederatedClient:
             self.local_parameters = global_parameters.copy()
         else:
             # Train from scratch
-            result = self.local_model.train(self.local_data)
-            self.local_parameters = np.random.random(20)  # Simplified parameter representation
+            self.local_model.train(self.local_data)
+            self.local_parameters = np.random.random(
+                20
+            )  # Simplified parameter representation
+
+        # Ensure local_parameters is not None before training
+        assert self.local_parameters is not None
 
         # Perform local training rounds
         for _ in range(rounds):
@@ -131,7 +140,9 @@ class QuantumFederatedClient:
             self.local_parameters += noise
 
             # Apply differential privacy
-            self.local_parameters = self.privacy.clip_gradients(self.local_parameters, 1.0)
+            self.local_parameters = self.privacy.clip_gradients(
+                self.local_parameters, 1.0
+            )
             self.local_parameters = self.privacy.add_gaussian_noise(
                 self.local_parameters, 0.1
             )
@@ -139,6 +150,7 @@ class QuantumFederatedClient:
         self.training_round += rounds
 
         # Create update with integrity check
+        assert self.local_parameters is not None
         update_data = self.local_parameters.copy()
         checksum = hashlib.sha256(update_data.tobytes()).hexdigest()
 
@@ -148,11 +160,14 @@ class QuantumFederatedClient:
             data_size=len(self.local_data.features),
             round_number=self.training_round,
             timestamp=time.time(),
-            signature=checksum
+            signature=checksum,
         )
 
         training_time = time.time() - start_time
-        self.logger.info(f"Client {self.client_id} completed local training in {training_time:.2f}s")
+        self.logger.info(
+            "Client %s completed local training in %.2fs",
+            self.client_id, training_time
+        )
 
         return update
 
@@ -161,18 +176,23 @@ class QuantumFederatedClient:
         expected_checksum = hashlib.sha256(update.model_update.tobytes()).hexdigest()
         return expected_checksum == update.signature
 
+
 class QuantumFederatedServer:
     """
     Central server coordinating federated quantum learning
     """
 
-    def __init__(self, min_clients: int = 3, max_rounds: int = 10,
-                 convergence_threshold: float = 1e-4):
+    def __init__(
+        self,
+        min_clients: int = 3,
+        max_rounds: int = 10,
+        convergence_threshold: float = 1e-4,
+    ):
         self.min_clients = min_clients
         self.max_rounds = max_rounds
         self.convergence_threshold = convergence_threshold
 
-        self.global_model = None
+        self.global_model: Optional[np.ndarray] = None
         self.clients: Dict[str, QuantumFederatedClient] = {}
         self.round_history: List[Dict[str, Any]] = []
 
@@ -181,12 +201,14 @@ class QuantumFederatedServer:
     def register_client(self, client: QuantumFederatedClient):
         """Register a client for federated learning"""
         self.clients[client.client_id] = client
-        self.logger.info(f"Registered client: {client.client_id}")
+        self.logger.info("Registered client: %s", client.client_id)
 
     def initialize_global_model(self):
         """Initialize the global quantum model"""
         if len(self.clients) < self.min_clients:
-            raise ValueError(f"Need at least {self.min_clients} clients, got {len(self.clients)}")
+            raise ValueError(
+                f"Need at least {self.min_clients} clients, got {len(self.clients)}"
+            )
 
         # Initialize with average of client models or random initialization
         client_params = []
@@ -199,9 +221,13 @@ class QuantumFederatedServer:
         self.global_model = np.mean(client_params, axis=0)
         self.logger.info("Initialized global quantum model")
 
-    def federated_averaging(self, client_updates: List[FederatedQuantumUpdate]) -> np.ndarray:
+    def federated_averaging(
+        self, client_updates: List[FederatedQuantumUpdate]
+    ) -> np.ndarray:
         """Perform federated averaging of quantum model updates"""
         if not client_updates:
+            if self.global_model is None:
+                raise ValueError("Global model not initialized")
             return self.global_model
 
         # Weighted averaging based on local data sizes
@@ -217,20 +243,37 @@ class QuantumFederatedServer:
 
         # Update global model with momentum-like averaging
         momentum = 0.9
-        self.global_model = momentum * self.global_model + (1 - momentum) * averaged_update
+        if self.global_model is None:
+            self.global_model = averaged_update
+        else:
+            self.global_model = (
+                momentum * self.global_model
+                + (1 - momentum) * averaged_update
+            )
 
+        if self.global_model is None:
+            raise ValueError("Global model update failed")
         return self.global_model
 
-    def check_convergence(self, old_model: np.ndarray, new_model: np.ndarray) -> float:
+    def check_convergence(
+        self, old_model: np.ndarray, new_model: np.ndarray
+    ) -> float:
         """Check convergence of the global model"""
         if old_model is None:
-            return float('inf')
+            return float("inf")
 
         # Calculate parameter change as convergence metric
-        param_change = np.linalg.norm(new_model - old_model) / np.linalg.norm(old_model)
+        norm_old = np.linalg.norm(old_model)
+        if norm_old == 0:
+            return float("inf")
+        param_change = float(
+            np.linalg.norm(new_model - old_model) / norm_old
+        )
         return param_change
 
-    def run_federated_learning(self, max_rounds: Optional[int] = None) -> FederatedQuantumResult:
+    def run_federated_learning(
+        self, max_rounds: Optional[int] = None
+    ) -> FederatedQuantumResult:
         """Run the complete federated learning process"""
         start_time = time.time()
         max_rounds = max_rounds or self.max_rounds
@@ -238,10 +281,15 @@ class QuantumFederatedServer:
         if self.global_model is None:
             self.initialize_global_model()
 
+        # Ensure global_model is initialized
+        assert self.global_model is not None
+
         all_updates = []
 
         for round_num in range(max_rounds):
-            self.logger.info(f"Starting federated learning round {round_num + 1}")
+            self.logger.info(
+                "Starting federated learning round %d", round_num + 1
+            )
 
             # Collect updates from clients
             round_updates = []
@@ -251,7 +299,9 @@ class QuantumFederatedServer:
             with ThreadPoolExecutor(max_workers=len(self.clients)) as executor:
                 futures = []
                 for client in self.clients.values():
-                    future = executor.submit(client.train_local_model, self.global_model, rounds=1)
+                    future = executor.submit(
+                        client.train_local_model, self.global_model, rounds=1
+                    )
                     futures.append(future)
 
                 for future in as_completed(futures):
@@ -265,6 +315,7 @@ class QuantumFederatedServer:
                 self.global_model = self.federated_averaging(round_updates)
 
             # Check convergence
+            assert self.global_model is not None
             convergence_metric = self.check_convergence(old_model, self.global_model)
 
             # Record round statistics
@@ -272,26 +323,36 @@ class QuantumFederatedServer:
                 "round": round_num + 1,
                 "clients_participated": len(round_updates),
                 "convergence_metric": convergence_metric,
-                "global_model_norm": np.linalg.norm(self.global_model)
+                "global_model_norm": float(np.linalg.norm(self.global_model)),
             }
             self.round_history.append(round_stats)
 
-            self.logger.info(f"Round {round_num + 1} completed. Convergence: {convergence_metric:.6f}")
+            self.logger.info(
+                "Round %d completed. Convergence: %.6f",
+                round_num + 1, convergence_metric
+            )
 
             # Early stopping if converged
             if convergence_metric < self.convergence_threshold:
-                self.logger.info(f"Converged after {round_num + 1} rounds")
+                self.logger.info("Converged after %d rounds", round_num + 1)
                 break
 
         total_time = time.time() - start_time
 
         # Calculate quantum federation advantage
         # This would be compared to non-federated learning
-        quantum_advantage = 1.5  # Placeholder - would be calculated based on performance metrics
+        quantum_advantage = (
+            1.5  # Placeholder - would be calculated based on
+            # performance metrics
+        )
 
         # Calculate total privacy budget used
-        total_privacy_budget = sum(client.privacy.privacy_budget_used
-                                 for client in self.clients.values())
+        total_privacy_budget = sum(
+            client.privacy.privacy_budget_used for client in self.clients.values()
+        )
+
+        # Ensure global_model is not None before creating result
+        assert self.global_model is not None
 
         result = FederatedQuantumResult(
             global_model=self.global_model,
@@ -300,28 +361,36 @@ class QuantumFederatedServer:
             privacy_budget=total_privacy_budget,
             quantum_federation_advantage=quantum_advantage,
             total_training_time=total_time,
-            participating_clients=len(self.clients)
+            participating_clients=len(self.clients),
         )
 
-        self.logger.info(f"Federated learning completed in {total_time:.2f}s with {len(all_updates)} total updates")
+        self.logger.info(
+            "Federated learning completed in %.2fs with %d total updates",
+            total_time, len(all_updates)
+        )
         return result
 
     def validate_client_update(self, update: FederatedQuantumUpdate) -> bool:
         """Validate a client update for security and integrity"""
         client = self.clients.get(update.client_id)
         if not client:
-            self.logger.warning(f"Unknown client: {update.client_id}")
+            self.logger.warning("Unknown client: %s", update.client_id)
             return False
 
         # Validate update integrity
         if not client.validate_update_integrity(update):
-            self.logger.warning(f"Invalid update signature from client: {update.client_id}")
+            self.logger.warning(
+                "Invalid update signature from client: %s", update.client_id
+            )
             return False
 
         # Check for malicious updates (simplified anomaly detection)
         param_norm = np.linalg.norm(update.model_update)
         if param_norm > 10.0:  # Threshold for suspicious updates
-            self.logger.warning(f"Suspicious update from client {update.client_id}: norm={param_norm}")
+            self.logger.warning(
+                "Suspicious update from client %s: norm=%s",
+                update.client_id, param_norm
+            )
             return False
 
         return True
@@ -334,13 +403,24 @@ class QuantumFederatedServer:
         stats = {
             "total_clients": len(self.clients),
             "total_rounds": len(self.round_history),
-            "final_convergence": self.round_history[-1]["convergence_metric"] if self.round_history else None,
-            "average_clients_per_round": np.mean([r["clients_participated"] for r in self.round_history]),
-            "global_model_norm": np.linalg.norm(self.global_model) if self.global_model is not None else None,
-            "federation_efficiency": len(self.round_history) / self.max_rounds
+            "final_convergence": (
+                self.round_history[-1]["convergence_metric"]
+                if self.round_history
+                else None
+            ),
+            "average_clients_per_round": np.mean(
+                [r["clients_participated"] for r in self.round_history]
+            ),
+            "global_model_norm": (
+                np.linalg.norm(self.global_model)
+                if self.global_model is not None
+                else None
+            ),
+            "federation_efficiency": len(self.round_history) / self.max_rounds,
         }
 
         return stats
+
 
 class QuantumSecureAggregation:
     """
@@ -360,7 +440,9 @@ class QuantumSecureAggregation:
             keys[f"client_{i}"] = np.random.randint(1, self.prime)
         return keys
 
-    def secure_aggregation(self, client_updates: List[FederatedQuantumUpdate]) -> np.ndarray:
+    def secure_aggregation(
+        self, client_updates: List[FederatedQuantumUpdate]
+    ) -> np.ndarray:
         """Perform secure aggregation using cryptographic primitives"""
         if len(client_updates) != self.num_clients:
             raise ValueError("Need updates from all clients for secure aggregation")
@@ -375,14 +457,15 @@ class QuantumSecureAggregation:
             aggregated += masked_update
 
         # Remove masks
-        for client_id in self.client_keys:
-            mask = self.client_keys[client_id] % 1000
+        for client_id, key in self.client_keys.items():
+            mask = key % 1000
             aggregated -= mask
 
         # Average the result
         aggregated /= len(client_updates)
 
         return aggregated
+
 
 class FederatedQuantumLearningManager:
     """
@@ -394,9 +477,12 @@ class FederatedQuantumLearningManager:
         self.active_federations: Dict[str, QuantumFederatedServer] = {}
         self.completed_experiments: List[FederatedQuantumResult] = []
 
-    def create_financial_federation(self, federation_id: str,
-                                   client_data: List[FinancialFeatureData],
-                                   min_clients: int = 3) -> QuantumFederatedServer:
+    def create_financial_federation(
+        self,
+        federation_id: str,
+        client_data: List[FinancialFeatureData],
+        min_clients: int = 3,
+    ) -> QuantumFederatedServer:
         """Create a new federated learning federation for financial applications"""
 
         server = QuantumFederatedServer(min_clients=min_clients)
@@ -405,16 +491,22 @@ class FederatedQuantumLearningManager:
         for i, data in enumerate(client_data):
             client_id = f"financial_client_{i}"
             privacy_mechanism = QuantumDifferentialPrivacy(epsilon=1.0)
-            client = QuantumFederatedClient(client_id, data, privacy_mechanism=privacy_mechanism)
+            client = QuantumFederatedClient(
+                client_id, data, privacy_mechanism=privacy_mechanism
+            )
             server.register_client(client)
 
         self.active_federations[federation_id] = server
-        self.logger.info(f"Created financial federation {federation_id} with {len(client_data)} clients")
+        self.logger.info(
+            "Created financial federation %s with %d clients",
+            federation_id, len(client_data)
+        )
 
         return server
 
-    def run_federated_experiment(self, federation_id: str,
-                               max_rounds: int = 10) -> FederatedQuantumResult:
+    def run_federated_experiment(
+        self, federation_id: str, max_rounds: int = 10
+    ) -> FederatedQuantumResult:
         """Run a federated learning experiment"""
 
         if federation_id not in self.active_federations:
@@ -424,7 +516,7 @@ class FederatedQuantumLearningManager:
         result = server.run_federated_learning(max_rounds=max_rounds)
 
         self.completed_experiments.append(result)
-        self.logger.info(f"Completed federated experiment {federation_id}")
+        self.logger.info("Completed federated experiment %s", federation_id)
 
         return result
 
@@ -436,10 +528,21 @@ class FederatedQuantumLearningManager:
 
         comparison = {
             "total_experiments": len(self.completed_experiments),
-            "average_convergence": np.mean([exp.convergence_metric for exp in self.completed_experiments]),
-            "average_training_time": np.mean([exp.total_training_time for exp in self.completed_experiments]),
-            "average_quantum_advantage": np.mean([exp.quantum_federation_advantage for exp in self.completed_experiments]),
-            "total_clients_across_experiments": sum(exp.participating_clients for exp in self.completed_experiments)
+            "average_convergence": np.mean(
+                [exp.convergence_metric for exp in self.completed_experiments]
+            ),
+            "average_training_time": np.mean(
+                [exp.total_training_time for exp in self.completed_experiments]
+            ),
+            "average_quantum_advantage": np.mean(
+                [
+                    exp.quantum_federation_advantage
+                    for exp in self.completed_experiments
+                ]
+            ),
+            "total_clients_across_experiments": sum(
+                exp.participating_clients for exp in self.completed_experiments
+            ),
         }
 
         return comparison
@@ -453,11 +556,16 @@ class FederatedQuantumLearningManager:
         server = self.active_federations[federation_id]
 
         if server.global_model is None:
-            self.logger.error(f"No trained model available for federation {federation_id}")
+            self.logger.error(
+                "No trained model available for federation %s", federation_id
+            )
             return False
 
         # Simulate model deployment
-        self.logger.info(f"Deploying global model from federation {federation_id} to {deployment_target}")
+        self.logger.info(
+            "Deploying global model from federation %s to %s",
+            federation_id, deployment_target
+        )
 
         # In practice, this would save the model and deploy to production systems
         # For now, just log the deployment
@@ -465,15 +573,19 @@ class FederatedQuantumLearningManager:
             "federation_id": federation_id,
             "deployment_target": deployment_target,
             "model_parameters": len(server.global_model),
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
-        self.logger.info(f"Model deployment completed: {deployment_info}")
+        self.logger.info(
+            "Model deployment completed: %s", deployment_info
+        )
         return True
 
+
 # Utility functions for federated quantum learning
-def create_distributed_financial_data(num_clients: int = 5,
-                                    samples_per_client: int = 1000) -> List[FinancialFeatureData]:
+def create_distributed_financial_data(
+    num_clients: int = 5, samples_per_client: int = 1000
+) -> List[FinancialFeatureData]:
     """Create distributed financial datasets for federated learning simulation"""
 
     client_datasets = []
@@ -498,14 +610,13 @@ def create_distributed_financial_data(num_clients: int = 5,
         feature_names = [f"feature_{j}" for j in range(n_features)]
 
         data = FinancialFeatureData(
-            features=features,
-            labels=labels,
-            feature_names=feature_names
+            features=features, labels=labels, feature_names=feature_names
         )
 
         client_datasets.append(data)
 
     return client_datasets
+
 
 def simulate_quantum_federated_learning_demo():
     """Demonstrate federated quantum learning with synthetic data"""
@@ -515,7 +626,9 @@ def simulate_quantum_federated_learning_demo():
 
     # Create distributed financial data
     print("📊 Creating distributed financial datasets...")
-    client_datasets = create_distributed_financial_data(num_clients=5, samples_per_client=500)
+    client_datasets = create_distributed_financial_data(
+        num_clients=5, samples_per_client=500
+    )
     print(f"✅ Created {len(client_datasets)} client datasets")
 
     # Initialize federated learning manager
@@ -524,7 +637,9 @@ def simulate_quantum_federated_learning_demo():
     # Create financial federation
     print("🏦 Setting up financial federation...")
     federation_id = "quantum_financial_federation"
-    server = manager.create_financial_federation(federation_id, client_datasets, min_clients=3)
+    server = manager.create_financial_federation(
+        federation_id, client_datasets, min_clients=3
+    )
     print(f"✅ Created federation with {len(server.clients)} clients")
 
     # Run federated learning
@@ -549,15 +664,23 @@ def simulate_quantum_federated_learning_demo():
 
     # Deploy model
     print("🚀 Deploying global model...")
-    deployment_success = manager.deploy_global_model(federation_id, "production_quantum_ml")
+    deployment_success = manager.deploy_global_model(
+        federation_id, "production_quantum_ml"
+    )
     print(f"✅ Model deployment: {'Successful' if deployment_success else 'Failed'}")
 
     print("\n🎯 Federated Quantum Learning Demo Completed!")
-    print("This demonstrates privacy-preserving, distributed quantum ML across financial institutions.")
+    print(
+        "This demonstrates privacy-preserving, "
+        "distributed quantum ML across financial institutions."
+    )
+
 
 if __name__ == "__main__":
     # Set up logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
     # Run demonstration
     simulate_quantum_federated_learning_demo()

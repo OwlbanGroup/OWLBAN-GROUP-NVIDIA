@@ -3,23 +3,29 @@ Example Usage of Quantum Machine Learning Pipeline
 OWLBAN GROUP - Demonstrating quantum ML for financial applications
 """
 
-import numpy as np
-import pandas as pd
 import logging
 import time
-from quantum_machine_learning_pipeline import (
+
+import numpy as np
+from .quantum_machine_learning_pipeline import (
     QuantumMLPipeline,
     FinancialQuantumMLApplication,
     create_synthetic_financial_data,
-    FinancialFeatureData
+    FinancialFeatureData,
 )
+from quantum_financial_ai.quantum_portfolio_optimizer import (
+    QuantumPortfolioOptimizer,
+    PortfolioAsset,
+)
+
 
 def setup_logging():
     """Set up logging configuration"""
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
 
 def demonstrate_basic_quantum_ml():
     """Demonstrate basic quantum ML pipeline usage"""
@@ -59,6 +65,7 @@ def demonstrate_basic_quantum_ml():
     for metric, value in performance.items():
         print(f"  {metric}: {value:.4f}")
 
+
 def demonstrate_financial_applications():
     """Demonstrate financial-specific quantum ML applications"""
     print("\n=== Financial Quantum ML Applications Demo ===")
@@ -70,39 +77,47 @@ def demonstrate_financial_applications():
     print("Creating specialized financial pipelines...")
 
     # Buy/sell signal classifier
-    buy_sell_pipeline = app.create_buy_sell_classifier(n_qubits=4)
+    _buy_sell_pipeline = app.create_buy_sell_classifier(n_qubits=4)
     print("✓ Buy/Sell classifier created")
 
     # Market direction predictor
-    market_pipeline = app.create_market_predictor(n_qubits=4)
+    _market_pipeline = app.create_market_predictor(n_qubits=4)
     print("✓ Market predictor created")
 
     # Risk assessment model
-    risk_pipeline = app.create_risk_assessor(n_qubits=4)
+    _risk_pipeline = app.create_risk_assessor(n_qubits=4)
     print("✓ Risk assessor created")
+
+    # Use variables to avoid unused warnings
+    _ = _buy_sell_pipeline, _market_pipeline, _risk_pipeline
 
     # Create synthetic financial data for each task
     print("Training models on synthetic financial data...")
 
     # Buy/sell data
     buy_sell_data = create_synthetic_financial_data(n_samples=300, n_features=4)
-    buy_sell_result = app.train_on_financial_signals("buy_sell", buy_sell_data)
+    buy_sell_result = app.train_on_financial_data("buy_sell", buy_sell_data)
     print(f"Buy/sell accuracy: {buy_sell_result.accuracy:.4f}")
     # Market prediction data
     market_data = create_synthetic_financial_data(n_samples=300, n_features=4)
-    market_result = app.train_on_financial_signals("market_prediction", market_data)
+    market_result = app.train_on_financial_data("market_prediction", market_data)
     print(f"Market prediction accuracy: {market_result.accuracy:.4f}")
     # Risk assessment data
     risk_data = create_synthetic_financial_data(n_samples=300, n_features=4)
-    risk_result = app.train_on_financial_signals("risk_assessment", risk_data)
+    risk_result = app.train_on_financial_data("risk_assessment", risk_data)
     print(f"Risk assessment accuracy: {risk_result.accuracy:.4f}")
     # Generate performance report
     print("Generating performance report...")
     report = app.get_pipeline_performance_report()
     print("Performance Report:")
     print(f"Number of pipelines: {len(report['pipelines'])}")
-    for name, info in report['pipelines'].items():
-        print(f"  {name}: {info['model_type']} ({info['n_qubits']} qubits) - {info['status']}")
+    for name, info in report["pipelines"].items():
+        model_info = (
+            f"  {name}: {info['model_type']} "
+            f"({info['n_qubits']} qubits) - {info['status']}"
+        )
+        print(model_info)
+
 
 def demonstrate_quantum_advantage():
     """Demonstrate quantum advantage over classical methods"""
@@ -125,21 +140,26 @@ def demonstrate_quantum_advantage():
             print(f"  Accuracy: {result.accuracy:.4f}")
             print(f"  Quantum advantage: {result.quantum_advantage:.4f}")
             print(f"  Training time: {result.training_time:.2f} seconds")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"  Error with {model_type}: {str(e)}")
 
     # Compare results
     print("\nComparison of Quantum ML Models:")
     print("-" * 50)
     for model_type, result in results.items():
-        print(f"{model_type.upper():<15} | Acc: {result.accuracy:.4f} | Q-Adv: {result.quantum_advantage:.4f} | Time: {result.training_time:.2f}s")
+        line = (
+            f"{model_type.upper():<15} | Acc: {result.accuracy:.4f} "
+            f"| Q-Adv: {result.quantum_advantage:.4f} "
+            f"| Time: {result.training_time:.2f}s"
+        )
+        print(line)
+
+
 def demonstrate_real_world_integration():
     """Demonstrate integration with existing financial systems"""
     print("\n=== Real-World Integration Demo ===")
 
     # Simulate integration with existing portfolio optimizer
-    from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer, PortfolioAsset
-
     print("Integrating with Quantum Portfolio Optimizer...")
 
     # Create portfolio optimizer
@@ -150,7 +170,7 @@ def demonstrate_real_world_integration():
         PortfolioAsset("AAPL", 0.12, 0.25, 150.0, 100),
         PortfolioAsset("GOOGL", 0.10, 0.22, 2800.0, 50),
         PortfolioAsset("MSFT", 0.15, 0.20, 300.0, 75),
-        PortfolioAsset("TSLA", 0.25, 0.35, 800.0, 25)
+        PortfolioAsset("TSLA", 0.25, 0.35, 800.0, 25),
     ]
 
     for asset in assets:
@@ -162,7 +182,7 @@ def demonstrate_real_world_integration():
     market_data = FinancialFeatureData(
         features=market_features,
         labels=np.random.randint(0, 2, 100),
-        feature_names=["RSI", "MACD", "Volume", "Volatility"]
+        feature_names=["RSI", "MACD", "Volume", "Volatility"],
     )
 
     # Create and train market predictor
@@ -192,6 +212,8 @@ def demonstrate_real_world_integration():
 
     print(f"Portfolio return: {portfolio_result.expected_return:.4f}")
     print(f"Portfolio volatility: {portfolio_result.portfolio_volatility:.4f}")
+
+
 def run_all_demos():
     """Run all demonstration functions"""
     setup_logging()
@@ -209,9 +231,10 @@ def run_all_demos():
         print("✅ All demonstrations completed successfully!")
         print("Quantum ML pipeline is ready for production use.")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"\n❌ Error during demonstrations: {str(e)}")
         logging.error("Demonstration failed", exc_info=True)
+
 
 if __name__ == "__main__":
     run_all_demos()

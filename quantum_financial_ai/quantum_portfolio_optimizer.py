@@ -6,26 +6,31 @@ OWLBAN GROUP - Quantum Annealing for Portfolio Optimization
 import numpy as np
 import torch
 import logging
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Optional
 from dataclasses import dataclass
+
 
 @dataclass
 class PortfolioAsset:
     """Represents a financial asset in the portfolio"""
+
     symbol: str
     expected_return: float
     volatility: float
     current_price: float
     quantity: int = 0
 
+
 @dataclass
 class QuantumPortfolioResult:
     """Result from quantum portfolio optimization"""
+
     optimal_weights: np.ndarray
     expected_return: float
     portfolio_volatility: float
     sharpe_ratio: float
     quantum_advantage: float  # Performance boost from quantum methods
+
 
 class QuantumPortfolioOptimizer:
     """
@@ -35,12 +40,16 @@ class QuantumPortfolioOptimizer:
 
     def __init__(self, risk_free_rate: float = 0.02, use_gpu: bool = True):
         self.risk_free_rate = risk_free_rate
-        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() and use_gpu else "cpu"
+        )
         self.logger = logging.getLogger("QuantumPortfolioOptimizer")
         self.assets: List[PortfolioAsset] = []
         self.covariance_matrix: Optional[np.ndarray] = None
 
-        self.logger.info("Initialized Quantum Portfolio Optimizer on device: %s", self.device)
+        self.logger.info(
+            "Initialized Quantum Portfolio Optimizer on device: %s", self.device
+        )
 
     def add_asset(self, asset: PortfolioAsset):
         """Add an asset to the optimization universe"""
@@ -52,7 +61,9 @@ class QuantumPortfolioOptimizer:
         self.covariance_matrix = covariance_matrix
         self.logger.info("Set covariance matrix shape: %s", covariance_matrix.shape)
 
-    def _classical_mean_variance_optimization(self, target_return: Optional[float] = None) -> QuantumPortfolioResult:
+    def _classical_mean_variance_optimization(
+        self, target_return: Optional[float] = None
+    ) -> QuantumPortfolioResult:
         """Classical Markowitz mean-variance optimization as baseline"""
         n_assets = len(self.assets)
 
@@ -63,7 +74,7 @@ class QuantumPortfolioOptimizer:
         # Create covariance matrix if not provided
         if self.covariance_matrix is None:
             # Simple diagonal covariance matrix
-            self.covariance_matrix = np.diag(volatilities ** 2)
+            self.covariance_matrix = np.diag(volatilities**2)
 
         # Classical optimization (simplified Markowitz)
         if target_return is None:
@@ -73,7 +84,9 @@ class QuantumPortfolioOptimizer:
         weights = np.ones(n_assets) / n_assets
 
         portfolio_return = np.dot(weights, returns)
-        portfolio_volatility = np.sqrt(np.dot(weights.T, np.dot(self.covariance_matrix, weights)))
+        portfolio_volatility = np.sqrt(
+            np.dot(weights.T, np.dot(self.covariance_matrix, weights))
+        )
         sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
 
         return QuantumPortfolioResult(
@@ -81,10 +94,12 @@ class QuantumPortfolioOptimizer:
             expected_return=portfolio_return,
             portfolio_volatility=portfolio_volatility,
             sharpe_ratio=sharpe_ratio,
-            quantum_advantage=1.0  # Baseline
+            quantum_advantage=1.0,  # Baseline
         )
 
-    def _quantum_annealing_optimization(self, target_return: Optional[float] = None) -> QuantumPortfolioResult:
+    def _quantum_annealing_optimization(
+        self, _target_return: Optional[float] = None
+    ) -> QuantumPortfolioResult:
         """
         Quantum annealing-inspired portfolio optimization
         Simulates quantum tunneling for better local optima finding
@@ -94,7 +109,7 @@ class QuantumPortfolioOptimizer:
 
         if self.covariance_matrix is None:
             volatilities = np.array([asset.volatility for asset in self.assets])
-            self.covariance_matrix = np.diag(volatilities ** 2)
+            self.covariance_matrix = np.diag(volatilities**2)
 
         # Quantum annealing simulation with advanced techniques
         # Start with random weights
@@ -112,19 +127,28 @@ class QuantumPortfolioOptimizer:
 
         temperature = initial_temp
 
-        for step in range(200):  # Annealing steps
+        for _step in range(200):  # Annealing steps
             # Add quantum noise (tunneling) with temperature-dependent amplitude
             quantum_noise = np.random.normal(0, temperature * 0.1, n_assets)
             candidate_weights = weights + quantum_noise
             candidate_weights = np.clip(candidate_weights, 0, 1)  # Bounds
-            candidate_weights = candidate_weights / np.sum(candidate_weights)  # Renormalize
+            candidate_weights = candidate_weights / np.sum(
+                candidate_weights
+            )  # Renormalize
 
             # Evaluate candidate with quantum-inspired objective
             portfolio_return = np.dot(candidate_weights, returns)
-            portfolio_volatility = np.sqrt(np.dot(candidate_weights.T, np.dot(self.covariance_matrix, candidate_weights)))
+            portfolio_volatility = np.sqrt(
+                np.dot(
+                    candidate_weights.T,
+                    np.dot(self.covariance_matrix, candidate_weights),
+                )
+            )
 
             if portfolio_volatility > 0:
-                sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
+                sharpe_ratio = (
+                    portfolio_return - self.risk_free_rate
+                ) / portfolio_volatility
 
                 # Quantum acceptance probability (Metropolis criterion)
                 if sharpe_ratio > best_sharpe:
@@ -146,17 +170,25 @@ class QuantumPortfolioOptimizer:
             weights = best_weights.copy()
 
         portfolio_return = np.dot(best_weights, returns)
-        portfolio_volatility = np.sqrt(np.dot(best_weights.T, np.dot(self.covariance_matrix, best_weights)))
+        portfolio_volatility = np.sqrt(
+            np.dot(best_weights.T, np.dot(self.covariance_matrix, best_weights))
+        )
 
         return QuantumPortfolioResult(
             optimal_weights=best_weights,
             expected_return=portfolio_return,
             portfolio_volatility=portfolio_volatility,
             sharpe_ratio=best_sharpe,
-            quantum_advantage=1.35  # Enhanced quantum advantage with advanced annealing
+            quantum_advantage=1.35,
+            # Enhanced quantum advantage with advanced annealing
         )
 
-    def optimize_portfolio(self, portfolio: Optional[np.ndarray] = None, method: str = "quantum", target_return: Optional[float] = None) -> QuantumPortfolioResult:
+    def optimize_portfolio(
+        self,
+        _portfolio: Optional[np.ndarray] = None,
+        method: str = "quantum",
+        target_return: Optional[float] = None,
+    ) -> QuantumPortfolioResult:
         """
         Optimize portfolio using specified method
 
@@ -175,8 +207,13 @@ class QuantumPortfolioOptimizer:
         else:
             result = self._classical_mean_variance_optimization(target_return)
 
-        self.logger.info("Optimization complete. Expected return: %.4f, Volatility: %.4f, Sharpe ratio: %.4f",
-             result.expected_return, result.portfolio_volatility, result.sharpe_ratio)
+        self.logger.info(
+            "Optimization complete. Expected return: %.4f, Volatility: %.4f, "
+            "Sharpe ratio: %.4f",
+            result.expected_return,
+            result.portfolio_volatility,
+            result.sharpe_ratio,
+        )
 
         return result
 
@@ -184,7 +221,9 @@ class QuantumPortfolioOptimizer:
         """Get summary of current portfolio assets"""
         return {
             "num_assets": len(self.assets),
-            "total_value": sum(asset.current_price * asset.quantity for asset in self.assets),
+            "total_value": sum(
+                asset.current_price * asset.quantity for asset in self.assets
+            ),
             "assets": [
                 {
                     "symbol": asset.symbol,
@@ -192,10 +231,10 @@ class QuantumPortfolioOptimizer:
                     "volatility": asset.volatility,
                     "current_price": asset.current_price,
                     "quantity": asset.quantity,
-                    "value": asset.current_price * asset.quantity
+                    "value": asset.current_price * asset.quantity,
                 }
                 for asset in self.assets
-            ]
+            ],
         }
 
     def quantum_risk_assessment(self, portfolio_weights: np.ndarray) -> Dict:
@@ -240,7 +279,9 @@ class QuantumPortfolioOptimizer:
 
         # Quantum-enhanced risk metrics
         quantum_var_99 = np.percentile(simulated_returns, 1)  # 99% VaR
-        quantum_tail_risk = np.mean(simulated_returns[simulated_returns <= quantum_var_99])
+        quantum_tail_risk = np.mean(
+            simulated_returns[simulated_returns <= quantum_var_99]
+        )
 
         return {
             "expected_return": np.mean(simulated_returns),
@@ -251,20 +292,23 @@ class QuantumPortfolioOptimizer:
             "tail_risk": quantum_tail_risk,  # Quantum tail risk measure
             "max_drawdown": np.min(simulated_returns),
             "quantum_simulations": n_simulations,
-            "quantum_advantage": 2.5  # Enhanced risk assessment advantage
+            "quantum_advantage": 2.5,  # Enhanced risk assessment advantage
         }
 
     def federated_quantum_learning(self, distributed_data: List[np.ndarray]) -> Dict:
         """
         Implement federated quantum learning for distributed portfolio optimization
         """
-        self.logger.info("Starting federated quantum learning across %d data sources", len(distributed_data))
+        self.logger.info(
+            "Starting federated quantum learning across %d data sources",
+            len(distributed_data),
+        )
 
         # Aggregate results from distributed quantum optimizers
         aggregated_weights: List[np.ndarray] = []
         aggregated_returns: List[float] = []
 
-        for data_chunk in distributed_data:
+        for _data_chunk in distributed_data:
             # Local quantum optimization on each data chunk
             local_result = self._quantum_annealing_optimization()
             aggregated_weights.append(local_result.optimal_weights)
@@ -278,7 +322,9 @@ class QuantumPortfolioOptimizer:
         interference_weights = np.exp(returns_array / np.max(returns_array))
         interference_weights = interference_weights / np.sum(interference_weights)
 
-        federated_weights = np.average(weights_array, axis=0, weights=interference_weights)
+        federated_weights = np.average(
+            weights_array, axis=0, weights=interference_weights
+        )
         asset_returns = np.array([asset.expected_return for asset in self.assets])
         federated_return = np.dot(federated_weights, asset_returns)
 
@@ -286,12 +332,15 @@ class QuantumPortfolioOptimizer:
             "federated_weights": federated_weights,
             "federated_return": federated_return,
             "participating_nodes": len(distributed_data),
-            "quantum_federation_advantage": 1.8
+            "quantum_federation_advantage": 1.8,
         }
 
-    def quantum_classical_hybrid_optimization(self, target_return: Optional[float] = None) -> QuantumPortfolioResult:
+    def quantum_classical_hybrid_optimization(
+        self, target_return: Optional[float] = None
+    ) -> QuantumPortfolioResult:
         """
-        Quantum-classical hybrid optimization combining quantum annealing with classical solvers
+        Quantum-classical hybrid optimization combining quantum annealing
+        with classical solvers
         """
         self.logger.info("Starting quantum-classical hybrid optimization")
 
@@ -300,7 +349,9 @@ class QuantumPortfolioOptimizer:
 
         # Phase 2: Classical refinement around quantum solution
         if self.covariance_matrix is not None:
-            refined_weights = self._classical_refinement(quantum_result.optimal_weights, target_return)
+            refined_weights = self._classical_refinement(
+                quantum_result.optimal_weights, target_return
+            )
         else:
             refined_weights = quantum_result.optimal_weights
 
@@ -308,7 +359,11 @@ class QuantumPortfolioOptimizer:
         returns = np.array([asset.expected_return for asset in self.assets])
         portfolio_return = np.dot(refined_weights, returns)
         if self.covariance_matrix is not None:
-            portfolio_volatility = np.sqrt(np.dot(refined_weights.T, np.dot(self.covariance_matrix, refined_weights)))
+            portfolio_volatility = np.sqrt(
+                np.dot(
+                    refined_weights.T, np.dot(self.covariance_matrix, refined_weights)
+                )
+            )
         else:
             portfolio_volatility = np.std(returns)  # Fallback if no covariance matrix
         sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
@@ -318,10 +373,12 @@ class QuantumPortfolioOptimizer:
             expected_return=portfolio_return,
             portfolio_volatility=portfolio_volatility,
             sharpe_ratio=sharpe_ratio,
-            quantum_advantage=2.1  # Hybrid advantage
+            quantum_advantage=2.1,  # Hybrid advantage
         )
 
-    def _classical_refinement(self, initial_weights: np.ndarray, target_return: Optional[float] = None) -> np.ndarray:
+    def _classical_refinement(
+        self, initial_weights: np.ndarray, _target_return: Optional[float] = None
+    ) -> np.ndarray:
         """
         Classical refinement of quantum solution using gradient-based optimization
         """
@@ -334,14 +391,22 @@ class QuantumPortfolioOptimizer:
         for _ in range(n_iterations):
             # Compute gradient of Sharpe ratio
             portfolio_return = np.dot(weights, returns)
-            portfolio_volatility = np.sqrt(np.dot(weights.T, np.dot(self.covariance_matrix, weights)))
+            portfolio_volatility = np.sqrt(
+                np.dot(weights.T, np.dot(self.covariance_matrix, weights))
+            )
 
             if portfolio_volatility > 0:
-                sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
+                _ = (
+                    portfolio_return - self.risk_free_rate
+                ) / portfolio_volatility
 
                 # Gradient computation (simplified)
-                d_sharpe_d_weights = (returns * portfolio_volatility - (portfolio_return - self.risk_free_rate) *
-                                    np.dot(self.covariance_matrix, weights) / portfolio_volatility) / (portfolio_volatility ** 2)
+                d_sharpe_d_weights = (
+                    returns * portfolio_volatility
+                    - (portfolio_return - self.risk_free_rate)
+                    * np.dot(self.covariance_matrix, weights)
+                    / portfolio_volatility
+                ) / (portfolio_volatility**2)
 
                 # Update weights
                 weights += learning_rate * d_sharpe_d_weights

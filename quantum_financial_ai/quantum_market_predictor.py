@@ -12,24 +12,29 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
+
 @dataclass
 class MarketData:
     """Represents market data for prediction"""
+
     symbol: str
     prices: np.ndarray
     volumes: np.ndarray
     timestamps: np.ndarray
     technical_indicators: Optional[Dict[str, np.ndarray]] = None
 
+
 @dataclass
 class QuantumPredictionResult:
     """Result from quantum market prediction"""
+
     predicted_price: float
     confidence: float
     direction: str  # "up", "down", "neutral"
     quantum_accuracy: float
     prediction_horizon: int  # days
     feature_importance: Dict[str, float]
+
 
 class QuantumLSTM(nn.Module):
     """Quantum-inspired LSTM for time series prediction"""
@@ -40,14 +45,15 @@ class QuantumLSTM(nn.Module):
         self.num_layers = num_layers
 
         # Quantum-inspired layers
-        self.quantum_lstm = nn.LSTM(input_size, hidden_size, num_layers,
-                                   batch_first=True, dropout=0.2)
+        self.quantum_lstm = nn.LSTM(
+            input_size, hidden_size, num_layers, batch_first=True, dropout=0.2
+        )
         self.quantum_attention = nn.MultiheadAttention(hidden_size, num_heads=4)
         self.quantum_output = nn.Sequential(
             nn.Linear(hidden_size, hidden_size // 2),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(hidden_size // 2, 1)
+            nn.Linear(hidden_size // 2, 1),
         )
 
     def forward(self, x):
@@ -56,15 +62,16 @@ class QuantumLSTM(nn.Module):
         lstm_out, (_, _) = self.quantum_lstm(x)
 
         # Quantum attention mechanism
-        attn_out, _ = self.quantum_attention(lstm_out.transpose(0, 1),
-                                           lstm_out.transpose(0, 1),
-                                           lstm_out.transpose(0, 1))
+        attn_out, _ = self.quantum_attention(
+            lstm_out.transpose(0, 1), lstm_out.transpose(0, 1), lstm_out.transpose(0, 1)
+        )
         attn_out = attn_out.transpose(0, 1)
 
         # Use last time step
         final_features = attn_out[:, -1, :]
         output = self.quantum_output(final_features)
         return output
+
 
 class QuantumMarketPredictor:
     """
@@ -74,24 +81,35 @@ class QuantumMarketPredictor:
 
     def __init__(self, sequence_length: int = 60, use_gpu: bool = True):
         self.sequence_length = sequence_length
-        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() and use_gpu else "cpu"
+        )
         self.logger = logging.getLogger("QuantumMarketPredictor")
         self.rng = np.random.default_rng()
 
         # Initialize quantum model
-        self.quantum_model = QuantumLSTM(input_size=6).to(self.device)  # Match actual feature count
-        self.optimizer = torch.optim.Adam(self.quantum_model.parameters(), lr=0.001, weight_decay=1e-4)
+        # Match actual feature count
+        self.quantum_model = QuantumLSTM(input_size=6).to(self.device)
+        self.optimizer = torch.optim.Adam(
+            self.quantum_model.parameters(), lr=0.001, weight_decay=1e-4
+        )
         self.criterion = nn.MSELoss()
 
         self.market_data: Dict[str, MarketData] = {}
         self.is_trained = False
 
-        self.logger.info("Initialized Quantum Market Predictor on device: %s", self.device)
+        self.logger.info(
+            "Initialized Quantum Market Predictor on device: %s", self.device
+        )
 
     def add_market_data(self, market_data: MarketData):
         """Add market data for training/prediction"""
         self.market_data[market_data.symbol] = market_data
-        self.logger.info("Added market data for %s: %d data points", market_data.symbol, len(market_data.prices))
+        self.logger.info(
+            "Added market data for %s: %d data points",
+            market_data.symbol,
+            len(market_data.prices),
+        )
 
     def _preprocess_data(self, symbol: str) -> Tuple[torch.Tensor, torch.Tensor]:
         """Preprocess market data for quantum model"""
@@ -119,18 +137,20 @@ class QuantumMarketPredictor:
 
             # Ensure all indicators have same length
             min_length = min(len(sma5), len(sma20), len(rsi), len(macd), len(bb))
-            features.extend([
-                sma5[-min_length:],
-                sma20[-min_length:],
-                rsi[-min_length:],
-                macd[-min_length:],
-                bb[-min_length:]
-            ])
+            features.extend(
+                [
+                    sma5[-min_length:],
+                    sma20[-min_length:],
+                    rsi[-min_length:],
+                    macd[-min_length:],
+                    bb[-min_length:],
+                ]
+            )
 
         # Volume features
         volume_ma = self._calculate_sma(data.volumes, 5)
         if len(volume_ma) > len(features[0]):
-            volume_ma = volume_ma[-len(features[0]):]
+            volume_ma = volume_ma[-len(features[0]) :]
         elif len(volume_ma) < len(features[0]):
             # Pad volume_ma if shorter
             padding = np.full(len(features[0]) - len(volume_ma), np.nan)
@@ -149,8 +169,8 @@ class QuantumMarketPredictor:
         # Create sequences
         x_features, y_returns = [], []
         for i in range(len(feature_matrix) - self.sequence_length):
-            x_features.append(feature_matrix[i:i+self.sequence_length])
-            y_returns.append(returns[i+self.sequence_length])
+            x_features.append(feature_matrix[i : i + self.sequence_length])
+            y_returns.append(returns[i + self.sequence_length])
 
         x_arr = np.asarray(x_features, dtype=np.float32)
         y_arr = np.asarray(y_returns, dtype=np.float32)
@@ -158,9 +178,9 @@ class QuantumMarketPredictor:
 
     def _calculate_sma(self, data: np.ndarray, period: int) -> np.ndarray:
         """Calculate Simple Moving Average"""
-        sma = np.convolve(data, np.ones(period)/period, mode='valid')
+        sma = np.convolve(data, np.ones(period) / period, mode="valid")
         # Pad with NaN for alignment
-        padding = np.full(period-1, np.nan)
+        padding = np.full(period - 1, np.nan)
         return np.concatenate([padding, sma])
 
     def _calculate_rsi(self, prices: np.ndarray, period: int = 14) -> np.ndarray:
@@ -169,8 +189,8 @@ class QuantumMarketPredictor:
         gains = np.where(returns > 0, returns, 0)
         losses = np.where(returns < 0, -returns, 0)
 
-        avg_gain = np.convolve(gains, np.ones(period)/period, mode='valid')
-        avg_loss = np.convolve(losses, np.ones(period)/period, mode='valid')
+        avg_gain = np.convolve(gains, np.ones(period) / period, mode="valid")
+        avg_loss = np.convolve(losses, np.ones(period) / period, mode="valid")
 
         rs = avg_gain / (avg_loss + 1e-10)  # Avoid division by zero
         rsi = 100 - (100 / (1 + rs))
@@ -189,24 +209,26 @@ class QuantumMarketPredictor:
     def _calculate_ema(self, data: np.ndarray, period: int) -> np.ndarray:
         """Calculate Exponential Moving Average"""
         ema = np.zeros_like(data)
-        ema[period-1] = np.mean(data[:period])
+        ema[period - 1] = np.mean(data[:period])
 
         multiplier = 2 / (period + 1)
         for i in range(period, len(data)):
-            ema[i] = (data[i] * multiplier) + (ema[i-1] * (1 - multiplier))
+            ema[i] = (data[i] * multiplier) + (ema[i - 1] * (1 - multiplier))
 
         return ema
 
-    def _calculate_bollinger_bands(self, prices: np.ndarray, period: int = 20) -> np.ndarray:
+    def _calculate_bollinger_bands(
+        self, prices: np.ndarray, period: int = 20
+    ) -> np.ndarray:
         """Calculate Bollinger Bands position"""
         sma = self._calculate_sma(prices, period)
         std = np.zeros_like(prices)
 
-        for i in range(period-1, len(prices)):
-            std[i] = np.std(prices[i-period+1:i+1])
+        for i in range(period - 1, len(prices)):
+            std[i] = np.std(prices[i - period + 1 : i + 1])
 
         # Position relative to bands (0 = lower band, 0.5 = middle, 1 = upper band)
-        position = (prices - (sma - 2*std)) / (4*std + 1e-10)
+        position = (prices - (sma - 2 * std)) / (4 * std + 1e-10)
         position = np.clip(position, 0, 1)
         return position
 
@@ -220,7 +242,9 @@ class QuantumMarketPredictor:
         x_features, y_returns = self._preprocess_data(symbol)
 
         # Remove NaN values
-        valid_indices = ~torch.isnan(x_features).any(dim=(1, 2)) & ~torch.isnan(y_returns)
+        valid_indices = ~torch.isnan(x_features).any(dim=(1, 2)) & ~torch.isnan(
+            y_returns
+        )
         x_features = x_features[valid_indices]
         y_returns = y_returns[valid_indices]
 
@@ -244,8 +268,8 @@ class QuantumMarketPredictor:
             y_shuffled = y_returns[indices]
 
             for i in range(0, dataset_size, batch_size):
-                batch_x = x_shuffled[i:i+batch_size]
-                batch_y = y_shuffled[i:i+batch_size]
+                batch_x = x_shuffled[i : i + batch_size]
+                batch_y = y_shuffled[i : i + batch_size]
 
                 self.optimizer.zero_grad()
                 outputs = self.quantum_model(batch_x)
@@ -259,14 +283,15 @@ class QuantumMarketPredictor:
             if (epoch + 1) % 10 == 0:
                 avg_loss = epoch_loss / n_batches
                 self.logger.info(
-                    "Epoch %d/%d, Average Loss: %.6f",
-                    epoch + 1, epochs, avg_loss
+                    "Epoch %d/%d, Average Loss: %.6f", epoch + 1, epochs, avg_loss
                 )
 
         self.is_trained = True
         self.logger.info("Quantum model training completed")
 
-    def predict_market_movement(self, symbol: str, prediction_horizon: int = 1) -> QuantumPredictionResult:
+    def predict_market_movement(
+        self, symbol: str, prediction_horizon: int = 1
+    ) -> QuantumPredictionResult:
         """
         Predict market movement using quantum model
 
@@ -285,7 +310,8 @@ class QuantumMarketPredictor:
 
         self.logger.info(
             "Predicting market movement for %s (%d days ahead)",
-            symbol, prediction_horizon
+            symbol,
+            prediction_horizon,
         )
 
         # Prepare input data (use most recent sequence)
@@ -327,7 +353,7 @@ class QuantumMarketPredictor:
             "volume_trend": 0.20,
             "technical_indicators": 0.30,
             "market_sentiment": 0.15,
-            "quantum_interference": 0.10
+            "quantum_interference": 0.10,
         }
 
         result = QuantumPredictionResult(
@@ -336,16 +362,27 @@ class QuantumMarketPredictor:
             direction=direction,
             quantum_accuracy=quantum_accuracy,
             prediction_horizon=prediction_horizon,
-            feature_importance=feature_importance
+            feature_importance=feature_importance,
         )
 
-        self.logger.info("Prediction: %s to $%.2f (confidence: %.2f%%)", direction, predicted_price, confidence*100)
+        self.logger.info(
+            "Prediction: %s to $%.2f (confidence: %.2f%%)",
+            direction,
+            predicted_price,
+            confidence * 100,
+        )
 
         return result
 
-    def quantum_ensemble_prediction(self, symbols: List[str], weights: Optional[List[float]] = None) -> Dict[str, QuantumPredictionResult]:
+    def quantum_ensemble_prediction(
+        self, symbols: List[str], weights: Optional[List[float]] = None
+    ) -> Dict[str, QuantumPredictionResult]:
         """
         Make ensemble predictions across multiple symbols using quantum correlations
+
+        Args:
+            symbols: List of stock symbols to predict
+            weights: Optional relative weight per symbol (defaults to equal weights)
         """
         predictions = {}
         for symbol in symbols:
@@ -353,12 +390,21 @@ class QuantumMarketPredictor:
                 pred = self.predict_market_movement(symbol)
                 predictions[symbol] = pred
 
+        # Resolve per-symbol weights (equal weighting when not provided)
+        if weights is None:
+            symbol_weights = {s: 1.0 for s in symbols}
+        else:
+            if len(weights) != len(symbols):
+                raise ValueError("Length of weights must match length of symbols")
+            symbol_weights = dict(zip(symbols, weights))
+
         # Apply quantum correlation adjustments (simplified)
         for symbol, pred in predictions.items():
             # Quantum interference effect
             interference_factor = self.rng.uniform(0.95, 1.05)
+            weight = symbol_weights.get(symbol, 1.0)
             pred.predicted_price *= interference_factor
-            pred.confidence *= interference_factor
+            pred.confidence *= interference_factor * weight
 
         return predictions
 
@@ -369,5 +415,5 @@ class QuantumMarketPredictor:
             "device": str(self.device),
             "sequence_length": self.sequence_length,
             "symbols_available": list(self.market_data.keys()),
-            "model_parameters": sum(p.numel() for p in self.quantum_model.parameters())
+            "model_parameters": sum(p.numel() for p in self.quantum_model.parameters()),
         }

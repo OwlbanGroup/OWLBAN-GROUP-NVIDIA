@@ -17,4 +17,5 @@ result_*.txt
 per_file_results.txt
 run_per_file.ps1
 .pytest_cache/
+.mypy_cache/
 
