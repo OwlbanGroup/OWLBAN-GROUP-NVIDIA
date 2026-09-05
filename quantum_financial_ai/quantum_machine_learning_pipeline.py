@@ -17,7 +17,10 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.circuit import Parameter, ParameterVector
 from qiskit.circuit.library import ZZFeatureMap, RealAmplitudes, EfficientSU2
 from qiskit_machine_learning.algorithms import QSVC, VQC
-from qiskit_machine_learning.kernels import QuantumKernel
+try:
+    from qiskit_machine_learning.kernels import FidelityQuantumKernel as QuantumKernel
+except ImportError:  # qiskit-machine-learning < 0.7
+    from qiskit_machine_learning.kernels import QuantumKernel
 from qiskit_machine_learning.neural_networks import EstimatorQNN, SamplerQNN
 from qiskit_machine_learning.circuit.library import QNNCircuit
 from qiskit_machine_learning.optimizers import COBYLA, SPSA

@@ -1,0 +1,23 @@
+
+=================================== ERRORS ====================================
+_ ERROR collecting .github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_api_server_status.py _
+tests\test_api_server_status.py:3: in <module>
+    import api_server
+api_server.py:68: in <module>
+    raise RuntimeError("API_PASSWORD environment variable must be set for API server authentication")
+E   RuntimeError: API_PASSWORD environment variable must be set for API server authentication
+_ ERROR collecting .github/.github/.github/OSCAR-BROOME-REVENUE/.blackbox/OWLBAN-GROUP-NVIDIA/tests/test_quantum_machine_learning.py _
+ImportError while importing test module 'C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\tests\test_quantum_machine_learning.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests\test_quantum_machine_learning.py:9: in <module>
+    from quantum_financial_ai.quantum_machine_learning_pipeline import (
+quantum_financial_ai\quantum_machine_learning_pipeline.py:25: in <module>
+    from qiskit_machine_learning.circuit.library import QNNCircuit
+E   ImportError: cannot import name 'QNNCircuit' from 'qiskit_machine_learning.circuit.library' (C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\qiskit_machine_learning\circuit\library\__init__.py)
+=========================== short test summary info ===========================
+ERROR tests\test_api_server_status.py - RuntimeError: API_PASSWORD environmen...
+ERROR tests\test_quantum_machine_learning.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!

@@ -11,7 +11,9 @@ try:
     import pynvml
     pynvml.nvmlInit()
     nvml_available = True
-except ImportError:
+except Exception:
+    # Covers missing pynvml, missing NVIDIA driver (NVMLError_LibraryNotFound),
+    # and any other NVML initialization failure so the module imports cleanly.
     nvml_available = False
 
 class NimManager:
