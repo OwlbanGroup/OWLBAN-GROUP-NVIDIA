@@ -9,6 +9,12 @@ import os
 import pytest
 import numpy as np
 
+# Optional heavy deps (torch, qiskit). Skip these tests gracefully when they
+# are not installed so the full suite still collects and runs. Guard BEFORE
+# the module-level imports below, which require these dependencies.
+torch = pytest.importorskip("torch")
+pytest.importorskip("qiskit")
+
 from combined_nim_owlban_ai import NimManager as NIM
 from combined_nim_owlban_ai import OwlbanAI as OWLBANAI
 from combined_nim_owlban_ai import QuantumFinancialOmniscientSystem

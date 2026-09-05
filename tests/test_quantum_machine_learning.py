@@ -6,6 +6,11 @@ OWLBAN GROUP - Testing quantum ML for financial applications
 import unittest
 import numpy as np
 import logging
+import pytest
+
+# Optional deps: skip these tests gracefully when qiskit/torch are unavailable
+pytest.importorskip("qiskit")
+
 from quantum_financial_ai.quantum_machine_learning_pipeline import (
     QuantumMLPipeline,
     FinancialQuantumMLApplication,
