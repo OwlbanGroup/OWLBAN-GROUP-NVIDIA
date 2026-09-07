@@ -25,9 +25,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import AI systems
 try:
-    # Exported lazily via combined_nim_owlban_ai.__getattr__, so static
-    # analyzers cannot see it; verified working at runtime.
-    from combined_nim_owlban_ai import CombinedSystem  # pylint: disable=no-name-in-module
+    # Exported lazily via combined_nim_owlban_ai.__getattr__, so
+    # static analyzers cannot see it; verified working at runtime.
+    from combined_nim_owlban_ai import (  # pylint: disable=no-name-in-module
+        CombinedSystem)
     COMBINED_SYSTEM_AVAILABLE = True
 except ImportError:
     COMBINED_SYSTEM_AVAILABLE = False
@@ -69,7 +70,8 @@ except ImportError:
 try:
     from auth_lib import authenticate_user, verify_token, create_user, auth_manager
     from auth_lib import request_password_reset, reset_password, generate_api_key
-    from auth_lib import setup_mfa, enable_mfa, disable_mfa, verify_mfa_code, mfa_required
+    from auth_lib import (setup_mfa, enable_mfa, disable_mfa,
+                          verify_mfa_code, mfa_required)
     AUTH_AVAILABLE = True
 except ImportError:
     AUTH_AVAILABLE = False
@@ -91,13 +93,25 @@ except ImportError:
     MIDDLEWARE_AVAILABLE = False
 
 # Constants
+
+
 REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 
 # Security
+
+
 security = HTTPBasic()
+
+
 API_USERNAME = os.getenv("API_USERNAME", "owlban_admin")
+
+
 API_PASSWORD = os.getenv("API_PASSWORD", "")
+
+
 API_HOST = os.getenv("API_HOST", "127.0.0.1")
+
+
 API_PORT = int(os.getenv("API_PORT", "8000"))
 
 if not API_PASSWORD:
@@ -118,6 +132,7 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
+
 def _get_monitoring_stats() -> Dict[str, Any]:
     """Return shared monitoring statistics stored on the FastAPI app state."""
     if not hasattr(fastapi_app.state, "monitoring"):
@@ -126,6 +141,8 @@ def _get_monitoring_stats() -> Dict[str, Any]:
 
 
 # Monitoring middleware
+
+
 class MonitoringMiddleware(BaseHTTPMiddleware):
     """Middleware for request monitoring and logging."""
 
@@ -171,9 +188,14 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
+
 logger = logging.getLogger("api_server")
 
+
 @asynccontextmanager
+
+
 async def lifespan(app: FastAPI):
     """Initialize AI systems on application startup."""
     logger.info("Initializing AI systems...")
@@ -196,7 +218,8 @@ async def lifespan(app: FastAPI):
 
     if RL_AGENT_AVAILABLE and ReinforcementLearningAgent is not None:
         try:
-            app.state.rl_agent = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
+            app.state.rl_agent = ReinforcementLearningAgent(
+                ['optimize', 'scale', 'monitor'])
             logger.info("RL agent initialized")
         except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize RL agent")
@@ -208,12 +231,14 @@ async def lifespan(app: FastAPI):
         except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize database manager")
 
-    if app.state.combined_system is not None and hasattr(app.state.combined_system, "ngc_catalog_manager"):
+    combined = app.state.combined_system
+    if combined is not None and hasattr(combined, "ngc_catalog_manager"):
         try:
-            app.state.ngc_catalog_manager = app.state.combined_system.ngc_catalog_manager
+            app.state.ngc_catalog_manager = (
+                app.state.combined_system.ngc_catalog_manager)
             app.state.ngc_catalog_manager.initialize()
             logger.info("NGC catalog manager attached to combined system")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to attach NGC catalog manager")
     elif NGCATALOG_AVAILABLE:
         try:
@@ -259,11 +284,16 @@ fastapi_app.add_middleware(
 )
 
 # Pydantic models
+
+
 class RevenueOptimizationRequest(BaseModel):
+    """Request payload for quantum revenue optimization."""
     iterations: int = 10
     market_conditions: Optional[Dict[str, float]] = None
 
+
 class InferenceRequest(BaseModel):
+    """Request payload for combined-system inference."""
     # `model_type` intentionally shadows pydantic's protected `model_`
     # namespace; opt out of that namespace check for this model.
     model_config = {'protected_namespaces': ()}
@@ -271,58 +301,82 @@ class InferenceRequest(BaseModel):
     data: Dict[str, Any]
     model_type: str = "prediction"
 
+
 class SystemStatus(BaseModel):
+    """Aggregated health status of all API services."""
     timestamp: str
     services: Dict[str, bool]
     gpu_status: Optional[Dict[str, Any]] = None
     database_status: Optional[Dict[str, Any]] = None
     monitoring: Optional[Dict[str, Any]] = None
 
+
 class LogEntry(BaseModel):
+    """A single application log entry."""
     level: str
     message: str
     timestamp: str
     source: str
 
 # --- Auth Pydantic Models ---
+
+
 class RegisterRequest(BaseModel):
+    """User registration payload."""
     email: str
     username: str
     password: str
     company: str = "OWLBAN_GROUP"
     role: str = "user"
 
+
 class LoginRequest(BaseModel):
+    """User login payload with optional MFA code."""
     email: str
     password: str
     mfa_code: Optional[str] = None
 
+
 class TokenResponse(BaseModel):
+    """JWT access/refresh token pair."""
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
+
 class ResetRequest(BaseModel):
+    """Password reset request payload."""
     email: str
 
+
 class ResetPasswordRequest(BaseModel):
+    """Password reset confirmation payload."""
     token: str
     new_password: str
 
+
 class APIKeyRequest(BaseModel):
+    """API key creation payload."""
     name: str = "default"
 
+
 class MFACodeRequest(BaseModel):
+    """TOTP MFA code payload."""
     code: str
 
+
 class UserProfile(BaseModel):
+    """Public user profile fields."""
     email: str
     username: str
     role: str
     company: str
 
 # JWT Bearer token dependency
+
+
 bearer_scheme = HTTPBearer(auto_error=False)
+
 
 def get_current_user(
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)):
@@ -335,12 +389,17 @@ def get_current_user(
     return payload
 
 # --- Auth Endpoints ---
+
+
 @fastapi_app.post("/auth/register", response_model=dict, status_code=201)
+
+
 async def register(req: RegisterRequest):
     """Register a new user account."""
     if not AUTH_AVAILABLE:
         raise HTTPException(status_code=503, detail="Auth system not available")
-    success, message = create_user(req.email, req.username, req.password, req.role, req.company)
+    success, message = create_user(
+        req.email, req.username, req.password, req.role, req.company)
     if not success:
         raise HTTPException(status_code=400, detail=message)
     auth_manager.log_audit_event("user_registered", req.email, {"company": req.company})
@@ -348,7 +407,10 @@ async def register(req: RegisterRequest):
         auth_metrics.record_audit_event("user_registered", "info")
     return {"message": message}
 
+
 @fastapi_app.post("/auth/login", response_model=TokenResponse)
+
+
 async def login(req: LoginRequest):
     """Authenticate user and return JWT tokens."""
     if not AUTH_AVAILABLE:
@@ -386,7 +448,10 @@ async def login(req: LoginRequest):
         auth_metrics.record_token_generated("refresh")
     return TokenResponse(access_token=access_tok, refresh_token=refresh_tok)
 
+
 @fastapi_app.post("/auth/refresh", response_model=dict)
+
+
 async def refresh_tokens(token: str):
     """Refresh an access token using a valid refresh token."""
     if not AUTH_AVAILABLE:
@@ -399,7 +464,10 @@ async def refresh_tokens(token: str):
         auth_metrics.record_token_generated("access")
     return {"access_token": new_access, "token_type": "bearer"}
 
+
 @fastapi_app.post("/auth/reset-request", response_model=dict)
+
+
 async def reset_request(req: ResetRequest):
     """Request a password reset token."""
     if not AUTH_AVAILABLE:
@@ -410,7 +478,10 @@ async def reset_request(req: ResetRequest):
         response["reset_token"] = token  # Demo only; production sends via email
     return response
 
+
 @fastapi_app.post("/auth/reset-password", response_model=dict)
+
+
 async def reset_password_endpoint(req: ResetPasswordRequest):
     """Reset password using a valid reset token."""
     if not AUTH_AVAILABLE:
@@ -420,7 +491,10 @@ async def reset_password_endpoint(req: ResetPasswordRequest):
         raise HTTPException(status_code=400, detail=message)
     return {"message": message}
 
+
 @fastapi_app.get("/auth/profile", response_model=dict)
+
+
 async def get_profile(user=Depends(get_current_user)):
     """Get current user profile."""
     if not AUTH_AVAILABLE:
@@ -428,9 +502,18 @@ async def get_profile(user=Depends(get_current_user)):
     db_user = auth_manager.get_user_by_email(user["email"])
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"email": db_user.email, "username": db_user.username, "role": db_user.role, "company": db_user.company, "mfa_enabled": db_user.mfa_enabled}
+    return {
+        "email": db_user.email,
+        "username": db_user.username,
+        "role": db_user.role,
+        "company": db_user.company,
+        "mfa_enabled": db_user.mfa_enabled,
+    }
+
 
 @fastapi_app.post("/auth/api-keys", response_model=dict)
+
+
 async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
     """Generate a new API key for the authenticated user."""
     if not AUTH_AVAILABLE:
@@ -444,7 +527,10 @@ async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
         auth_metrics.record_api_key_generated(company)
     return {"api_key": key, "name": req.name}
 
+
 @fastapi_app.get("/auth/api-keys", response_model=dict)
+
+
 async def list_api_keys(user=Depends(get_current_user)):
     """List all API keys for the authenticated user."""
     if not AUTH_AVAILABLE:
@@ -452,7 +538,10 @@ async def list_api_keys(user=Depends(get_current_user)):
     keys = auth_manager.list_api_keys(user["email"])
     return {"api_keys": keys}
 
+
 @fastapi_app.delete("/auth/api-keys/{api_key}", response_model=dict)
+
+
 async def delete_api_key(api_key: str, user=Depends(get_current_user)):
     """Revoke an API key."""
     if not AUTH_AVAILABLE:
@@ -462,7 +551,10 @@ async def delete_api_key(api_key: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Failed to revoke key")
     return {"message": "API key revoked"}
 
+
 @fastapi_app.get("/auth/audit-log", response_model=dict)
+
+
 async def get_audit(user=Depends(get_current_user)):
     """Get audit log (admin only)."""
     if not AUTH_AVAILABLE:
@@ -474,19 +566,25 @@ async def get_audit(user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/mfa/setup", response_model=dict)
+
+
 async def mfa_setup(user=Depends(get_current_user)):
     """Generate a TOTP secret and provisioning URI for the current user."""
     if not AUTH_AVAILABLE:
         raise HTTPException(status_code=503, detail="Auth system not available")
     result = setup_mfa(user["email"])
     if not result:
-        raise HTTPException(status_code=400, detail="MFA is already enabled or user not found")
+        raise HTTPException(
+            status_code=400,
+            detail="MFA is already enabled or user not found")
     if AUTH_METRICS_AVAILABLE:
         auth_metrics.record_audit_event("mfa_setup", user["email"])
     return {"secret": result["secret"], "provisioning_uri": result["provisioning_uri"]}
 
 
 @fastapi_app.post("/auth/mfa/enable", response_model=dict)
+
+
 async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Verify a TOTP code and enable MFA for the current user."""
     if not AUTH_AVAILABLE:
@@ -498,6 +596,8 @@ async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/mfa/disable", response_model=dict)
+
+
 async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Disable MFA for the current user after verifying a TOTP code."""
     if not AUTH_AVAILABLE:
@@ -509,13 +609,18 @@ async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
 
 
 @fastapi_app.get("/auth/mfa/status", response_model=dict)
+
+
 async def mfa_status(user=Depends(get_current_user)):
     """Return whether MFA is enabled for the current user."""
     if not AUTH_AVAILABLE:
         raise HTTPException(status_code=503, detail="Auth system not available")
     return {"mfa_required": mfa_required(user["email"])}
 
+
 @fastapi_app.get("/prometheus/metrics", response_model=str)
+
+
 async def prometheus_metrics():
     """Prometheus TEXT-format auth metrics endpoint (scraped by Prometheus)."""
     if AUTH_METRICS_AVAILABLE and AUTH_AVAILABLE:
@@ -528,22 +633,35 @@ async def prometheus_metrics():
             )
             auth_metrics.set_api_keys_active(
                 len(getattr(auth_manager, "_api_keys", {}) or {}))
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to sync auth metric gauges")
         return auth_metrics.render()
     return "# TYPE owlban_auth_up gauge\nowlban_auth_up 0\n"
 
 # API endpoints
+
+
 @fastapi_app.get("/")
+
+
 async def root():
+    """Root service banner."""
     return {"message": "OWLBAN GROUP AI API Server", "status": "running"}
 
+
 @fastapi_app.get("/health")
+
+
 async def health_check():
+    """Liveness probe endpoint."""
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+
 @fastapi_app.get("/status", response_model=SystemStatus)
+
+
 async def get_system_status():
+    """Full system status across all services."""
     services = {
         "combined_system": fastapi_app.state.combined_system is not None,
         "revenue_optimizer": fastapi_app.state.revenue_optimizer is not None,
@@ -578,17 +696,26 @@ async def get_system_status():
         monitoring=monitoring
     )
 
+
 @fastapi_app.get("/catalog/summary")
+
+
 async def get_catalog_summary():
+    """Summarize the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
     if manager is None:
         raise HTTPException(status_code=503, detail="NGC catalog manager not available")
 
-    return manager.get_catalog_summary() if hasattr(manager, "get_catalog_summary") else {"error": "catalog manager unavailable"}
+    if hasattr(manager, "get_catalog_summary"):
+        return manager.get_catalog_summary()
+    return {"error": "catalog manager unavailable"}
 
 
 @fastapi_app.get("/catalog/search")
+
+
 async def search_catalog(query: str):
+    """Search the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
     if manager is None:
         raise HTTPException(status_code=503, detail="NGC catalog manager not available")
@@ -596,118 +723,213 @@ async def search_catalog(query: str):
     return manager.search(query) if hasattr(manager, "search") else []
 
 
-@fastapi_app.post("/revenue/optimize", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
-async def optimize_revenue(request: RevenueOptimizationRequest, background_tasks: BackgroundTasks):
+@fastapi_app.post(
+    "/revenue/optimize",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
+async def optimize_revenue(request: RevenueOptimizationRequest,
+                           background_tasks: BackgroundTasks):
+    """Start a revenue optimization run in the background."""
     if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        background_tasks.add_task(fastapi_app.state.revenue_optimizer.optimize_revenue, request.iterations)
+        background_tasks.add_task(
+            fastapi_app.state.revenue_optimizer.optimize_revenue,
+            request.iterations)
         return {
-            "message": "Revenue optimization started with %d iterations" % request.iterations,
+            "message":
+            f"Revenue optimization started with {request.iterations} iterations",
             "status": "running"
         }
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Revenue optimization failed")
-        raise HTTPException(status_code=500, detail="Revenue optimization failed")
+        raise HTTPException(
+            status_code=500, detail="Revenue optimization failed") from exc
 
-@fastapi_app.get("/revenue/profit", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/revenue/profit",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_current_profit():
+    """Return the current optimized profit."""
     if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
         profit = fastapi_app.state.revenue_optimizer.get_current_profit()
         return {"current_profit": profit}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to get profit")
-        raise HTTPException(status_code=500, detail="Failed to get profit")
+        raise HTTPException(status_code=500, detail="Failed to get profit") from exc
 
-@fastapi_app.post("/inference", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.post(
+    "/inference",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def run_inference(request: InferenceRequest):
+    """Run combined-system inference."""
     if not fastapi_app.state.combined_system:
         raise HTTPException(status_code=503, detail="Combined system not available")
 
     try:
         result = fastapi_app.state.combined_system.run_inference(request.data)
         return {"result": result}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Inference failed")
-        raise HTTPException(status_code=500, detail="Inference failed")
+        raise HTTPException(status_code=500, detail="Inference failed") from exc
 
-@fastapi_app.post("/rl/learn", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
-async def rl_learn(state: List[float], action: str, reward: float, next_state: List[float]):
+
+@fastapi_app.post(
+    "/rl/learn",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
+async def rl_learn(state: List[float], action: str, reward: float,
+                   next_state: List[float]):
+    """Train the reinforcement learning agent on one transition."""
     if not fastapi_app.state.rl_agent:
         raise HTTPException(status_code=503, detail="RL agent not available")
 
     try:
         fastapi_app.state.rl_agent.learn(state, action, reward, next_state)
         return {"message": "RL learning completed"}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("RL learning failed")
-        raise HTTPException(status_code=500, detail="RL learning failed")
+        raise HTTPException(status_code=500, detail="RL learning failed") from exc
 
-@fastapi_app.post("/rl/action", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.post(
+    "/rl/action",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_rl_action(state: List[float]):
+    """Select the next RL action for a state."""
     if not fastapi_app.state.rl_agent:
         raise HTTPException(status_code=503, detail="RL agent not available")
 
     try:
         action = fastapi_app.state.rl_agent.choose_action(state)
         return {"action": action}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("RL action selection failed")
-        raise HTTPException(status_code=500, detail="RL action selection failed")
+        raise HTTPException(
+            status_code=500, detail="RL action selection failed") from exc
 
-@fastapi_app.get("/gpu/status", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/gpu/status",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_gpu_status():
+    """Return GPU resource status."""
     if not fastapi_app.state.nim_manager:
         raise HTTPException(status_code=503, detail="NIM manager not available")
 
     try:
         gpu_status = fastapi_app.state.nim_manager.get_resource_status()
         return {"gpu_status": gpu_status}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("GPU status check failed")
-        raise HTTPException(status_code=500, detail="GPU status check failed")
+        raise HTTPException(status_code=500, detail="GPU status check failed") from exc
 
-@fastapi_app.get("/quantum/portfolio", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/quantum/portfolio",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_quantum_portfolio():
+    """Run quantum portfolio optimization."""
     if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
         result = fastapi_app.state.revenue_optimizer.optimize_quantum_portfolio()
         return {"portfolio": result.__dict__}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum portfolio optimization failed")
-        raise HTTPException(status_code=500, detail="Quantum portfolio optimization failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Quantum portfolio optimization failed") from exc
 
-@fastapi_app.get("/quantum/risk", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/quantum/risk",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_quantum_risk():
+    """Run quantum risk analysis."""
     if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
         result = fastapi_app.state.revenue_optimizer.analyze_quantum_risk()
         return {"risk_analysis": result.__dict__}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum risk analysis failed")
-        raise HTTPException(status_code=500, detail="Quantum risk analysis failed")
+        raise HTTPException(
+            status_code=500, detail="Quantum risk analysis failed") from exc
 
-@fastapi_app.get("/quantum/predict/{symbol}", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/quantum/predict/{symbol}",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def predict_market(symbol: str):
+    """Predict market movement for a symbol."""
     if not fastapi_app.state.revenue_optimizer:
         raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
 
     try:
-        prediction = fastapi_app.state.revenue_optimizer.predict_market_with_quantum(symbol)
+        optimizer = fastapi_app.state.revenue_optimizer
+        prediction = optimizer.predict_market_with_quantum(symbol)
         return {"prediction": prediction.__dict__}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum market prediction failed")
-        raise HTTPException(status_code=500, detail="Quantum market prediction failed")
+        raise HTTPException(
+            status_code=500, detail="Quantum market prediction failed") from exc
+
 
 @fastapi_app.get("/logs")
+
+
 def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int = 100):
     """Get recent log entries (admin only)"""
     logger.info("Logs requested by %s", username)
@@ -718,12 +940,17 @@ def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int =
         return {"logs": logs, "user": username}
     except FileNotFoundError:
         return {"logs": ["No log file found"], "user": username}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to read logs")
-        raise HTTPException(status_code=500, detail="Failed to read logs")
+        raise HTTPException(status_code=500, detail="Failed to read logs") from exc
+
 
 @fastapi_app.post("/logs")
-async def add_log_entry(entry: LogEntry, username: Annotated[str, Depends(verify_credentials)]):
+
+
+async def add_log_entry(
+        entry: LogEntry,
+        username: Annotated[str, Depends(verify_credentials)]):
     """Add a log entry"""
     logger.info("Log entry added by %s: %s", username, entry.message)
 
@@ -732,7 +959,15 @@ async def add_log_entry(entry: LogEntry, username: Annotated[str, Depends(verify
 
     return {"message": "Log entry added", "user": username}
 
-@fastapi_app.get("/metrics", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
+
+@fastapi_app.get(
+    "/metrics",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
 async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
     """Get system metrics"""
     logger.info("Metrics requested by %s", username)
@@ -743,12 +978,22 @@ async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
     try:
         metrics = fastapi_app.state.db_manager.get_predictions(limit=50)
         return {"metrics": metrics, "user": username}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to get metrics")
-        raise HTTPException(status_code=500, detail="Failed to get metrics")
+        raise HTTPException(status_code=500, detail="Failed to get metrics") from exc
 
-@fastapi_app.post("/metrics", responses={503: {"description": "Service unavailable"}, 500: {"description": "Internal server error"}})
-async def save_metric(metric_name: str, value: float, username: Annotated[str, Depends(verify_credentials)], tags: Optional[Dict] = None):
+
+@fastapi_app.post(
+    "/metrics",
+    responses={
+        503: {"description": "Service unavailable"},
+        500: {"description": "Internal server error"},
+    })
+
+
+async def save_metric(metric_name: str, value: float,
+                      username: Annotated[str, Depends(verify_credentials)],
+                      tags: Optional[Dict] = None):
     """Save a system metric"""
     logger.info("Metric saved by %s: %s = %f", username, metric_name, value)
 
@@ -758,9 +1003,9 @@ async def save_metric(metric_name: str, value: float, username: Annotated[str, D
     try:
         fastapi_app.state.db_manager.save_system_metric(metric_name, value, tags)
         return {"message": "Metric saved", "user": username}
-    except Exception:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to save metric")
-        raise HTTPException(status_code=500, detail="Failed to save metric")
+        raise HTTPException(status_code=500, detail="Failed to save metric") from exc
 
 if __name__ == "__main__":
     fastapi_app.state.start_time = time.time()
