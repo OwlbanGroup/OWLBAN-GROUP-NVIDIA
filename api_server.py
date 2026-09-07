@@ -12,40 +12,50 @@ import time
 from typing import Annotated, Dict, List, Optional, Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Request
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBasic, HTTPBasicCredentials, HTTPBearer, OAuth2PasswordBearer
+from fastapi.security import (
+    HTTPBasic,
+    HTTPBasicCredentials,
+    HTTPBearer,
+    HTTPAuthorizationCredentials,
+)
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import AI systems
 try:
-    from combined_nim_owlban_ai import CombinedSystem
+    # Exported lazily via combined_nim_owlban_ai.__getattr__, so static
+    # analyzers cannot see it; verified working at runtime.
+    from combined_nim_owlban_ai import CombinedSystem  # pylint: disable=no-name-in-module
     COMBINED_SYSTEM_AVAILABLE = True
-except Exception:
+except ImportError:
     COMBINED_SYSTEM_AVAILABLE = False
 
 try:
     from combined_nim_owlban_ai.ngc_catalog import NGCatalogManager
     NGCATALOG_AVAILABLE = True
-except Exception:
+except ImportError:
     NGCATALOG_AVAILABLE = False
 
 try:
     from combined_nim_owlban_ai.nim import NimManager
-except Exception:
-    NimManager = None
+    NIM_AVAILABLE = True
+except ImportError:
+    NIM_AVAILABLE = False
 
 try:
     from new_products.revenue_optimizer import NVIDIARevenueOptimizer
     REVENUE_OPTIMIZER_AVAILABLE = True
-except Exception:
+except ImportError:
     REVENUE_OPTIMIZER_AVAILABLE = False
 
 try:
-    from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
+    from performance_optimization.reinforcement_learning_agent import (
+        ReinforcementLearningAgent,
+    )
     RL_AGENT_AVAILABLE = True
-except Exception:
+except ImportError:
     RL_AGENT_AVAILABLE = False
 
 # Import database manager
@@ -58,7 +68,7 @@ except ImportError:
 # Import auth library
 try:
     from auth_lib import authenticate_user, verify_token, create_user, auth_manager
-    from auth_lib import request_password_reset, reset_password, generate_api_key, verify_api_key
+    from auth_lib import request_password_reset, reset_password, generate_api_key
     from auth_lib import setup_mfa, enable_mfa, disable_mfa, verify_mfa_code, mfa_required
     AUTH_AVAILABLE = True
 except ImportError:
@@ -75,7 +85,7 @@ except ImportError:
 try:
     from middleware.rate_limiter import RateLimiterMiddleware
     from middleware.security_headers import SecurityHeadersMiddleware
-    from middleware.csrf import CSRFProtectionMiddleware, generate_csrf_token, validate_csrf_token
+    from middleware.csrf import CSRFProtectionMiddleware
     MIDDLEWARE_AVAILABLE = True
 except ImportError:
     MIDDLEWARE_AVAILABLE = False
@@ -86,12 +96,15 @@ REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 # Security
 security = HTTPBasic()
 API_USERNAME = os.getenv("API_USERNAME", "owlban_admin")
-API_PASSWORD = os.getenv("API_PASSWORD")
+API_PASSWORD = os.getenv("API_PASSWORD", "")
 API_HOST = os.getenv("API_HOST", "127.0.0.1")
 API_PORT = int(os.getenv("API_PORT", "8000"))
 
-if API_PASSWORD is None:
-    raise RuntimeError("API_PASSWORD environment variable must be set for API server authentication")
+if not API_PASSWORD:
+    raise RuntimeError(
+        "API_PASSWORD environment variable must be set "
+        "for API server authentication")
+
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     """Verify API credentials"""
@@ -123,7 +136,9 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
 
         # Log request
-        logger.info("Request: %s %s from %s", request.method, request.url.path, request.client.host)
+        client_host = request.client.host if request.client else "unknown"
+        logger.info("Request: %s %s from %s",
+                    request.method, request.url.path, client_host)
 
         # Process request
         response = await call_next(request)
@@ -167,30 +182,30 @@ async def lifespan(app: FastAPI):
         try:
             app.state.combined_system = CombinedSystem()
             logger.info("CombinedSystem initialized")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize CombinedSystem")
 
-    if REVENUE_OPTIMIZER_AVAILABLE and NimManager is not None and NVIDIARevenueOptimizer is not None:
+    if REVENUE_OPTIMIZER_AVAILABLE and NIM_AVAILABLE:
         try:
             app.state.nim_manager = NimManager()
             app.state.nim_manager.initialize()
             app.state.revenue_optimizer = NVIDIARevenueOptimizer(app.state.nim_manager)
             logger.info("Revenue optimizer initialized")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize revenue optimizer")
 
     if RL_AGENT_AVAILABLE and ReinforcementLearningAgent is not None:
         try:
             app.state.rl_agent = ReinforcementLearningAgent(['optimize', 'scale', 'monitor'])
             logger.info("RL agent initialized")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize RL agent")
 
     if DB_MANAGER_AVAILABLE:
         try:
             app.state.db_manager = DatabaseManager()
             logger.info("Database manager initialized")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize database manager")
 
     if app.state.combined_system is not None and hasattr(app.state.combined_system, "ngc_catalog_manager"):
@@ -205,7 +220,7 @@ async def lifespan(app: FastAPI):
             app.state.ngc_catalog_manager = NGCatalogManager()
             app.state.ngc_catalog_manager.initialize()
             logger.info("Standalone NGC catalog manager initialized")
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize standalone NGC catalog manager")
 
     yield
@@ -309,7 +324,8 @@ class UserProfile(BaseModel):
 # JWT Bearer token dependency
 bearer_scheme = HTTPBearer(auto_error=False)
 
-def get_current_user(credentials: HTTPBearer = Depends(bearer_scheme)):
+def get_current_user(
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)):
     """Extract and verify JWT token from Authorization header."""
     if credentials is None:
         raise HTTPException(status_code=401, detail="Authorization header missing")
@@ -362,20 +378,20 @@ async def login(req: LoginRequest):
             if AUTH_METRICS_AVAILABLE:
                 auth_metrics.record_login("mfa_failed", user.company)
             raise HTTPException(status_code=401, detail="Invalid MFA code")
-    access_token, refresh_token = auth_manager.generate_tokens(user)
+    access_tok, refresh_tok = auth_manager.generate_tokens(user)
     auth_manager.log_audit_event("user_login", req.email, {})
     if AUTH_METRICS_AVAILABLE:
         auth_metrics.record_login("success", user.company)
         auth_metrics.record_token_generated("access")
         auth_metrics.record_token_generated("refresh")
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return TokenResponse(access_token=access_tok, refresh_token=refresh_tok)
 
 @fastapi_app.post("/auth/refresh", response_model=dict)
-async def refresh_token(refresh_token: str):
+async def refresh_tokens(token: str):
     """Refresh an access token using a valid refresh token."""
     if not AUTH_AVAILABLE:
         raise HTTPException(status_code=503, detail="Auth system not available")
-    new_access = auth_manager.refresh_access_token(refresh_token)
+    new_access = auth_manager.refresh_access_token(token)
     if not new_access:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     if AUTH_METRICS_AVAILABLE:
@@ -510,7 +526,8 @@ async def prometheus_metrics():
                 sum(1 for u in auth_manager.users.values()
                     if getattr(u, "locked_until", None) is not None)
             )
-            auth_metrics.set_api_keys_active(len(auth_manager._api_keys or {}))
+            auth_metrics.set_api_keys_active(
+                len(getattr(auth_manager, "_api_keys", {}) or {}))
         except Exception:
             logger.exception("Failed to sync auth metric gauges")
         return auth_metrics.render()
