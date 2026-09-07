@@ -249,6 +249,10 @@ class RevenueOptimizationRequest(BaseModel):
     market_conditions: Optional[Dict[str, float]] = None
 
 class InferenceRequest(BaseModel):
+    # `model_type` intentionally shadows pydantic's protected `model_`
+    # namespace; opt out of that namespace check for this model.
+    model_config = {'protected_namespaces': ()}
+
     data: Dict[str, Any]
     model_type: str = "prediction"
 
