@@ -9,12 +9,14 @@ import hmac
 import base64
 import struct
 import re
+import time
 import logging
 import json
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
+from urllib.parse import quote
 
 import jwt
 import bcrypt
@@ -60,18 +62,16 @@ class TOTP:
     @classmethod
     def code_for_time(cls, secret: str, at_time: Optional[float] = None) -> str:
         """Generate the current (or given epoch) TOTP code for a secret."""
-        import time as _time
-        now = at_time if at_time is not None else _time.time()
+        now = at_time if at_time is not None else time.time()
         counter = int(now // cls.PERIOD)
         return cls._hotp(cls._secret_to_bytes(secret), counter)
 
     @classmethod
     def verify(cls, secret: str, code: str, window: int = 1) -> bool:
         """Verify a TOTP code, allowing `window` steps of clock drift."""
-        import time as _time
         if not code or not code.isdigit():
             return False
-        current_counter = int(_time.time() // cls.PERIOD)
+        current_counter = int(time.time() // cls.PERIOD)
         for counter in range(current_counter - window, current_counter + window + 1):
             expected = cls._hotp(cls._secret_to_bytes(secret), counter)
             if hmac.compare_digest(expected, code):
@@ -82,7 +82,6 @@ class TOTP:
     def provisioning_uri(cls, secret: str, email: str,
                          issuer: str = "OWLBAN GROUP") -> str:
         """Return an otpauth:// provisioning URI for authenticator apps."""
-        from urllib.parse import quote
         otpauth = f"otpauth://totp/{quote(issuer)}:{quote(email)}?secret={secret}"
         otpauth += f"&issuer={quote(issuer)}&period={cls.PERIOD}&digits={cls.DIGITS}"
         return otpauth
@@ -111,6 +110,7 @@ class User:
             self.created_at = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serialize the user to a JSON-compatible dict."""
         data = asdict(self)
         # Convert datetime objects to ISO strings
         for key, value in data.items():
@@ -120,6 +120,7 @@ class User:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'User':
+        """Rebuild a User from a serialized dict."""
         # Convert ISO strings back to datetime objects
         for key in ['created_at', 'last_login', 'locked_until']:
             if data.get(key) and isinstance(data[key], str):
@@ -159,6 +160,7 @@ class OAuthClient:
             self.created_at = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serialize the OAuth client to a JSON-compatible dict."""
         data = asdict(self)
         if isinstance(data.get("created_at"), datetime):
             data["created_at"] = data["created_at"].isoformat()
@@ -166,6 +168,7 @@ class OAuthClient:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "OAuthClient":
+        """Rebuild an OAuthClient from a serialized dict."""
         if data.get("created_at") and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
         return cls(**data)
@@ -218,6 +221,11 @@ class AuthManager:
         self.session_store_file = session_store_file
         self.users: Dict[str, User] = {}
         self.sessions: Dict[str, Session] = {}
+        self._password_reset_tokens: Dict[str, Dict[str, Any]] = {}
+        self._audit_log: List[Dict[str, Any]] = []
+        self._api_keys: Dict[str, Any] = {}
+        self._oauth_clients_store: Optional[Dict[str, OAuthClient]] = None
+        self._oauth_codes_store: Optional[Dict[str, Dict[str, Any]]] = None
         self._load_data()
 
         # Create default admin user if no users exist
@@ -234,8 +242,8 @@ class AuthManager:
                         email: User.from_dict(data)
                         for email, data in user_data.items()
                     }
-        except Exception as e:
-            logger.error(f"Failed to load user data: {e}")
+        except (OSError, ValueError, TypeError) as e:
+            logger.error("Failed to load user data: %s", e)
 
         try:
             if os.path.exists(self.session_store_file):
@@ -244,8 +252,8 @@ class AuthManager:
                     self.sessions = {
                         sid: Session(**data) for sid, data in session_data.items()
                     }
-        except Exception as e:
-            logger.error(f"Failed to load session data: {e}")
+        except (OSError, ValueError, TypeError) as e:
+            logger.error("Failed to load session data: %s", e)
 
     def _save_data(self):
         """Save users and sessions to storage"""
@@ -253,8 +261,8 @@ class AuthManager:
             user_data = {email: user.to_dict() for email, user in self.users.items()}
             with open(self.user_store_file, 'w', encoding='utf-8') as f:
                 json.dump(user_data, f, indent=2)
-        except Exception as e:
-            logger.error(f"Failed to save user data: {e}")
+        except (OSError, TypeError, ValueError) as e:
+            logger.error("Failed to save user data: %s", e)
 
         try:
             session_data = {
@@ -267,8 +275,8 @@ class AuthManager:
                         data[key] = data[key].isoformat()
             with open(self.session_store_file, 'w', encoding='utf-8') as f:
                 json.dump(session_data, f, indent=2)
-        except Exception as e:
-            logger.error(f"Failed to save session data: {e}")
+        except (OSError, TypeError, ValueError) as e:
+            logger.error("Failed to save session data: %s", e)
 
     def _create_default_admin(self):
         """Create default admin user"""
@@ -361,7 +369,7 @@ class AuthManager:
 
         self.users[email] = user
         self._save_data()
-        logger.info(f"User created: {email}")
+        logger.info("User created: %s", email)
         return True, "User created successfully"
 
     def authenticate_user(self, email: str, password: str,
@@ -371,12 +379,12 @@ class AuthManager:
         """Authenticate a user"""
         user = self.users.get(email)
         if not user:
-            logger.warning(f"Login attempt for non-existent user: {email}")
+            logger.warning("Login attempt for non-existent user: %s", email)
             return False, "Invalid credentials", None
 
         # Check if account is active
         if not user.active:
-            logger.warning(f"Login attempt for inactive user: {email}")
+            logger.warning("Login attempt for inactive user: %s", email)
             return False, "Account is deactivated", None
 
         # Check if account is locked
@@ -389,9 +397,9 @@ class AuthManager:
             if user.login_attempts >= self.config.MAX_LOGIN_ATTEMPTS:
                 user.locked_until = datetime.now(timezone.utc) + timedelta(
                     minutes=self.config.LOCKOUT_DURATION_MINUTES)
-                logger.warning(f"Account locked for user: {email}")
+                logger.warning("Account locked for user: %s", email)
             self._save_data()
-            logger.warning(f"Invalid password for user: {email}")
+            logger.warning("Invalid password for user: %s", email)
             return False, "Invalid credentials", None
 
         # Reset login attempts on successful login
@@ -400,7 +408,9 @@ class AuthManager:
         user.last_login = datetime.now(timezone.utc)
         self._save_data()
 
-        logger.info(f"Successful login for user: {email}")
+        logger.info("Successful login for user: %s", email)
+        self.log_audit_event("login", email, {"user_agent": user_agent},
+                             ip_address=ip_address)
         return True, "Login successful", user
 
     def generate_tokens(self, user: User) -> Tuple[str, str]:
@@ -491,7 +501,7 @@ class AuthManager:
 
         self.sessions[session_id] = session
         self._save_data()
-        logger.info(f"Session created for user: {user.email}")
+        logger.info("Session created for user: %s", user.email)
         return session_id
 
     def verify_session(self, session_id: str) -> Optional[Session]:
@@ -512,7 +522,7 @@ class AuthManager:
         if session_id in self.sessions:
             self.sessions[session_id].active = False
             self._save_data()
-            logger.info(f"Session destroyed: {session_id}")
+            logger.info("Session destroyed: %s", session_id)
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
@@ -529,7 +539,7 @@ class AuthManager:
                 setattr(user, key, value)
 
         self._save_data()
-        logger.info(f"User updated: {email}")
+        logger.info("User updated: %s", email)
         return True
 
     def delete_user(self, email: str) -> bool:
@@ -537,7 +547,7 @@ class AuthManager:
         if email in self.users:
             del self.users[email]
             self._save_data()
-            logger.info(f"User deleted: {email}")
+            logger.info("User deleted: %s", email)
             return True
         return False
 
@@ -566,7 +576,7 @@ class AuthManager:
 
         if expired_sessions:
             self._save_data()
-            logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
+            logger.info("Cleaned up %s expired sessions", len(expired_sessions))
 
     def create_password_reset_token(self, email: str) -> Optional[str]:
         """Create a password reset token for a user. Returns the token or None."""
@@ -581,7 +591,7 @@ class AuthManager:
             'expires_at': datetime.now(timezone.utc) + timedelta(hours=1),
             'used': False,
         }
-        logger.info(f"Password reset token created for {email}")
+        logger.info("Password reset token created for %s", email)
         return reset_token
 
     def verify_password_reset_token(self, reset_token: str) -> Optional[str]:
@@ -612,7 +622,7 @@ class AuthManager:
             if session.user_id == user.id:
                 session.active = False
         self._save_data()
-        logger.info(f"Password reset successful for {email}")
+        logger.info("Password reset successful for %s", email)
         return True, "Password reset successful"
 
     def log_audit_event(self, event_type: str, user_email: str, details: Dict[str, Any],
@@ -636,9 +646,9 @@ class AuthManager:
             audit_file = self.user_store_file.replace('.json', '_audit.json')
             with open(audit_file, 'w', encoding='utf-8') as f:
                 json.dump(self._audit_log, f, indent=2)
-        except Exception:
+        except OSError:
             logger.warning("Failed to persist audit log to file")
-        logger.info(f"Audit event: {event_type} for {user_email}")
+        logger.info("Audit event: %s for %s", event_type, user_email)
 
     def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
         """Get recent audit log entries."""
@@ -661,7 +671,7 @@ class AuthManager:
             'last_used': None,
         }
         self._save_api_keys()
-        logger.info(f"API key created for {email}")
+        logger.info("API key created for %s", email)
         return api_key
 
     def verify_api_key(self, api_key: str) -> Optional[Dict[str, Any]]:
@@ -684,7 +694,7 @@ class AuthManager:
             return False
         record['active'] = False
         self._save_api_keys()
-        logger.info(f"API key revoked for {email}")
+        logger.info("API key revoked for %s", email)
         return True
 
     def list_api_keys(self, email: str) -> List[Dict[str, Any]]:
@@ -708,7 +718,7 @@ class AuthManager:
             keys_file = self.user_store_file.replace('.json', '_apikeys.json')
             with open(keys_file, 'w', encoding='utf-8') as f:
                 json.dump(getattr(self, '_api_keys', {}), f, indent=2)
-        except Exception:
+        except OSError:
             logger.warning("Failed to save API keys")
 
     # -------------------- Multi-Factor Authentication (TOTP) --------------------
@@ -728,7 +738,7 @@ class AuthManager:
         user.mfa_secret = secret
         uri = TOTP.provisioning_uri(secret, email)
         self._save_data()
-        logger.info(f"MFA setup initiated for {email}")
+        logger.info("MFA setup initiated for %s", email)
         return {"secret": secret, "provisioning_uri": uri}
 
     def enable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
@@ -744,7 +754,7 @@ class AuthManager:
         user.mfa_enabled = True
         self._save_data()
         self.log_audit_event("mfa_enabled", email, {})
-        logger.info(f"MFA enabled for {email}")
+        logger.info("MFA enabled for %s", email)
         return True, "MFA enabled"
 
     def disable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
@@ -761,7 +771,7 @@ class AuthManager:
         user.mfa_secret = None
         self._save_data()
         self.log_audit_event("mfa_disabled", email, {})
-        logger.info(f"MFA disabled for {email}")
+        logger.info("MFA disabled for %s", email)
         return True, "MFA disabled"
 
     def verify_mfa_code(self, email: str, code: str) -> bool:
@@ -805,7 +815,7 @@ class AuthManager:
         )
         self._oauth_clients[client_id] = client
         self._save_oauth_clients()
-        logger.info(f"OAuth2 client registered: {name} ({client_id})")
+        logger.info("OAuth2 client registered: %s (%s)", name, client_id)
         return {"client_id": client_id, "client_secret": client_secret}
 
     def get_oauth_client(self, client_id: str) -> Optional[OAuthClient]:
@@ -822,7 +832,7 @@ class AuthManager:
             return False
         client.active = False
         self._save_oauth_clients()
-        logger.info(f"OAuth2 client revoked: {client_id}")
+        logger.info("OAuth2 client revoked: %s", client_id)
         return True
 
     def list_oauth_clients(self) -> List[Dict[str, Any]]:
@@ -853,7 +863,7 @@ class AuthManager:
         if not client:
             return None
         if redirect_uri not in client.redirect_uris:
-            logger.warning(f"OAuth redirect_uri not registered: {redirect_uri}")
+            logger.warning("OAuth redirect_uri not registered: %s", redirect_uri)
             return None
         if code_challenge_method not in ("S256", "plain"):
             return None
@@ -871,8 +881,8 @@ class AuthManager:
             "used": False,
         }
         self._save_oauth_codes()
-        logger.info(
-            f"OAuth authorization code issued to {client_id} for {user_email}")
+        logger.info("OAuth authorization code issued to %s for %s",
+                    client_id, user_email)
         return code
 
     # === OAuth methods continue below ===
@@ -930,7 +940,7 @@ class AuthManager:
 
     @property
     def _oauth_clients(self) -> Dict[str, OAuthClient]:
-        if not hasattr(self, "_oauth_clients_store"):
+        if self._oauth_clients_store is None:
             self._oauth_clients_store = {}
             fname = self.user_store_file.replace(
                 '.json', '_oauth_clients.json')
@@ -942,13 +952,13 @@ class AuthManager:
                             cid: OAuthClient.from_dict(data)
                             for cid, data in raw.items()
                         }
-            except Exception:
+            except (OSError, ValueError):
                 self._oauth_clients_store = {}
         return self._oauth_clients_store
 
     @property
     def _oauth_codes(self) -> Dict[str, Dict[str, Any]]:
-        if not hasattr(self, "_oauth_codes_store"):
+        if self._oauth_codes_store is None:
             self._oauth_codes_store = {}
             fname = self.user_store_file.replace('.json', '_oauth_codes.json')
             try:
@@ -961,7 +971,7 @@ class AuthManager:
                                 rec["expires_at"] = datetime.fromisoformat(
                                     rec["expires_at"])
                         self._oauth_codes_store = raw
-            except Exception:
+            except (OSError, ValueError):
                 self._oauth_codes_store = {}
         return self._oauth_codes_store
 
@@ -971,19 +981,21 @@ class AuthManager:
             data = {cid: c.to_dict() for cid, c in self._oauth_clients.items()}
             with open(fname, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
-        except Exception:
+        except OSError:
             logger.warning("Failed to save OAuth clients")
 
     def _save_oauth_codes(self):
         try:
             fname = self.user_store_file.replace('.json', '_oauth_codes.json')
-            data = dict(self._oauth_codes)
+            # Deep-copy each record so ISO-string conversion for JSON output
+            # does not mutate the live in-memory datetime values.
+            data = {code: dict(rec) for code, rec in self._oauth_codes.items()}
             for rec in data.values():
                 if isinstance(rec.get("expires_at"), datetime):
                     rec["expires_at"] = rec["expires_at"].isoformat()
             with open(fname, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
-        except Exception:
+        except OSError:
             logger.warning("Failed to save OAuth authorization codes")
 
 auth_manager = AuthManager()
@@ -992,75 +1004,92 @@ auth_manager = AuthManager()
 # Convenience functions
 def authenticate_user(email: str, password: str, ip_address: Optional[str] = None,
                       user_agent: Optional[str] = None):
+    """Authenticate a user via the global auth manager."""
     return auth_manager.authenticate_user(email, password, ip_address, user_agent)
 
 
 def verify_token(token: str):
+    """Verify an access token via the global auth manager."""
     return auth_manager.verify_access_token(token)
 
 
 def create_user(email: str, username: str, password: str, role: str = 'user',
                 company: str = 'OWLBAN_GROUP',
                 permissions: Optional[List[str]] = None):
+    """Create a user via the global auth manager."""
     return auth_manager.create_user(email, username, password, role, company,
                                     permissions)
 
 
 def get_user_by_email(email: str):
+    """Fetch a user by email via the global auth manager."""
     return auth_manager.get_user_by_email(email)
 
 
 def request_password_reset(email: str):
+    """Create a password reset token via the global auth manager."""
     return auth_manager.create_password_reset_token(email)
 
 
 def reset_password(reset_token: str, new_password: str):
+    """Reset a password via the global auth manager."""
     return auth_manager.reset_password(reset_token, new_password)
 
 
 def generate_api_key(email: str, name: str = "default"):
+    """Generate an API key via the global auth manager."""
     return auth_manager.generate_api_key(email, name)
 
 
 def verify_api_key(api_key: str):
+    """Verify an API key via the global auth manager."""
     return auth_manager.verify_api_key(api_key)
 
 
 def setup_mfa(email: str):
+    """Begin MFA setup via the global auth manager."""
     return auth_manager.setup_mfa(email)
 
 
 def enable_mfa(email: str, code: str):
+    """Enable MFA via the global auth manager."""
     return auth_manager.enable_mfa(email, code)
 
 
 def disable_mfa(email: str, code: str):
+    """Disable MFA via the global auth manager."""
     return auth_manager.disable_mfa(email, code)
 
 
 def verify_mfa_code(email: str, code: str):
+    """Verify an MFA code via the global auth manager."""
     return auth_manager.verify_mfa_code(email, code)
 
 
 def mfa_required(email: str):
+    """Check whether MFA is required via the global auth manager."""
     return auth_manager.mfa_required(email)
 
 
 def register_oauth_client(name: str, redirect_uris: List[str], scopes: List[str],
                           confidential: bool = True):
+    """Register an OAuth2 client via the global auth manager."""
     return auth_manager.register_oauth_client(name, redirect_uris, scopes,
                                               confidential)
 
 
 def get_oauth_client(client_id: str):
+    """Fetch an OAuth2 client via the global auth manager."""
     return auth_manager.get_oauth_client(client_id)
 
 
 def list_oauth_clients():
+    """List registered OAuth2 clients via the global auth manager."""
     return auth_manager.list_oauth_clients()
 
 
 def revoke_oauth_client(client_id: str):
+    """Revoke an OAuth2 client via the global auth manager."""
     return auth_manager.revoke_oauth_client(client_id)
 
 
@@ -1069,6 +1098,7 @@ def preauthorize_code(client_id: str, user_email: str, redirect_uri: str,
                       code_challenge_method: str = "S256",
                       scope: Optional[List[str]] = None,
                       expires_seconds: int = 600):
+    """Create an OAuth2 authorization code via the global auth manager."""
     return auth_manager.preauthorize_code(client_id, user_email, redirect_uri,
                                           code_challenge, code_challenge_method,
                                           scope, expires_seconds)
@@ -1076,6 +1106,7 @@ def preauthorize_code(client_id: str, user_email: str, redirect_uri: str,
 
 def exchange_code_for_tokens(code: str, redirect_uri: str,
                              code_verifier: Optional[str] = None):
+    """Exchange an OAuth2 code for tokens via the global auth manager."""
     return auth_manager.exchange_code_for_tokens(code, redirect_uri,
                                                  code_verifier)
 
@@ -1085,22 +1116,23 @@ if __name__ == '__main__':
     print("Testing OWLBAN GROUP Authentication System")
 
     # Create a test user
-    success, message = create_user(
+    created, create_msg = create_user(
         'test@owlban.com', 'testuser', 'TestPass123!', 'user', 'OWLBAN_GROUP')
-    print(f"Create user: {success} - {message}")
+    print(f"Create user: {created} - {create_msg}")
 
     # Test authentication
-    success, message, user = authenticate_user('test@owlban.com', 'TestPass123!')
-    print(f"Authenticate: {success} - {message}")
+    auth_ok, auth_msg, auth_user = authenticate_user(
+        'test@owlban.com', 'TestPass123!')
+    print(f"Authenticate: {auth_ok} - {auth_msg}")
 
-    if user:
+    if auth_user:
         # Generate tokens
-        access_token, refresh_token = auth_manager.generate_tokens(user)
-        print(f"Access token: {access_token[:20]}...")
-        print(f"Refresh token: {refresh_token[:20]}...")
+        access_tok, refresh_tok = auth_manager.generate_tokens(auth_user)
+        print(f"Access token: {access_tok[:20]}...")
+        print(f"Refresh token: {refresh_tok[:20]}...")
 
         # Verify token
-        payload = verify_token(access_token)
-        print(f"Token valid: {payload is not None}")
-        if payload:
-            print(f"User from token: {payload['email']}")
+        token_payload = verify_token(access_tok)
+        print(f"Token valid: {token_payload is not None}")
+        if token_payload:
+            print(f"User from token: {token_payload['email']}")
