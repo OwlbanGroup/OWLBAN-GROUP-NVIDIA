@@ -3,20 +3,21 @@ Unified Authentication Library for OWLBAN GROUP
 Provides JWT-based authentication, password management, and session handling
 """
 
-import jwt
-import bcrypt
 import secrets
 import hashlib
 import hmac
 import base64
 import struct
 import re
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any, Tuple
 import logging
 import json
 import os
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
+
+import jwt
+import bcrypt
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
@@ -46,7 +47,7 @@ class TOTP:
     def _hotp(secret: bytes, counter: int) -> str:
         """RFC 4226 HOTP for the given 8-byte big-endian counter."""
         msg = struct.pack('>Q', counter)
-        digest = hmac.new(secret, msg, TOTP.ALGORITHM).digest()
+        digest = hmac.new(secret, msg, hashlib.sha1).digest()
         offset = digest[-1] & 0x0F
         binary = struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF
         return str(binary % (10 ** TOTP.DIGITS)).zfill(TOTP.DIGITS)
@@ -78,7 +79,8 @@ class TOTP:
         return False
 
     @classmethod
-    def provisioning_uri(cls, secret: str, email: str, issuer: str = "OWLBAN GROUP") -> str:
+    def provisioning_uri(cls, secret: str, email: str,
+                         issuer: str = "OWLBAN GROUP") -> str:
         """Return an otpauth:// provisioning URI for authenticator apps."""
         from urllib.parse import quote
         otpauth = f"otpauth://totp/{quote(issuer)}:{quote(email)}?secret={secret}"
@@ -98,7 +100,7 @@ class User:
     permissions: List[str]
     mfa_enabled: bool = False
     mfa_secret: Optional[str] = None
-    created_at: datetime = None
+    created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
     login_attempts: int = 0
     locked_until: Optional[datetime] = None
@@ -124,6 +126,7 @@ class User:
                 data[key] = datetime.fromisoformat(data[key])
         return cls(**data)
 
+
 @dataclass
 class Session:
     """Session data structure"""
@@ -148,7 +151,7 @@ class OAuthClient:
     name: str
     redirect_uris: List[str]
     scopes: List[str]
-    created_at: datetime = None
+    created_at: Optional[datetime] = None
     active: bool = True
 
     def __post_init__(self):
@@ -170,8 +173,7 @@ class OAuthClient:
 
 def pkce_s256_challenge(verifier: str) -> str:
     """Return the PKCE S256 code_challenge for a code_verifier (RFC 7636)."""
-    import hashlib as _hashlib
-    digest = _hashlib.sha256(verifier.encode("utf-8")).digest()
+    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
 
@@ -184,14 +186,20 @@ class AuthConfig:
     """Authentication configuration"""
     JWT_SECRET = os.getenv('JWT_SECRET', secrets.token_hex(32))
     JWT_REFRESH_SECRET = os.getenv('JWT_REFRESH_SECRET', secrets.token_hex(32))
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', '15'))
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', '7'))
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+        os.getenv('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', '15'))
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(
+        os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', '7'))
 
     PASSWORD_MIN_LENGTH = int(os.getenv('PASSWORD_MIN_LENGTH', '8'))
-    PASSWORD_REQUIRE_UPPERCASE = os.getenv('PASSWORD_REQUIRE_UPPERCASE', 'true').lower() == 'true'
-    PASSWORD_REQUIRE_LOWERCASE = os.getenv('PASSWORD_REQUIRE_LOWERCASE', 'true').lower() == 'true'
-    PASSWORD_REQUIRE_NUMBERS = os.getenv('PASSWORD_REQUIRE_NUMBERS', 'true').lower() == 'true'
-    PASSWORD_REQUIRE_SPECIAL = os.getenv('PASSWORD_REQUIRE_SPECIAL', 'false').lower() == 'true'
+    PASSWORD_REQUIRE_UPPERCASE = (
+        os.getenv('PASSWORD_REQUIRE_UPPERCASE', 'true').lower() == 'true')
+    PASSWORD_REQUIRE_LOWERCASE = (
+        os.getenv('PASSWORD_REQUIRE_LOWERCASE', 'true').lower() == 'true')
+    PASSWORD_REQUIRE_NUMBERS = (
+        os.getenv('PASSWORD_REQUIRE_NUMBERS', 'true').lower() == 'true')
+    PASSWORD_REQUIRE_SPECIAL = (
+        os.getenv('PASSWORD_REQUIRE_SPECIAL', 'false').lower() == 'true')
 
     MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', '5'))
     LOCKOUT_DURATION_MINUTES = int(os.getenv('LOCKOUT_DURATION_MINUTES', '15'))
@@ -199,10 +207,12 @@ class AuthConfig:
     COMPANIES = ['OWLBAN_GROUP', 'OSCAR_BROOME', 'BLACKBOX_AI', 'NVIDIA_INTEGRATION']
     ROLES = ['admin', 'user', 'executive', 'developer', 'analyst']
 
+
 class AuthManager:
     """Unified authentication manager for all OWLBAN GROUP systems"""
 
-    def __init__(self, user_store_file: str = 'users.json', session_store_file: str = 'sessions.json'):
+    def __init__(self, user_store_file: str = 'users.json',
+                 session_store_file: str = 'sessions.json'):
         self.config = AuthConfig()
         self.user_store_file = user_store_file
         self.session_store_file = session_store_file
@@ -218,17 +228,22 @@ class AuthManager:
         """Load users and sessions from storage"""
         try:
             if os.path.exists(self.user_store_file):
-                with open(self.user_store_file, 'r') as f:
+                with open(self.user_store_file, 'r', encoding='utf-8') as f:
                     user_data = json.load(f)
-                    self.users = {email: User.from_dict(data) for email, data in user_data.items()}
+                    self.users = {
+                        email: User.from_dict(data)
+                        for email, data in user_data.items()
+                    }
         except Exception as e:
             logger.error(f"Failed to load user data: {e}")
 
         try:
             if os.path.exists(self.session_store_file):
-                with open(self.session_store_file, 'r') as f:
+                with open(self.session_store_file, 'r', encoding='utf-8') as f:
                     session_data = json.load(f)
-                    self.sessions = {sid: Session(**data) for sid, data in session_data.items()}
+                    self.sessions = {
+                        sid: Session(**data) for sid, data in session_data.items()
+                    }
         except Exception as e:
             logger.error(f"Failed to load session data: {e}")
 
@@ -236,19 +251,21 @@ class AuthManager:
         """Save users and sessions to storage"""
         try:
             user_data = {email: user.to_dict() for email, user in self.users.items()}
-            with open(self.user_store_file, 'w') as f:
+            with open(self.user_store_file, 'w', encoding='utf-8') as f:
                 json.dump(user_data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save user data: {e}")
 
         try:
-            session_data = {sid: asdict(session) for sid, session in self.sessions.items()}
+            session_data = {
+                sid: asdict(session) for sid, session in self.sessions.items()
+            }
             # Convert datetime objects to ISO strings
             for data in session_data.values():
                 for key in ['created_at', 'expires_at']:
                     if isinstance(data[key], datetime):
                         data[key] = data[key].isoformat()
-            with open(self.session_store_file, 'w') as f:
+            with open(self.session_store_file, 'w', encoding='utf-8') as f:
                 json.dump(session_data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save session data: {e}")
@@ -259,7 +276,8 @@ class AuthManager:
             id='admin-001',
             email='admin@owlban.com',
             username='admin',
-            password_hash=bcrypt.hashpw('Admin2024!'.encode(), bcrypt.gensalt()).decode(),
+            password_hash=bcrypt.hashpw(
+                'Admin2024!'.encode(), bcrypt.gensalt()).decode(),
             role='admin',
             company='OWLBAN_GROUP',
             permissions=['read', 'write', 'delete', 'admin', 'manage_users']
@@ -271,18 +289,25 @@ class AuthManager:
     def validate_password_policy(self, password: str) -> Tuple[bool, str]:
         """Validate password against policy"""
         if len(password) < self.config.PASSWORD_MIN_LENGTH:
-            return False, f"Password must be at least {self.config.PASSWORD_MIN_LENGTH} characters long"
+            return False, (
+                f"Password must be at least "
+                f"{self.config.PASSWORD_MIN_LENGTH} characters long")
 
-        if self.config.PASSWORD_REQUIRE_UPPERCASE and not any(c.isupper() for c in password):
+        if (self.config.PASSWORD_REQUIRE_UPPERCASE
+                and not any(c.isupper() for c in password)):
             return False, "Password must contain at least one uppercase letter"
 
-        if self.config.PASSWORD_REQUIRE_LOWERCASE and not any(c.islower() for c in password):
+        if (self.config.PASSWORD_REQUIRE_LOWERCASE
+                and not any(c.islower() for c in password)):
             return False, "Password must contain at least one lowercase letter"
 
-        if self.config.PASSWORD_REQUIRE_NUMBERS and not any(c.isdigit() for c in password):
+        if (self.config.PASSWORD_REQUIRE_NUMBERS
+                and not any(c.isdigit() for c in password)):
             return False, "Password must contain at least one number"
 
-        if self.config.PASSWORD_REQUIRE_SPECIAL and not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password):
+        if (self.config.PASSWORD_REQUIRE_SPECIAL
+                and not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?'
+                            for c in password)):
             return False, "Password must contain at least one special character"
 
         return True, "Password is valid"
@@ -296,7 +321,8 @@ class AuthManager:
         return bcrypt.checkpw(password.encode(), password_hash.encode())
 
     def create_user(self, email: str, username: str, password: str, role: str = 'user',
-                   company: str = 'OWLBAN_GROUP', permissions: List[str] = None) -> Tuple[bool, str]:
+                    company: str = 'OWLBAN_GROUP',
+                    permissions: Optional[List[str]] = None) -> Tuple[bool, str]:
         """Create a new user"""
         if email in self.users:
             return False, "User already exists"
@@ -305,10 +331,13 @@ class AuthManager:
             return False, "Invalid email format"
 
         if role not in self.config.ROLES:
-            return False, f"Invalid role. Must be one of: {', '.join(self.config.ROLES)}"
+            return False, (
+                f"Invalid role. Must be one of: {', '.join(self.config.ROLES)}")
 
         if company not in self.config.COMPANIES:
-            return False, f"Invalid company. Must be one of: {', '.join(self.config.COMPANIES)}"
+            return False, (
+                f"Invalid company. Must be one of: "
+                f"{', '.join(self.config.COMPANIES)}")
 
         # Validate password
         valid, message = self.validate_password_policy(password)
@@ -335,8 +364,10 @@ class AuthManager:
         logger.info(f"User created: {email}")
         return True, "User created successfully"
 
-    def authenticate_user(self, email: str, password: str, ip_address: str = None,
-                         user_agent: str = None) -> Tuple[bool, str, Optional[User]]:
+    def authenticate_user(self, email: str, password: str,
+                          ip_address: Optional[str] = None,
+                          user_agent: Optional[str] = None
+                          ) -> Tuple[bool, str, Optional[User]]:
         """Authenticate a user"""
         user = self.users.get(email)
         if not user:
@@ -356,7 +387,8 @@ class AuthManager:
         if not self.verify_password(password, user.password_hash):
             user.login_attempts += 1
             if user.login_attempts >= self.config.MAX_LOGIN_ATTEMPTS:
-                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=self.config.LOCKOUT_DURATION_MINUTES)
+                user.locked_until = datetime.now(timezone.utc) + timedelta(
+                    minutes=self.config.LOCKOUT_DURATION_MINUTES)
                 logger.warning(f"Account locked for user: {email}")
             self._save_data()
             logger.warning(f"Invalid password for user: {email}")
@@ -387,7 +419,8 @@ class AuthManager:
             'permissions': user.permissions,
             'type': 'access',
             'iat': int(now.timestamp()),
-            'exp': int((now + timedelta(minutes=self.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
+            'exp': int((now + timedelta(
+                minutes=self.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
         }
 
         refresh_token_payload = {
@@ -396,11 +429,15 @@ class AuthManager:
             'email': user.email,
             'type': 'refresh',
             'iat': int(now.timestamp()),
-            'exp': int((now + timedelta(days=self.config.JWT_REFRESH_TOKEN_EXPIRE_DAYS)).timestamp())
+            'exp': int((now + timedelta(
+                days=self.config.JWT_REFRESH_TOKEN_EXPIRE_DAYS)).timestamp())
         }
 
-        access_token = jwt.encode(access_token_payload, self.config.JWT_SECRET, algorithm='HS256')
-        refresh_token = jwt.encode(refresh_token_payload, self.config.JWT_REFRESH_SECRET, algorithm='HS256')
+        access_token = jwt.encode(
+            access_token_payload, self.config.JWT_SECRET, algorithm='HS256')
+        refresh_token = jwt.encode(
+            refresh_token_payload, self.config.JWT_REFRESH_SECRET,
+            algorithm='HS256')
 
         return access_token, refresh_token
 
@@ -417,7 +454,9 @@ class AuthManager:
     def refresh_access_token(self, refresh_token: str) -> Optional[Tuple[str, str]]:
         """Refresh an access token using a refresh token"""
         try:
-            payload = jwt.decode(refresh_token, self.config.JWT_REFRESH_SECRET, algorithms=['HS256'])
+            payload = jwt.decode(
+                refresh_token, self.config.JWT_REFRESH_SECRET,
+                algorithms=['HS256'])
             if payload.get('type') != 'refresh':
                 return None
 
@@ -431,7 +470,8 @@ class AuthManager:
         except jwt.InvalidTokenError:
             return None
 
-    def create_session(self, user: User, ip_address: str = None, user_agent: str = None) -> str:
+    def create_session(self, user: User, ip_address: Optional[str] = None,
+                       user_agent: Optional[str] = None) -> str:
         """Create a new session"""
         session_id = secrets.token_urlsafe(32)
         now = datetime.now(timezone.utc)
@@ -501,7 +541,7 @@ class AuthManager:
             return True
         return False
 
-    def list_users(self, company: str = None) -> List[Dict[str, Any]]:
+    def list_users(self, company: Optional[str] = None) -> List[Dict[str, Any]]:
         """List all users, optionally filtered by company"""
         users = []
         for user in self.users.values():
@@ -565,7 +605,8 @@ class AuthManager:
         user = self.users.get(email)
         if not user:
             return False, "User not found"
-        user.password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        user.password_hash = bcrypt.hashpw(
+            new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self._password_reset_tokens[reset_token]['used'] = True
         for session in self.sessions.values():
             if session.user_id == user.id:
@@ -575,7 +616,7 @@ class AuthManager:
         return True, "Password reset successful"
 
     def log_audit_event(self, event_type: str, user_email: str, details: Dict[str, Any],
-                        ip_address: str = None, severity: str = "info"):
+                        ip_address: Optional[str] = None, severity: str = "info"):
         """Log an audit event for security tracking."""
         if not hasattr(self, '_audit_log'):
             self._audit_log = []
@@ -713,7 +754,7 @@ class AuthManager:
             return False, "User not found"
         if not user.mfa_enabled:
             return False, "MFA not enabled"
-        if not TOTP.verify(user.mfa_secret, code):
+        if not user.mfa_secret or not TOTP.verify(user.mfa_secret, code):
             self.log_audit_event("mfa_disable_failed", email, {}, severity="warning")
             return False, "Invalid TOTP code"
         user.mfa_enabled = False
@@ -750,7 +791,8 @@ class AuthManager:
     # -------------------- OAuth2 Authorization Server --------------------
 
     def register_oauth_client(self, name: str, redirect_uris: List[str],
-                              scopes: List[str], confidential: bool = True) -> Dict[str, str]:
+                              scopes: List[str],
+                              confidential: bool = True) -> Dict[str, Optional[str]]:
         """Register a new OAuth2 client. Returns client_id/client_secret."""
         client_id = f"oac_{secrets.token_urlsafe(24)}"
         client_secret = secrets.token_urlsafe(48) if confidential else None
@@ -824,18 +866,21 @@ class AuthManager:
             "scope": scope or client.scopes,
             "code_challenge": code_challenge,
             "code_challenge_method": code_challenge_method,
-            "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_seconds),
+            "expires_at": datetime.now(timezone.utc) + timedelta(
+                seconds=expires_seconds),
             "used": False,
         }
         self._save_oauth_codes()
-        logger.info(f"OAuth authorization code issued to {client_id} for {user_email}")
+        logger.info(
+            f"OAuth authorization code issued to {client_id} for {user_email}")
         return code
 
     # === OAuth methods continue below ===
 
     def exchange_code_for_tokens(self, code: str, redirect_uri: str,
-                                 code_verifier: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Exchange an authorization code for JWT access/refresh tokens (RFC 6749 §4.1.3).
+                                 code_verifier: Optional[str] = None
+                                 ) -> Optional[Dict[str, Any]]:
+        """Exchange an authorization code for JWT tokens (RFC 6749 §4.1.3).
 
         Enforces single-use, expiry, redirect_uri match, and PKCE verification.
         Returns a dict with access_token/refresh_token/token_type/expires_in and
@@ -887,13 +932,15 @@ class AuthManager:
     def _oauth_clients(self) -> Dict[str, OAuthClient]:
         if not hasattr(self, "_oauth_clients_store"):
             self._oauth_clients_store = {}
-            fname = self.user_store_file.replace('.json', '_oauth_clients.json')
+            fname = self.user_store_file.replace(
+                '.json', '_oauth_clients.json')
             try:
                 if os.path.exists(fname):
                     with open(fname, 'r', encoding='utf-8') as f:
                         raw = json.load(f)
                         self._oauth_clients_store = {
-                            cid: OAuthClient.from_dict(data) for cid, data in raw.items()
+                            cid: OAuthClient.from_dict(data)
+                            for cid, data in raw.items()
                         }
             except Exception:
                 self._oauth_clients_store = {}
@@ -909,8 +956,10 @@ class AuthManager:
                     with open(fname, 'r', encoding='utf-8') as f:
                         raw = json.load(f)
                         for rec in raw.values():
-                            if rec.get("expires_at") and isinstance(rec["expires_at"], str):
-                                rec["expires_at"] = datetime.fromisoformat(rec["expires_at"])
+                            if rec.get("expires_at") and isinstance(
+                                    rec["expires_at"], str):
+                                rec["expires_at"] = datetime.fromisoformat(
+                                    rec["expires_at"])
                         self._oauth_codes_store = raw
             except Exception:
                 self._oauth_codes_store = {}
@@ -939,76 +988,105 @@ class AuthManager:
 
 auth_manager = AuthManager()
 
+
 # Convenience functions
-def authenticate_user(email: str, password: str, ip_address: str = None, user_agent: str = None):
+def authenticate_user(email: str, password: str, ip_address: Optional[str] = None,
+                      user_agent: Optional[str] = None):
     return auth_manager.authenticate_user(email, password, ip_address, user_agent)
+
 
 def verify_token(token: str):
     return auth_manager.verify_access_token(token)
 
+
 def create_user(email: str, username: str, password: str, role: str = 'user',
-               company: str = 'OWLBAN_GROUP', permissions: List[str] = None):
-    return auth_manager.create_user(email, username, password, role, company, permissions)
+                company: str = 'OWLBAN_GROUP',
+                permissions: Optional[List[str]] = None):
+    return auth_manager.create_user(email, username, password, role, company,
+                                    permissions)
+
 
 def get_user_by_email(email: str):
     return auth_manager.get_user_by_email(email)
 
+
 def request_password_reset(email: str):
     return auth_manager.create_password_reset_token(email)
+
 
 def reset_password(reset_token: str, new_password: str):
     return auth_manager.reset_password(reset_token, new_password)
 
+
 def generate_api_key(email: str, name: str = "default"):
     return auth_manager.generate_api_key(email, name)
+
 
 def verify_api_key(api_key: str):
     return auth_manager.verify_api_key(api_key)
 
+
 def setup_mfa(email: str):
     return auth_manager.setup_mfa(email)
+
 
 def enable_mfa(email: str, code: str):
     return auth_manager.enable_mfa(email, code)
 
+
 def disable_mfa(email: str, code: str):
     return auth_manager.disable_mfa(email, code)
+
 
 def verify_mfa_code(email: str, code: str):
     return auth_manager.verify_mfa_code(email, code)
 
+
 def mfa_required(email: str):
     return auth_manager.mfa_required(email)
 
+
 def register_oauth_client(name: str, redirect_uris: List[str], scopes: List[str],
                           confidential: bool = True):
-    return auth_manager.register_oauth_client(name, redirect_uris, scopes, confidential)
+    return auth_manager.register_oauth_client(name, redirect_uris, scopes,
+                                              confidential)
+
 
 def get_oauth_client(client_id: str):
     return auth_manager.get_oauth_client(client_id)
 
+
 def list_oauth_clients():
     return auth_manager.list_oauth_clients()
+
 
 def revoke_oauth_client(client_id: str):
     return auth_manager.revoke_oauth_client(client_id)
 
+
 def preauthorize_code(client_id: str, user_email: str, redirect_uri: str,
-                      code_challenge: str = None, code_challenge_method: str = "S256",
-                      scope: List[str] = None, expires_seconds: int = 600):
+                      code_challenge: Optional[str] = None,
+                      code_challenge_method: str = "S256",
+                      scope: Optional[List[str]] = None,
+                      expires_seconds: int = 600):
     return auth_manager.preauthorize_code(client_id, user_email, redirect_uri,
                                           code_challenge, code_challenge_method,
                                           scope, expires_seconds)
 
-def exchange_code_for_tokens(code: str, redirect_uri: str, code_verifier: str = None):
-    return auth_manager.exchange_code_for_tokens(code, redirect_uri, code_verifier)
+
+def exchange_code_for_tokens(code: str, redirect_uri: str,
+                             code_verifier: Optional[str] = None):
+    return auth_manager.exchange_code_for_tokens(code, redirect_uri,
+                                                 code_verifier)
+
 
 if __name__ == '__main__':
     # Test the auth system
     print("Testing OWLBAN GROUP Authentication System")
 
     # Create a test user
-    success, message = create_user('test@owlban.com', 'testuser', 'TestPass123!', 'user', 'OWLBAN_GROUP')
+    success, message = create_user(
+        'test@owlban.com', 'testuser', 'TestPass123!', 'user', 'OWLBAN_GROUP')
     print(f"Create user: {success} - {message}")
 
     # Test authentication
