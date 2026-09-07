@@ -5,16 +5,16 @@ JPMorgan Integration - Treasury Management Module
 """
 
 import logging
-import json
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
 from jpmorgan_api_integration import JPMorganAPIIntegration
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("BankingTreasuryApp")
+
 
 class BankingTreasuryApp:
     """Banking Treasury Application using JPMorgan Integration"""
@@ -38,12 +38,12 @@ class BankingTreasuryApp:
             "investments": 5000000.00,
             "liabilities": 2000000.00,
             "net_liquidity": 6000000.00,
-            "status": "healthy"
+            "status": "healthy",
         }
 
     def get_account_balance(self, account_id: str) -> Dict[str, Any]:
         """Get account balance"""
-        self.logger.info(f"Retrieving balance for account: {account_id}")
+        self.logger.info("Retrieving balance for account: %s", account_id)
 
         balance = self.jpmorgan.get_account_balance(account_id)
         if balance.get("status") != "failed":
@@ -51,12 +51,22 @@ class BankingTreasuryApp:
 
         return balance
 
-    def transfer_funds(self, from_account: str, to_account: str, amount: float,
-                      currency: str = "USD", description: str = "") -> Dict[str, Any]:
+    def transfer_funds(
+        self,
+        from_account: str,
+        to_account: str,
+        amount: float,
+        currency: str = "USD",
+        description: str = "",
+    ) -> Dict[str, Any]:
         """Transfer funds between accounts"""
-        self.logger.info(f"Transferring ${amount} {currency} from {from_account} to {to_account}")
+        self.logger.info(
+            f"Transferring ${amount} {currency} from {from_account} to {to_account}"
+        )
 
-        result = self.jpmorgan.transfer_funds(from_account, to_account, amount, currency)
+        result = self.jpmorgan.transfer_funds(
+            from_account, to_account, amount, currency
+        )
 
         if result.get("status") == "completed":
             # Update cached balances
@@ -69,7 +79,7 @@ class BankingTreasuryApp:
 
     def optimize_cash_position(self, accounts: List[str]) -> Dict[str, Any]:
         """Optimize cash position across accounts"""
-        self.logger.info(f"Optimizing cash position for {len(accounts)} accounts")
+        self.logger.info("Optimizing cash position for %s accounts", len(accounts))
 
         total_balance = 0
         account_balances = {}
@@ -91,16 +101,21 @@ class BankingTreasuryApp:
                 needed = target_balance - current_balance
                 # Find account with surplus
                 for surplus_account, surplus_balance in account_balances.items():
-                    if surplus_balance > target_balance * 1.1 and surplus_account != account_id:
+                    if (
+                        surplus_balance > target_balance * 1.1
+                        and surplus_account != account_id
+                    ):
                         transfer_amount = min(needed, surplus_balance - target_balance)
                         if transfer_amount > 0:
-                            optimization_actions.append({
-                                "action": "transfer",
-                                "from_account": surplus_account,
-                                "to_account": account_id,
-                                "amount": transfer_amount,
-                                "reason": "Cash optimization"
-                            })
+                            optimization_actions.append(
+                                {
+                                    "action": "transfer",
+                                    "from_account": surplus_account,
+                                    "to_account": account_id,
+                                    "amount": transfer_amount,
+                                    "reason": "Cash optimization",
+                                }
+                            )
                         break
 
         # Execute optimization actions
@@ -110,7 +125,7 @@ class BankingTreasuryApp:
                 action["from_account"],
                 action["to_account"],
                 action["amount"],
-                description=action["reason"]
+                description=action["reason"],
             )
             results.append(result)
 
@@ -120,12 +135,12 @@ class BankingTreasuryApp:
             "account_balances": account_balances,
             "optimization_actions": len(optimization_actions),
             "executed_transfers": results,
-            "status": "completed"
+            "status": "completed",
         }
 
     def forecast_cash_flow(self, account_id: str, days: int = 30) -> Dict[str, Any]:
         """Forecast cash flow for an account"""
-        self.logger.info(f"Forecasting cash flow for {account_id} over {days} days")
+        self.logger.info("Forecasting cash flow for %s over %s days", account_id, days)
 
         # Get current balance
         balance = self.get_account_balance(account_id)
@@ -143,13 +158,15 @@ class BankingTreasuryApp:
 
             balance_projection += net_flow
 
-            forecast.append({
-                "day": day,
-                "inflow": inflow,
-                "outflow": outflow,
-                "net_flow": net_flow,
-                "projected_balance": balance_projection
-            })
+            forecast.append(
+                {
+                    "day": day,
+                    "inflow": inflow,
+                    "outflow": outflow,
+                    "net_flow": net_flow,
+                    "projected_balance": balance_projection,
+                }
+            )
 
         return {
             "account_id": account_id,
@@ -157,12 +174,12 @@ class BankingTreasuryApp:
             "forecast_period_days": days,
             "forecast": forecast,
             "final_projected_balance": balance_projection,
-            "status": "completed"
+            "status": "completed",
         }
 
     def generate_treasury_report(self, accounts: List[str]) -> str:
         """Generate comprehensive treasury report"""
-        self.logger.info(f"Generating treasury report for {len(accounts)} accounts")
+        self.logger.info("Generating treasury report for %s accounts", len(accounts))
 
         total_balance = 0
         account_details = []
@@ -174,12 +191,14 @@ class BankingTreasuryApp:
                 current = balance.get("currentBalance", {}).get("amount", 0)
                 total_balance += available
 
-                account_details.append({
-                    "account_id": account_id,
-                    "available_balance": available,
-                    "current_balance": current,
-                    "status": balance.get("status", "unknown")
-                })
+                account_details.append(
+                    {
+                        "account_id": account_id,
+                        "available_balance": available,
+                        "current_balance": current,
+                        "status": balance.get("status", "unknown"),
+                    }
+                )
 
         # Cash flow forecast for primary account
         if accounts:
@@ -219,7 +238,7 @@ class BankingTreasuryApp:
 
 """
 
-        if accounts and 'forecast' in locals():
+        if accounts and "forecast" in locals():
             for day_data in forecast["forecast"][:7]:  # Show first 7 days
                 report += f"| {day_data['day']} | ${day_data['inflow']:,.2f} | ${day_data['outflow']:,.2f} | ${day_data['net_flow']:,.2f} | ${day_data['projected_balance']:,.2f} |\n"
 
@@ -246,6 +265,7 @@ class BankingTreasuryApp:
 """
 
         return report
+
 
 def main():
     """Demonstrate Banking Treasury Application"""
@@ -274,26 +294,26 @@ def main():
     # Transfer funds
     print("\n🔄 Executing Fund Transfer...")
     transfer = treasury_app.transfer_funds(
-        "OWL001234",
-        "TREASURY999",
-        25000.00,
-        description="Treasury optimization"
+        "OWL001234", "TREASURY999", 25000.00, description="Treasury optimization"
     )
     print(f"Transfer Result: {transfer.get('status')}")
 
     # Optimize cash position
     print("\n📊 Optimizing Cash Position...")
     optimization = treasury_app.optimize_cash_position(accounts)
-    print(f"Optimization completed: {optimization['optimization_actions']} actions executed")
+    print(
+        f"Optimization completed: {optimization['optimization_actions']} actions executed"
+    )
 
     # Generate treasury report
     report = treasury_app.generate_treasury_report(accounts)
 
-    with open('banking_treasury_report.md', 'w', encoding='utf-8') as f:
+    with open("banking_treasury_report.md", "w", encoding="utf-8") as f:
         f.write(report)
 
     print("\n📋 Treasury report saved to 'banking_treasury_report.md'")
     print("🎉 Banking Treasury Application Demo Complete!")
+
 
 if __name__ == "__main__":
     main()

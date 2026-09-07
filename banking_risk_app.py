@@ -5,15 +5,16 @@ JPMorgan Integration - Risk Management Module
 """
 
 import logging
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
 from jpmorgan_api_integration import JPMorganAPIIntegration
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("BankingRiskApp")
+
 
 class BankingRiskApp:
     """Banking Risk Application using JPMorgan Integration"""
@@ -26,12 +27,17 @@ class BankingRiskApp:
         """Authenticate with JPMorgan"""
         return self.jpmorgan.authenticate()
 
-    def calculate_portfolio_risk(self, portfolio: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def calculate_portfolio_risk(
+        self, portfolio: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Calculate portfolio risk metrics"""
-        self.logger.info(f"Calculating risk for portfolio with {len(portfolio)} assets")
+        self.logger.info("Calculating risk for portfolio with %s assets", len(portfolio))
 
         total_value = sum(item.get("value", 0) for item in portfolio)
-        total_volatility = sum(item.get("volatility", 0) * item.get("value", 0) for item in portfolio) / total_value
+        total_volatility = (
+            sum(item.get("volatility", 0) * item.get("value", 0) for item in portfolio)
+            / total_value
+        )
 
         # Simplified VaR calculation (95% confidence)
         var_95 = total_value * total_volatility * 1.645  # 1.645 is z-score for 95%
@@ -40,12 +46,14 @@ class BankingRiskApp:
             "total_risk": total_volatility,
             "var_95": var_95,
             "total_value": total_value,
-            "expected_loss": var_95 * 0.05
+            "expected_loss": var_95 * 0.05,
         }
 
     def check_compliance(self, transaction: Dict[str, Any]) -> Dict[str, Any]:
         """Check transaction compliance"""
-        self.logger.info(f"Checking compliance for transaction: {transaction.get('amount', 0)}")
+        self.logger.info(
+            f"Checking compliance for transaction: {transaction.get('amount', 0)}"
+        )
 
         amount = transaction.get("amount", 0)
         sender = transaction.get("sender", "")
@@ -53,18 +61,24 @@ class BankingRiskApp:
 
         # Simplified compliance checks
         aml_clear = amount < 10000  # AML threshold
-        sanctions_check = not any(word in (sender + recipient).upper() for word in ["SANCTIONED", "BLOCKED"])
+        sanctions_check = not any(
+            word in (sender + recipient).upper() for word in ["SANCTIONED", "BLOCKED"]
+        )
 
         return {
             "aml_clear": aml_clear,
             "sanctions_check": sanctions_check,
-            "compliance_status": "passed" if aml_clear and sanctions_check else "failed",
-            "checked_amount": amount
+            "compliance_status": (
+                "passed" if aml_clear and sanctions_check else "failed"
+            ),
+            "checked_amount": amount,
         }
 
     def assess_portfolio_risk(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         """Assess risk for a portfolio"""
-        self.logger.info(f"Assessing risk for portfolio with ${portfolio.get('totalValue', 0):,.2f} value")
+        self.logger.info(
+            f"Assessing risk for portfolio with ${portfolio.get('totalValue', 0):,.2f} value"
+        )
 
         risk_metrics = self.jpmorgan.get_risk_metrics(portfolio)
 
@@ -78,7 +92,7 @@ class BankingRiskApp:
             "risk_level": risk_level,
             "recommendations": recommendations,
             "assessment_date": "2024-01-15",
-            "status": "completed"
+            "status": "completed",
         }
 
     def _calculate_risk_level(self, risk_metrics: Dict[str, Any]) -> str:
@@ -95,7 +109,9 @@ class BankingRiskApp:
         else:
             return "Very High Risk"
 
-    def _generate_risk_recommendations(self, risk_metrics: Dict[str, Any], risk_level: str) -> List[str]:
+    def _generate_risk_recommendations(
+        self, risk_metrics: Dict[str, Any], risk_level: str
+    ) -> List[str]:
         """Generate risk management recommendations"""
         recommendations = []
 
@@ -104,43 +120,59 @@ class BankingRiskApp:
         sharpe = risk_metrics.get("riskMetrics", {}).get("sharpeRatio", 0)
 
         if risk_level == "Very High Risk":
-            recommendations.extend([
-                "Immediate portfolio rebalancing required",
-                "Consider reducing exposure to high-volatility assets",
-                "Implement hedging strategies",
-                "Increase cash reserves to 25%"
-            ])
+            recommendations.extend(
+                [
+                    "Immediate portfolio rebalancing required",
+                    "Consider reducing exposure to high-volatility assets",
+                    "Implement hedging strategies",
+                    "Increase cash reserves to 25%",
+                ]
+            )
         elif risk_level == "High Risk":
-            recommendations.extend([
-                "Rebalance portfolio to reduce volatility",
-                "Diversify across more asset classes",
-                "Consider defensive investment strategies",
-                "Monitor positions daily"
-            ])
+            recommendations.extend(
+                [
+                    "Rebalance portfolio to reduce volatility",
+                    "Diversify across more asset classes",
+                    "Consider defensive investment strategies",
+                    "Monitor positions daily",
+                ]
+            )
         elif risk_level == "Moderate Risk":
-            recommendations.extend([
-                "Maintain current diversification",
-                "Regular portfolio review recommended",
-                "Consider moderate hedging if volatility increases"
-            ])
+            recommendations.extend(
+                [
+                    "Maintain current diversification",
+                    "Regular portfolio review recommended",
+                    "Consider moderate hedging if volatility increases",
+                ]
+            )
         else:  # Low Risk
-            recommendations.extend([
-                "Portfolio well-balanced",
-                "Continue current risk management strategy",
-                "Monitor for changes in market conditions"
-            ])
+            recommendations.extend(
+                [
+                    "Portfolio well-balanced",
+                    "Continue current risk management strategy",
+                    "Monitor for changes in market conditions",
+                ]
+            )
 
         if sharpe < 1.0:
-            recommendations.append("Sharpe ratio indicates poor risk-adjusted returns - consider portfolio optimization")
+            recommendations.append(
+                "Sharpe ratio indicates poor risk-adjusted returns - consider portfolio optimization"
+            )
 
         if volatility > 0.20:
-            recommendations.append("High volatility detected - consider volatility dampening strategies")
+            recommendations.append(
+                "High volatility detected - consider volatility dampening strategies"
+            )
 
         return recommendations
 
-    def stress_test_portfolio(self, portfolio: Dict[str, Any], scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def stress_test_portfolio(
+        self, portfolio: Dict[str, Any], scenarios: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Perform stress testing on portfolio"""
-        self.logger.info(f"Performing stress test on portfolio with {len(scenarios)} scenarios")
+        self.logger.info(
+            f"Performing stress test on portfolio with {len(scenarios)} scenarios"
+        )
 
         results = []
         base_value = portfolio.get("totalValue", 1000000)
@@ -154,25 +186,29 @@ class BankingRiskApp:
             stressed_value = base_value * (1 + market_change)
             stressed_var = 0.05 * (1 + volatility_change)  # Base 5% VaR adjusted
 
-            results.append({
-                "scenario_name": scenario.get("name", "Unnamed"),
-                "market_change": market_change,
-                "volatility_change": volatility_change,
-                "stressed_value": stressed_value,
-                "stressed_var": stressed_var,
-                "loss_amount": base_value - stressed_value,
-                "survival_probability": max(0, 1 - (stressed_var * 2))
-            })
+            results.append(
+                {
+                    "scenario_name": scenario.get("name", "Unnamed"),
+                    "market_change": market_change,
+                    "volatility_change": volatility_change,
+                    "stressed_value": stressed_value,
+                    "stressed_var": stressed_var,
+                    "loss_amount": base_value - stressed_value,
+                    "survival_probability": max(0, 1 - (stressed_var * 2)),
+                }
+            )
 
         return {
             "portfolio_value": base_value,
             "scenarios_tested": len(scenarios),
             "stress_test_results": results,
             "worst_case_loss": max(r["loss_amount"] for r in results),
-            "status": "completed"
+            "status": "completed",
         }
 
-    def monitor_risk_limits(self, portfolio: Dict[str, Any], limits: Dict[str, float]) -> Dict[str, Any]:
+    def monitor_risk_limits(
+        self, portfolio: Dict[str, Any], limits: Dict[str, float]
+    ) -> Dict[str, Any]:
         """Monitor portfolio against risk limits"""
         self.logger.info("Monitoring portfolio against risk limits")
 
@@ -187,19 +223,23 @@ class BankingRiskApp:
             if limit_name in risk_metrics:
                 current_value = risk_metrics[limit_name]
                 if current_value > limit_value:
-                    violations.append({
-                        "limit": limit_name,
-                        "current_value": current_value,
-                        "limit_value": limit_value,
-                        "breach_amount": current_value - limit_value
-                    })
+                    violations.append(
+                        {
+                            "limit": limit_name,
+                            "current_value": current_value,
+                            "limit_value": limit_value,
+                            "breach_amount": current_value - limit_value,
+                        }
+                    )
                 elif current_value > limit_value * 0.9:  # Warning at 90% of limit
-                    warnings.append({
-                        "limit": limit_name,
-                        "current_value": current_value,
-                        "limit_value": limit_value,
-                        "warning_threshold": limit_value * 0.1
-                    })
+                    warnings.append(
+                        {
+                            "limit": limit_name,
+                            "current_value": current_value,
+                            "limit_value": limit_value,
+                            "warning_threshold": limit_value * 0.1,
+                        }
+                    )
 
         return {
             "portfolio": portfolio,
@@ -208,7 +248,7 @@ class BankingRiskApp:
             "limit_violations": violations,
             "limit_warnings": warnings,
             "overall_status": "breached" if violations else "within_limits",
-            "monitoring_timestamp": "2024-01-15T10:00:00Z"
+            "monitoring_timestamp": "2024-01-15T10:00:00Z",
         }
 
     def generate_risk_report(self, portfolio: Dict[str, Any]) -> str:
@@ -222,8 +262,12 @@ class BankingRiskApp:
         scenarios = [
             {"name": "Market Crash", "market_change": -0.20, "volatility_change": 0.50},
             {"name": "Recession", "market_change": -0.10, "volatility_change": 0.30},
-            {"name": "Inflation Spike", "market_change": -0.05, "volatility_change": 0.20},
-            {"name": "Bull Market", "market_change": 0.15, "volatility_change": -0.20}
+            {
+                "name": "Inflation Spike",
+                "market_change": -0.05,
+                "volatility_change": 0.20,
+            },
+            {"name": "Bull Market", "market_change": 0.15, "volatility_change": -0.20},
         ]
 
         stress_test = self.stress_test_portfolio(portfolio, scenarios)
@@ -231,8 +275,8 @@ class BankingRiskApp:
         # Risk limits
         limits = {
             "valueAtRisk": 0.08,  # 8% max VaR
-            "volatility": 0.25,   # 25% max volatility
-            "maxDrawdown": 0.15   # 15% max drawdown
+            "volatility": 0.25,  # 25% max volatility
+            "maxDrawdown": 0.15,  # 15% max drawdown
         }
 
         limit_monitoring = self.monitor_risk_limits(portfolio, limits)
@@ -267,7 +311,7 @@ class BankingRiskApp:
 
 """
 
-        for i, rec in enumerate(assessment['recommendations'], 1):
+        for i, rec in enumerate(assessment["recommendations"], 1):
             report += f"{i}. {rec}\n"
 
         report += f"""
@@ -320,6 +364,7 @@ class BankingRiskApp:
 
         return report
 
+
 def main():
     """Demonstrate Banking Risk Application"""
     print("OWLBAN GROUP - Banking Risk Application")
@@ -339,7 +384,7 @@ def main():
     portfolio = {
         "totalValue": 2500000,
         "assets": ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"],
-        "weights": [0.25, 0.20, 0.20, 0.20, 0.15]
+        "weights": [0.25, 0.20, 0.20, 0.20, 0.15],
     }
 
     # Assess portfolio risk
@@ -352,7 +397,7 @@ def main():
     print("\n🔥 Performing Stress Testing...")
     scenarios = [
         {"name": "Market Crash", "market_change": -0.20, "volatility_change": 0.50},
-        {"name": "Recession", "market_change": -0.10, "volatility_change": 0.30}
+        {"name": "Recession", "market_change": -0.10, "volatility_change": 0.30},
     ]
     stress_test = risk_app.stress_test_portfolio(portfolio, scenarios)
     print(f"Worst case loss: ${stress_test['worst_case_loss']:,.2f}")
@@ -366,11 +411,12 @@ def main():
     # Generate risk report
     report = risk_app.generate_risk_report(portfolio)
 
-    with open('banking_risk_report.md', 'w', encoding='utf-8') as f:
+    with open("banking_risk_report.md", "w", encoding="utf-8") as f:
         f.write(report)
 
     print("\n📋 Risk report saved to 'banking_risk_report.md'")
     print("🎉 Banking Risk Application Demo Complete!")
+
 
 if __name__ == "__main__":
     main()

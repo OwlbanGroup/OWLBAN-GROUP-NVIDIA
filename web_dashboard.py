@@ -3,16 +3,18 @@ OWLBAN GROUP AI Web Dashboard
 Streamlit-based web interface for monitoring and controlling AI systems
 """
 
+from typing import Dict, Optional
+
 import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
-from typing import Dict, Optional
 
 # Import AI systems
 try:
     from combined_nim_owlban_ai import CombinedSystem
     from combined_nim_owlban_ai.nim import NimManager
+
     COMBINED_SYSTEM_AVAILABLE = True
 except ImportError:
     COMBINED_SYSTEM_AVAILABLE = False
@@ -20,12 +22,14 @@ except ImportError:
 
 try:
     from new_products.revenue_optimizer import NVIDIARevenueOptimizer
+
     REVENUE_OPTIMIZER_AVAILABLE = COMBINED_SYSTEM_AVAILABLE and NimManager is not None
 except ImportError:
     REVENUE_OPTIMIZER_AVAILABLE = False
 
 try:
     from database_manager import DatabaseManager
+
     DATABASE_AVAILABLE = True
 except ImportError:
     DATABASE_AVAILABLE = False
@@ -37,19 +41,21 @@ st.set_page_config(
     page_title="OWLBAN GROUP AI Dashboard",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
+
 
 # --- Streamlit Auth Overlay ---
 def _get_query_params():
     """Safely get query parameters (Streamlit compatible)."""
     try:
         return st.query_params.to_dict()
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         try:
             return dict(st.experimental_get_query_params())
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             return {}
+
 
 def _st_login_form():
     """Render a login form in the sidebar. Returns True if authenticated."""
@@ -76,6 +82,7 @@ def _st_login_form():
         if submitted and email and password:
             try:
                 import requests as _req
+
                 resp = _req.post(
                     f"{API_BASE_URL}/auth/login",
                     json={"email": email, "password": password},
@@ -89,7 +96,7 @@ def _st_login_form():
                     st.rerun()
                 else:
                     st.sidebar.error("Invalid credentials")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 st.sidebar.error(f"Auth error: {e}")
 
     st.sidebar.markdown("---")
@@ -101,12 +108,17 @@ def _st_login_form():
             if st.form_submit_button("Send Reset Link") and reset_email:
                 try:
                     import requests as _req
-                    _req.post(f"{API_BASE_URL}/auth/reset-request",
-                              json={"email": reset_email}, timeout=10)
+
+                    _req.post(
+                        f"{API_BASE_URL}/auth/reset-request",
+                        json={"email": reset_email},
+                        timeout=10,
+                    )
                     st.sidebar.info("Reset link sent (if email exists)")
-                except Exception:
+                except Exception:  # pylint: disable=broad-exception-caught
                     st.sidebar.error("Failed to send reset")
     return False
+
 
 # Require authentication before loading the dashboard
 if not _st_login_form():
@@ -123,7 +135,8 @@ if st.sidebar.button("🚪 Sign Out"):
     st.rerun()
 
 # Custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -151,7 +164,10 @@ st.markdown("""
         font-weight: bold;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 class AIDashboard:
     """OWLBAN GROUP AI Dashboard"""
@@ -172,7 +188,10 @@ class AIDashboard:
 
     def run(self):
         """Run the dashboard"""
-        st.markdown('<div class="main-header">🚀 OWLBAN GROUP AI Dashboard</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="main-header">🚀 OWLBAN GROUP AI Dashboard</div>',
+            unsafe_allow_html=True,
+        )
 
         # Sidebar navigation
         st.sidebar.title("Navigation")
@@ -218,22 +237,52 @@ class AIDashboard:
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
-                st.metric("Combined System", "Active" if status.get('services', {}).get('combined_system') else "Inactive")
+                st.metric(
+                    "Combined System",
+                    (
+                        "Active"
+                        if status.get("services", {}).get("combined_system")
+                        else "Inactive"
+                    ),
+                )
 
             with col2:
-                st.metric("Revenue Optimizer", "Active" if status.get('services', {}).get('revenue_optimizer') else "Inactive")
+                st.metric(
+                    "Revenue Optimizer",
+                    (
+                        "Active"
+                        if status.get("services", {}).get("revenue_optimizer")
+                        else "Inactive"
+                    ),
+                )
 
             with col3:
-                st.metric("RL Agent", "Active" if status.get('services', {}).get('rl_agent') else "Inactive")
+                st.metric(
+                    "RL Agent",
+                    (
+                        "Active"
+                        if status.get("services", {}).get("rl_agent")
+                        else "Inactive"
+                    ),
+                )
 
             with col4:
-                st.metric("NIM Manager", "Active" if status.get('services', {}).get('nim_manager') else "Inactive")
+                st.metric(
+                    "NIM Manager",
+                    (
+                        "Active"
+                        if status.get("services", {}).get("nim_manager")
+                        else "Inactive"
+                    ),
+                )
 
         # GPU status
         gpu_status = self.get_gpu_status()
         if gpu_status:
             st.subheader("GPU Resources")
-            gpu_df = pd.DataFrame.from_dict(gpu_status, orient='index', columns=['Value'])
+            gpu_df = pd.DataFrame.from_dict(
+                gpu_status, orient="index", columns=["Value"]
+            )
             st.dataframe(gpu_df)
 
         # Recent predictions
@@ -242,7 +291,7 @@ class AIDashboard:
             predictions = self.db_manager.get_predictions(limit=10)
             if predictions:
                 pred_df = pd.DataFrame(predictions)
-                st.dataframe(pred_df[['model_name', 'confidence', 'timestamp']])
+                st.dataframe(pred_df[["model_name", "confidence", "timestamp"]])
 
     def show_inference(self):
         """Show AI inference interface"""
@@ -253,9 +302,9 @@ class AIDashboard:
         with col1:
             st.subheader("Input Data")
             input_data = {}
-            input_data['feature1'] = st.slider("Feature 1", 0.0, 1.0, 0.5)
-            input_data['feature2'] = st.slider("Feature 2", 0.0, 1.0, 0.3)
-            input_data['feature3'] = st.slider("Feature 3", 0.0, 1.0, 0.7)
+            input_data["feature1"] = st.slider("Feature 1", 0.0, 1.0, 0.5)
+            input_data["feature2"] = st.slider("Feature 2", 0.0, 1.0, 0.3)
+            input_data["feature3"] = st.slider("Feature 3", 0.0, 1.0, 0.7)
 
         with col2:
             st.subheader("Inference Result")
@@ -272,7 +321,7 @@ class AIDashboard:
                                 "dashboard_inference",
                                 input_data,
                                 result,
-                                result.get('confidence', 0.5)
+                                result.get("confidence", 0.5),
                             )
                     except (AttributeError, RuntimeError, ValueError) as e:
                         st.error(f"Inference failed: {e}")
@@ -311,7 +360,7 @@ class AIDashboard:
                     portfolio = self.revenue_optimizer.optimize_quantum_portfolio()
                     st.json(portfolio.__dict__)
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 st.error(f"Failed to get performance: {e}")
 
     def show_gpu_monitoring(self):
@@ -324,14 +373,16 @@ class AIDashboard:
             gpu_data = []
             for key, value in gpu_status.items():
                 if "Usage" in key and "%" in str(value):
-                    gpu_data.append({
-                        'GPU': key.replace('_Usage', '').replace('_', ' '),
-                        'Usage': float(str(value).strip('%'))
-                    })
+                    gpu_data.append(
+                        {
+                            "GPU": key.replace("_Usage", "").replace("_", " "),
+                            "Usage": float(str(value).strip("%")),
+                        }
+                    )
 
             if gpu_data:
                 df = pd.DataFrame(gpu_data)
-                fig = px.bar(df, x='GPU', y='Usage', title='GPU Utilization')
+                fig = px.bar(df, x="GPU", y="Usage", title="GPU Utilization")
                 st.plotly_chart(fig)
 
             # Raw GPU data
@@ -409,9 +460,12 @@ class AIDashboard:
         if status:
             st.subheader("Service Status")
 
-            for service, active in status.get('services', {}).items():
+            for service, active in status.get("services", {}).items():
                 status_class = "status-good" if active else "status-error"
-                st.markdown(f'<span class="{status_class}">{service}: {"Active" if active else "Inactive"}</span>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<span class="{status_class}">{service}: {"Active" if active else "Inactive"}</span>',
+                    unsafe_allow_html=True,
+                )
 
         # Performance metrics
         if self.db_manager:
@@ -449,15 +503,17 @@ class AIDashboard:
         try:
             response = requests.get(f"{self.api_url}/gpu/status", timeout=5)
             if response.status_code == 200:
-                return response.json().get('gpu_status', {})
+                return response.json().get("gpu_status", {})
         except requests.RequestException as e:
             st.error(f"Failed to get GPU status: {e}")
         return None
+
 
 def main():
     """Main dashboard function"""
     dashboard = AIDashboard()
     dashboard.run()
+
 
 if __name__ == "__main__":
     main()

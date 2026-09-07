@@ -15,8 +15,9 @@ OSCAR BROOME, BLACKBOX AI) included in the platform.
 """
 
 import hmac
-import secrets
 import logging
+import secrets
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -77,7 +78,9 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
             if csrf_cookie is None or not validate_csrf_token(csrf_cookie, submitted):
                 logger.warning(
                     "CSRF validation failed for %s %s (origin=%s)",
-                    method, request.url.path, request.headers.get("origin"),
+                    method,
+                    request.url.path,
+                    request.headers.get("origin"),
                 )
                 return JSONResponse(
                     status_code=403,
@@ -89,8 +92,8 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
             response.set_cookie(
                 self.COOKIE_NAME,
                 generate_csrf_token(),
-                httponly=False,      # read by frontend JS for the header
-                samesite="lax",      # CSRF-safe while still allowing top-nav nav
+                httponly=False,  # read by frontend JS for the header
+                samesite="lax",  # CSRF-safe while still allowing top-nav nav
                 secure=request.url.scheme == "https",
                 max_age=3600,
             )
@@ -102,15 +105,18 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
     async def _read_form(self, request):
         try:
             import json
+
             ct = request.headers.get("content-type", "")
             if "application/json" in ct:
                 body = await request.body()
                 data = json.loads(body or b"{}")
                 if isinstance(data, dict):
                     return data
-            elif "application/x-www-form-urlencoded" in ct or "multipart/form-data" in ct:
+            elif (
+                "application/x-www-form-urlencoded" in ct or "multipart/form-data" in ct
+            ):
                 form = await request.form()
                 return dict(form)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to read form for CSRF token")
         return {}
