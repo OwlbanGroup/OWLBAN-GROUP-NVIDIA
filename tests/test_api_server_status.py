@@ -1,4 +1,10 @@
 import asyncio
+import os
+
+import pytest
+
+if not os.environ.get("API_PASSWORD"):
+    pytest.skip("api_server requires API_PASSWORD environment variable", allow_module_level=True)
 
 import api_server
 
