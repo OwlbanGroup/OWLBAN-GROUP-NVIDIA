@@ -1,0 +1,31 @@
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:106:API_USERNAME = os.getenv("API_USERNAME", "owlban_admin")
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:109:API_PASSWORD = os.getenv("API_PASSWORD", "")
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:112:API_HOST = os.getenv("API_HOST", "127.0.0.1")
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:115:API_PORT = int(os.getenv("API_PORT", "8000"))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:117:if not API_PASSWORD:
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:119:        "API_PASSWORD environment variable must be set "
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:125:    correct_username = secrets.compare_digest(credentials.username, API_USERNAME)
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:126:    correct_password = secrets.compare_digest(credentials.password, API_PASSWORD)
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\api_server.py:1013:    uvicorn.run(fastapi_app, host=API_HOST, port=API_PORT)
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:190:    JWT_SECRET = os.getenv('JWT_SECRET', secrets.token_hex(32))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:191:    JWT_REFRESH_SECRET = os.getenv('JWT_REFRESH_SECRET', secrets.token_hex(32))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:193:        os.getenv('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', '15'))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:195:        os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', '7'))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:197:    PASSWORD_MIN_LENGTH = int(os.getenv('PASSWORD_MIN_LENGTH', '8'))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:199:        os.getenv('PASSWORD_REQUIRE_UPPERCASE', 'true').lower() == 'true')
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:201:        os.getenv('PASSWORD_REQUIRE_LOWERCASE', 'true').lower() == 'true')
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:203:        os.getenv('PASSWORD_REQUIRE_NUMBERS', 'true').lower() == 'true')
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:205:        os.getenv('PASSWORD_REQUIRE_SPECIAL', 'false').lower() == 'true')
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:207:    MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', '5'))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:208:    LOCKOUT_DURATION_MINUTES = int(os.getenv('LOCKOUT_DURATION_MINUTES', '15'))
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:447:            access_token_payload, self.config.JWT_SECRET, algorithm='HS256')
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\auth_lib.py:457:            payload = jwt.decode(token, self.config.JWT_SECRET, algorithms=['HS256'])
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\run_per_file.ps1:2:$env:API_PASSWORD = 'testpass123'
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\docker-compose.yml:18:      - SECRET_KEY=${SECRET_KEY:-quantum_secure_2024}
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\docker-compose.yml:19:      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt_quantum_secure_2024}
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\docker-compose.yml:291:      - JWT_SECRET=${JWT_SECRET:-owlban_group_jwt_secret_change_me}
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\docker-compose.yml:327:      - JWT_SECRET=${JWT_SECRET:-oscar_broome_jwt_secret_change_me}
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\docker-compose.yml:363:      - JWT_SECRET=${JWT_SECRET:-blackbox_ai_jwt_secret_change_me}
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\financial_data_config.py:38:        self.config_path = config_path or os.environ.get(
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\gemini_integration.py:21:        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\integration.py:389:        os.environ['CUDA_VISIBLE_DEVICES'] = ''

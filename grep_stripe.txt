@@ -1,0 +1,4 @@
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\integration.py:115:from new_products.stripe_integration import StripeIntegration
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\integration.py:154:        self.stripe_integration = StripeIntegration()
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\combined_nim_owlban_ai\integration.py:855:            description = "Quantum-enhanced spending profits for Oscar Broome via StripeIntegration"
+C:\Users\bsean\OneDrive\BLACKBOX-AI\.github\.github\.github\OSCAR-BROOME-REVENUE\.blackbox\OWLBAN-GROUP-NVIDIA\new_products\stripe_integration.py:4:class StripeIntegration:
