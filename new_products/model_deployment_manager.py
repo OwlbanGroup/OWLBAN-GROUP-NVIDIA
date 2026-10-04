@@ -3,8 +3,20 @@ import torch.nn as nn
 import logging
 import time
 from typing import Dict, List, Optional
-import docker
 import subprocess
+
+# Optional Docker support. The Docker SDK is only used for NVIDIA container
+# deployment features; the manager degrades gracefully when it is unavailable
+# (see _init_docker_client / deploy_nvidia_container). Keeping this optional
+# matches the pattern used for tensorrt/cupy below and prevents a hard
+# ImportError from breaking the entire CombinedSystem / api_server import
+# chain when the `docker` package is not installed.
+try:
+    import docker
+    docker_available = True
+except ImportError:
+    docker = None
+    docker_available = False
 
 # NVIDIA-specific imports
 try:

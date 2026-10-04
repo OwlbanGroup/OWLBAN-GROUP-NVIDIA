@@ -54,8 +54,25 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
     COOKIE_NAME = "csrf_token"
     HEADER_NAME = "X-CSRF-Token"
     UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-    # Bearer-token-authenticated API routes do not need cookie-CSRF.
-    SKIPPED_PATHS = ("/auth/", "/prometheus/", "/metrics", "/health", "/status")
+    # Bearer/Basic-token-authenticated API routes do not need cookie-CSRF
+    # protection (the browser does not auto-attach bearer tokens, and HTTP Basic
+    # is likewise not a cookie-based flow). Only cookie/session-authenticated
+    # web surfaces (e.g. OWLBAN GROUP site, OSCAR BROOME, BLACKBOX AI) require
+    # the double-submit token.
+    SKIPPED_PATHS = (
+        "/auth/",        # stateless JWT auth endpoints
+        "/prometheus/",   # Prometheus scrape endpoint
+        "/metrics",       # auth + api metrics endpoints
+        "/health",        # liveness probe
+        "/status",        # aggregated system status
+        "/inference",     # stateless API: combined-system inference
+        "/revenue/",      # stateless API: revenue optimization endpoints
+        "/rl/",           # stateless API: reinforcement-learning endpoints
+        "/quantum/",      # stateless API: quantum finance endpoints
+        "/catalog/",      # stateless API: NGC catalog endpoints
+        "/gpu/",          # stateless API: GPU status
+        "/logs",          # admin API log endpoint (HTTP Basic protected)
+    )
 
     def __init__(self, app, exempt_paths=None):
         super().__init__(app)

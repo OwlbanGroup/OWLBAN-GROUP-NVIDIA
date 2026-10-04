@@ -1,1 +1,1 @@
-IMPORT_OK: tests
+IMPORT_OK: combined_nim_owlban_ai.integration

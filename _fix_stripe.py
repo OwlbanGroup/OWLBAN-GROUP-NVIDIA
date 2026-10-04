@@ -1,4 +1,8 @@
 import os
+
+path = os.path.join(os.path.dirname(__file__), "new_products", "stripe_integration.py")
+
+content = '''import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -79,3 +83,8 @@ class StripeIntegration:
                 description=description,
             )
             return payment_intent
+'''
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(content)
+print("wrote", path, "bytes=", len(content))
