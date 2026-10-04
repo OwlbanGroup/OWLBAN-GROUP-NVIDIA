@@ -16,6 +16,11 @@ qml_err.txt
 result_*.txt
 per_file_results.txt
 run_per_file.ps1
+
+# Payload / scratch artifacts (runtime, regenerated - never commit)
+inference_payload.json
+login_payload.json
+*_payload.json
 .pytest_cache/
 .mypy_cache/
 
