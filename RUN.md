@@ -17,6 +17,30 @@
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
+## API authentication (HTTP Basic auth)
+
+The API is protected by HTTP Basic auth. `API_PASSWORD` is required by
+**`api_server.py`** for direct `uvicorn` invocations. The two supported ways
+to provide it:
+
+1. **Recommended** — copy `.env.example` to `.env`, set `API_PASSWORD` (and any
+   other vars you want). `main.py` loads `.env` automatically:
+   ```powershell
+   copy .env.example .env
+   # edit .env -> set API_PASSWORD=...
+   ```
+2. **Zero-config (local dev only)** — `python main.py` generates a strong
+   random `API_PASSWORD` if one is not set and prints it to the console, so
+   the command below works out of the box. Running
+   `uvicorn api_server:fastapi_app` directly (without `main.py`) still
+   requires `API_PASSWORD` to be set in the environment.
+
+> `docker` and `stripe` Python SDKs are **optional**. Without them the
+> platform runs in simulation/mock mode ("using mock mode",
+> "dummy Stripe API key") and stays fully functional. Install them only if
+> you need real container deployments or live Stripe payments:
+> `pip install docker stripe`.
+
 ## Start the API (background or separate terminal)
 
 ```powershell
