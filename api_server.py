@@ -5,6 +5,7 @@ FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 
 import logging
 import os
+import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import secrets
@@ -98,6 +99,19 @@ except ImportError:
 REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 
 # Security
+
+
+def _jsonable(obj: Any) -> Any:
+    """JSON-encode qiskit/numpy result objects so quantum result dicts serialize.
+
+    FastAPI's ``jsonable_encoder`` cannot coerce numpy arrays / qiskit objects,
+    which surfaced as HTTP 500 on /quantum/risk and /quantum/portfolio.
+    ``ndarray.tolist()`` preserves array data; any other non-serializable value
+    falls back to ``str()`` so the endpoint returns 200 instead of crashing.
+    """
+    return json.loads(
+        json.dumps(obj, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
+    )
 
 
 security = HTTPBasic()
@@ -881,7 +895,7 @@ async def get_quantum_portfolio():
 
     try:
         result = fastapi_app.state.revenue_optimizer.optimize_quantum_portfolio()
-        return {"portfolio": result.__dict__}
+        return {"portfolio": _jsonable(result.__dict__)}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum portfolio optimization failed")
         raise HTTPException(
@@ -904,7 +918,7 @@ async def get_quantum_risk():
 
     try:
         result = fastapi_app.state.revenue_optimizer.analyze_quantum_risk()
-        return {"risk_analysis": result.__dict__}
+        return {"risk_analysis": _jsonable(result.__dict__)}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum risk analysis failed")
         raise HTTPException(
