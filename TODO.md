@@ -38,8 +38,16 @@
   every stateless POST endpoint passes CSRF and auth.
 
 ## ⏳ Backlog (non-blocking)
-- [ ] Provision local PostgreSQL + Redis, or keep the SQLite / mock fallbacks.
-- [ ] Install `docker` + `stripe` SDKs and set real keys for production
-      payments / NVIDIA container deployments.
-- [ ] Add rate limiting / security headers to the FastAPI API routes.
+- [~] Provision local PostgreSQL + Redis. **Blocked in-sandbox**: no Docker daemon
+       running here (`docker info` exits non-zero; no `dockerd`/`com.docker` process).
+       Non-blocking — the API runs fine on SQLite/mock fallbacks.
+       On a host with Docker Desktop: `docker compose up -d database redis`.
+- [x] Install `docker` + `stripe` SDKs into `.venv` — **DONE** (`docker 7.2.0`,
+      `stripe 16.0.0`). Real keys come from env vars (`STRIPE_API_KEY`, etc.),
+      never committed; absent keys fall back to simulation in `spend_profits`.
+- [x] Rate limiting / security headers / CSRF — **DONE (wired in `api_server.py`)**.
+      `RateLimiterMiddleware`, `SecurityHeadersMiddleware`, and `CSRFProtectionMiddleware`
+      are mounted on `fastapi_app` (the `# Add middleware` block). Verified live:
+      `X-RateLimit-*`, `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`,
+      `X-Request-Id` headers present; stateless API POSTs bypass the cookie CSRF guard.
 
