@@ -31,3 +31,5 @@ users.json
 sessions.json
 users_audit.json
 
+# SQLite databases (runtime state, regenerated on startup)
+*.db
