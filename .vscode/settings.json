@@ -6,5 +6,17 @@
   "python.terminal.activateEnvironment": true,
   "python.terminal.envFile": "${workspaceFolder}\\.env",
   "ansible.mcpServer.enabled": true,
-  "ansible.ansible.reuseTerminal": true
+  "ansible.ansible.reuseTerminal": true,
+  "mcpServers": {
+    "auxly": {
+      "command": "node",
+      "args": [
+        "c:\\Users\\bsean\\.vscode\\extensions\\tzamun-arabia.auxly-extension-0.1.8\\dist\\mcp-server\\index.js"
+      ],
+      "env": {
+        "AUXLY_WORKSPACE_PATH": "c:\\Users\\bsean\\OneDrive\\BLACKBOX-AI\\.github\\.github\\.github\\OSCAR-BROOME-REVENUE\\.blackbox\\OWLBAN-GROUP-NVIDIA",
+        "AUXLY_API_URL": "https://auxly.tzamun.com"
+      }
+    }
+  }
 }
