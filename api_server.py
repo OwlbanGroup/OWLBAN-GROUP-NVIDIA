@@ -275,10 +275,17 @@ if MIDDLEWARE_AVAILABLE:
     # CSRF protect cookie-authenticated surfaces; auth/API routes are exempt
     # because they use stateless bearer tokens (no CSRF cookie dependency).
     fastapi_app.add_middleware(CSRFProtectionMiddleware)
+# CORS hardening (security):
+# - The insecure combo allow_origins=["*"] + allow_credentials=True is avoided by
+#   default. When CORS_ALLOWED_ORIGINS is unset/empty the API stays publicly
+#   open (allow_credentials=False, safe for stateless Basic/bearer auth).
+# - Set CORS_ALLOWED_ORIGINS="https://dashboard.example.com,https://app.example.com"
+#   to enable credentialed cross-origin access for the logged-in web dashboard.
+_cors_origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins or ["*"],
+    allow_credentials=bool(_cors_origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )
