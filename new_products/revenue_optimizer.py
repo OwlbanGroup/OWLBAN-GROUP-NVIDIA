@@ -59,7 +59,6 @@ class NVIDIARevenueOptimizer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.cuda_available = torch.cuda.is_available()
         self.gpu_count = torch.cuda.device_count() if self.cuda_available else 0
-        logging.basicConfig(level=logging.INFO)
 
         # NVIDIA optimization components
         self.revenue_prediction_model = self._create_revenue_model()
@@ -69,9 +68,9 @@ class NVIDIARevenueOptimizer:
             torch.backends.cudnn.benchmark = True
 
         # Initialize quantum financial AI components
-        self.quantum_optimizer = QuantumPortfolioOptimizer(use_gpu=True)
-        self.quantum_risk_analyzer = QuantumRiskAnalyzer(use_gpu=True)
-        self.quantum_predictor = QuantumMarketPredictor(use_gpu=True)
+        self.quantum_optimizer = QuantumPortfolioOptimizer(use_gpu=self.cuda_available)
+        self.quantum_risk_analyzer = QuantumRiskAnalyzer(use_gpu=self.cuda_available)
+        self.quantum_predictor = QuantumMarketPredictor(use_gpu=self.cuda_available)
 
         # Initialize with sample portfolio assets
         self._initialize_quantum_portfolio()

@@ -83,8 +83,15 @@ class ReinforcementLearningAgent:
             return str(tuple(state))
         return str(state)
 
-    def update_state_size(self, state):
-        """Dynamically update state size based on input"""
+    def update_state_size(self, state: Union[list, tuple, np.ndarray, float]) -> None:
+        """Dynamically update state size based on input.
+        
+        Preserves trained DQN weights and optimizer state when reinitializing
+        networks with a new state dimension. Prevents loss of RL training progress.
+        
+        Args:
+            state: Input state vector (list, tuple, numpy array, or scalar)
+        """
         if isinstance(state, (list, tuple, np.ndarray)):
             new_size = len(state)
         else:
@@ -93,11 +100,19 @@ class ReinforcementLearningAgent:
         if new_size != self.state_size:
             self.state_size = new_size
             self.logger.info("Updating DQN state size to %d", self.state_size)
-            # Reinitialize networks with new state size
+            # Reinitialize networks with new state size, preserving weights
+            import copy
+            old_dqn_state = self.dqn.state_dict()
+            old_target_dqn_state = self.target_dqn.state_dict()
+            old_optimizer_state = self.optimizer.state_dict()
             self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
             self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
-            self.target_dqn.load_state_dict(self.dqn.state_dict())
+            # Copy trained weights to new networks
+            self.dqn.load_state_dict(old_dqn_state)
+            self.target_dqn.load_state_dict(old_target_dqn_state)
+            # Reinitialize optimizer with new network parameters
             self.optimizer = optim.Adam(self.dqn.parameters(), lr=self.learning_rate)
+            self.optimizer.load_state_dict(old_optimizer_state)
 
     def choose_action(self, state):
         """Choose action using NVIDIA GPU-accelerated DQN"""

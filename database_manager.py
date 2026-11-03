@@ -6,6 +6,7 @@ Unified database interface for all AI systems with SQL and NoSQL support
 import importlib
 import json
 import logging
+import os
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -58,8 +59,11 @@ class DatabaseManager:
                 "host": "localhost",
                 "port": 5432,
                 "database": "owlban_ai",
-                "user": "owlban",
-                "password": "password",
+                # Credentials should be set via environment variables:
+                #   PG_USER, PG_PASSWORD, PG_DATABASE
+                # Defaults below are for local dev only and should be overridden
+                "user": os.getenv("PG_USER", "owlban"),
+                "password": os.getenv("PG_PASSWORD", "password"),
             },
             "redis": {"host": "localhost", "port": 6379, "db": 0},
         }

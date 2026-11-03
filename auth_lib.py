@@ -23,8 +23,7 @@ import bcrypt
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Other modules should use logging.getLogger(__name__) without basicConfig
 logger = logging.getLogger(__name__)
 
 
