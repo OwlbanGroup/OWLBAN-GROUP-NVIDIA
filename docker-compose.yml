@@ -324,8 +324,11 @@ services:
     environment:
       - NODE_ENV=production
       - OSCAR_PORT=3001
-      - JWT_SECRET=${JWT_SECRET:-oscar_broome_jwt_secret_change_me}
+      - JWT_SECRET=${OSCAR_JWT_SECRET:-oscar_broome_jwt_secret_change_me}
       - API_SERVER_URL=http://api-server:8000
+      - OSCAR_OWNER_EMAIL=${OSCAR_OWNER_EMAIL:-oscar.broome@jpmorgan.com}
+      - OSCAR_OWNER_USERNAME=${OSCAR_OWNER_USERNAME:-Oscar Broome}
+      - OSCAR_OWNER_PASSWORD=${OSCAR_OWNER_PASSWORD:-OscarBroome!2026}
     volumes:
       - ./OSCAR-BROOME-REVENUE/users.json:/app/users.json
       - ./OSCAR-BROOME-REVENUE/tokens.json:/app/tokens.json
