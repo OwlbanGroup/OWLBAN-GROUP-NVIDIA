@@ -63,3 +63,72 @@ docker run -p 8501:8501 owlban-dashboard
 ```
 
 If you want, I can attempt to run these commands here and capture logs; tell me to proceed.
+
+## OSCAR BROOME Revenue service (`OSCAR-BROOME-REVENUE/`)
+
+Node/Express + JWT service on port 3001 (browser UI at `/`, dashboard at
+`/dashboard`). It seeds Oscar's owner account on first boot.
+
+> `OSCAR-BROOME-REVENUE` is recorded as a **gitlink**, so edits made inside it
+> are tracked by neither repo. The update to that service is captured in
+> [`.tools/apply_update.py`](.tools/apply_update.py) — idempotent, supports
+> `--check` and `--revert`, and stops on drift instead of guessing:
+>
+> ```powershell
+> .\.venv\Scripts\python.exe .tools\apply_update.py --check   # what would change
+> .\.venv\Scripts\python.exe .tools\apply_update.py           # apply
+> ```
+
+```powershell
+cd OSCAR-BROOME-REVENUE
+npm install
+$env:OSCAR_OWNER_PASSWORD = 'a-strong-password'   # optional, see below
+npm start
+```
+
+- `OSCAR_OWNER_EMAIL` / `OSCAR_OWNER_USERNAME` — owner identity
+  (defaults `oscar.broome@jpmorgan.com` / `Oscar Broome`).
+- `OSCAR_OWNER_PASSWORD` — pins the owner password. **No password is baked
+  into the repo**: when unset, the first boot generates a random one and prints
+  it to the console once. Set it in `.env`/compose for reproducible creds.
+- `OSCAR_JWT_SECRET` — JWT signing key (random per process when unset).
+- `OSCAR_DATA_DIR` — where `users.json` / `tokens.json` live (tests use a temp dir).
+
+End-to-end test (headless browser logs in as Oscar and checks the dashboard):
+
+```powershell
+cd OSCAR-BROOME-REVENUE
+$env:OSCAR_OWNER_PASSWORD = 'a-strong-password'   # required to run the e2e
+npm test
+```
+
+### Upstream clone check (`verify-oscar-login.mjs`)
+
+`OSCAR-BROOME-REVENUE/verify-oscar-login.mjs` is a copy of the upstream
+[OwlbanGroup/OSCAR-BROOME-REVENUE](https://github.com/OwlbanGroup/OSCAR-BROOME-REVENUE)
+verifier; it belongs in that clone (here: `C:\Users\bsean\oscar-revenue-work`)
+and needs the clone's ESM server, so run it from the clone root. That clone's
+`middleware/authOverride.js` refuses to start unless all three override
+passwords are set:
+
+```powershell
+cd C:\Users\bsean\oscar-revenue-work
+$env:OVERRIDE_ADMIN_PASS='...'; $env:OVERRIDE_MANAGER_PASS='...'; $env:OVERRIDE_SUPER_ADMIN_PASS='...'
+node scripts/verify-oscar-login.mjs
+```
+
+`OSCAR_PASSWORD` additionally runs the authenticated login checks. The verifier
+no longer requires a `data/` directory to exist in the clone.
+
+## Known slow / hanging tests
+
+`pytest tests` runs to completion but takes several minutes on CPU-only hosts:
+`torch` import alone is ~15 s here, and `tests/test_quantum_ai.py::
+TestQuantumMarketPredictor::test_market_predictor` plus the QSVC tests in
+`tests/test_quantum_machine_learning.py` perform real quantum-kernel training
+(exact statevector simulation) — minutes of CPU each. For a fast local run:
+
+```powershell
+.\\.venv\\Scripts\\python.exe -m pytest tests -q `
+  --ignore=tests/test_quantum_ai.py --ignore=tests/test_quantum_machine_learning.py
+```
