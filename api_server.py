@@ -5,6 +5,25 @@ FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 
 import logging
 import os
+
+# Configure logging - ensure logs are written to api_server.log
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('api_server.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+
+# Reduce noise from third-party libraries
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('starlette').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('fastapi').setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
