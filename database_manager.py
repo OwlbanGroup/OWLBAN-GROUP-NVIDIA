@@ -156,6 +156,7 @@ class DatabaseManager:
             self.logger.info("PostgreSQL connection initialized")
         except Exception as e:  # pylint: disable=broad-exception-caught
             self.logger.error("PostgreSQL initialization failed: %s", e)
+            self.connections["postgresql"] = None
 
     def _create_postgresql_tables(self):
         """Create PostgreSQL tables if they don't exist"""
