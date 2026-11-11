@@ -3,8 +3,26 @@ OWLBAN GROUP AI API Server
 FastAPI-based REST API for all AI services with NVIDIA GPU acceleration
 """
 
+import json
 import logging
 import os
+import secrets
+import time
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import Annotated, Dict, List, Optional, Any
+
+import uvicorn
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBasic,
+    HTTPBasicCredentials,
+    HTTPBearer,
+)
+from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure logging - ensure logs are written to api_server.log
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -24,24 +42,6 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 logging.getLogger('fastapi').setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
-import json
-from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-import secrets
-import time
-from typing import Annotated, Dict, List, Optional, Any
-
-import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import (
-    HTTPBasic,
-    HTTPBasicCredentials,
-    HTTPBearer,
-    HTTPAuthorizationCredentials,
-)
-from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import AI systems
 try:
@@ -88,8 +88,17 @@ except ImportError:
 
 # Import auth library
 try:
-    from auth_lib import authenticate_user, verify_token, create_user, auth_manager
-    from auth_lib import request_password_reset, reset_password, generate_api_key
+    from auth_lib import (
+        authenticate_user,
+        verify_token,
+        create_user,
+        auth_manager,
+    )
+    from auth_lib import (
+        request_password_reset,
+        reset_password,
+        generate_api_key,
+    )
     from auth_lib import (setup_mfa, enable_mfa, disable_mfa,
                           verify_mfa_code, mfa_required)
     AUTH_AVAILABLE = True
@@ -120,17 +129,21 @@ REVENUE_OPTIMIZER_NOT_AVAILABLE = "Revenue optimizer not available"
 # Security
 
 
+def _serialize_default(obj: Any) -> Any:
+    """Fallback JSON serializer for numpy arrays and qiskit objects."""
+    return obj.tolist() if hasattr(obj, "tolist") else str(obj)
+
+
 def _jsonable(obj: Any) -> Any:
-    """JSON-encode qiskit/numpy result objects so quantum result dicts serialize.
+    """JSON-encode qiskit/numpy result objects so quantum result dicts
+    serialize.
 
     FastAPI's ``jsonable_encoder`` cannot coerce numpy arrays / qiskit objects,
     which surfaced as HTTP 500 on /quantum/risk and /quantum/portfolio.
     ``ndarray.tolist()`` preserves array data; any other non-serializable value
     falls back to ``str()`` so the endpoint returns 200 instead of crashing.
     """
-    return json.loads(
-        json.dumps(obj, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
-    )
+    return json.loads(json.dumps(obj, default=_serialize_default))
 
 
 security = HTTPBasic()
@@ -155,8 +168,12 @@ if not API_PASSWORD:
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     """Verify API credentials"""
-    correct_username = secrets.compare_digest(credentials.username, API_USERNAME)
-    correct_password = secrets.compare_digest(credentials.password, API_PASSWORD)
+    correct_username = secrets.compare_digest(
+        credentials.username, API_USERNAME
+    )
+    correct_password = secrets.compare_digest(
+        credentials.password, API_PASSWORD
+    )
     if not (correct_username and correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -169,7 +186,10 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
 def _get_monitoring_stats() -> Dict[str, Any]:
     """Return shared monitoring statistics stored on the FastAPI app state."""
     if not hasattr(fastapi_app.state, "monitoring"):
-        fastapi_app.state.monitoring = {"request_count": 0, "response_times": []}
+        fastapi_app.state.monitoring = {
+            "request_count": 0,
+            "response_times": [],
+        }
     return fastapi_app.state.monitoring
 
 
@@ -204,13 +224,16 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
             monitoring_stats["response_times"].pop(0)
 
         # Log response
-        logger.info("Response: %s in %.3fs", response.status_code, process_time)
+        logger.info(
+            "Response: %s in %.3fs", response.status_code, process_time
+        )
 
         # Add custom headers
         response.headers["X-Process-Time"] = str(process_time)
         response.headers["X-API-Version"] = "1.0.0"
 
         return response
+
 
 # Configure logging
 logging.basicConfig(
@@ -227,8 +250,6 @@ logger = logging.getLogger("api_server")
 
 
 @asynccontextmanager
-
-
 async def lifespan(app: FastAPI):
     """Initialize AI systems on application startup."""
     logger.info("Initializing AI systems...")
@@ -244,7 +265,9 @@ async def lifespan(app: FastAPI):
         try:
             app.state.nim_manager = NimManager()
             app.state.nim_manager.initialize()
-            app.state.revenue_optimizer = NVIDIARevenueOptimizer(app.state.nim_manager)
+            app.state.revenue_optimizer = NVIDIARevenueOptimizer(
+                app.state.nim_manager
+            )
             logger.info("Revenue optimizer initialized")
         except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to initialize revenue optimizer")
@@ -432,8 +455,6 @@ def get_current_user(
 
 
 @fastapi_app.post("/auth/register", response_model=dict, status_code=201)
-
-
 async def register(req: RegisterRequest):
     """Register a new user account."""
     if not AUTH_AVAILABLE:
@@ -449,8 +470,6 @@ async def register(req: RegisterRequest):
 
 
 @fastapi_app.post("/auth/login", response_model=TokenResponse)
-
-
 async def login(req: LoginRequest):
     """Authenticate user and return JWT tokens."""
     if not AUTH_AVAILABLE:
@@ -490,8 +509,6 @@ async def login(req: LoginRequest):
 
 
 @fastapi_app.post("/auth/refresh", response_model=dict)
-
-
 async def refresh_tokens(token: str):
     """Refresh an access token using a valid refresh token."""
     if not AUTH_AVAILABLE:
@@ -506,8 +523,6 @@ async def refresh_tokens(token: str):
 
 
 @fastapi_app.post("/auth/reset-request", response_model=dict)
-
-
 async def reset_request(req: ResetRequest):
     """Request a password reset token."""
     if not AUTH_AVAILABLE:
@@ -520,8 +535,6 @@ async def reset_request(req: ResetRequest):
 
 
 @fastapi_app.post("/auth/reset-password", response_model=dict)
-
-
 async def reset_password_endpoint(req: ResetPasswordRequest):
     """Reset password using a valid reset token."""
     if not AUTH_AVAILABLE:
@@ -533,8 +546,6 @@ async def reset_password_endpoint(req: ResetPasswordRequest):
 
 
 @fastapi_app.get("/auth/profile", response_model=dict)
-
-
 async def get_profile(user=Depends(get_current_user)):
     """Get current user profile."""
     if not AUTH_AVAILABLE:
@@ -552,8 +563,6 @@ async def get_profile(user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/api-keys", response_model=dict)
-
-
 async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
     """Generate a new API key for the authenticated user."""
     if not AUTH_AVAILABLE:
@@ -569,8 +578,6 @@ async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
 
 
 @fastapi_app.get("/auth/api-keys", response_model=dict)
-
-
 async def list_api_keys(user=Depends(get_current_user)):
     """List all API keys for the authenticated user."""
     if not AUTH_AVAILABLE:
@@ -580,8 +587,6 @@ async def list_api_keys(user=Depends(get_current_user)):
 
 
 @fastapi_app.delete("/auth/api-keys/{api_key}", response_model=dict)
-
-
 async def delete_api_key(api_key: str, user=Depends(get_current_user)):
     """Revoke an API key."""
     if not AUTH_AVAILABLE:
@@ -593,8 +598,6 @@ async def delete_api_key(api_key: str, user=Depends(get_current_user)):
 
 
 @fastapi_app.get("/auth/audit-log", response_model=dict)
-
-
 async def get_audit(user=Depends(get_current_user)):
     """Get audit log (admin only)."""
     if not AUTH_AVAILABLE:
@@ -606,8 +609,6 @@ async def get_audit(user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/mfa/setup", response_model=dict)
-
-
 async def mfa_setup(user=Depends(get_current_user)):
     """Generate a TOTP secret and provisioning URI for the current user."""
     if not AUTH_AVAILABLE:
@@ -623,8 +624,6 @@ async def mfa_setup(user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/mfa/enable", response_model=dict)
-
-
 async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Verify a TOTP code and enable MFA for the current user."""
     if not AUTH_AVAILABLE:
@@ -636,8 +635,6 @@ async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
 
 
 @fastapi_app.post("/auth/mfa/disable", response_model=dict)
-
-
 async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Disable MFA for the current user after verifying a TOTP code."""
     if not AUTH_AVAILABLE:
@@ -649,8 +646,6 @@ async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
 
 
 @fastapi_app.get("/auth/mfa/status", response_model=dict)
-
-
 async def mfa_status(user=Depends(get_current_user)):
     """Return whether MFA is enabled for the current user."""
     if not AUTH_AVAILABLE:
@@ -659,8 +654,6 @@ async def mfa_status(user=Depends(get_current_user)):
 
 
 @fastapi_app.get("/prometheus/metrics", response_model=str)
-
-
 async def prometheus_metrics():
     """Prometheus TEXT-format auth metrics endpoint (scraped by Prometheus)."""
     if AUTH_METRICS_AVAILABLE and AUTH_AVAILABLE:
@@ -682,24 +675,18 @@ async def prometheus_metrics():
 
 
 @fastapi_app.get("/")
-
-
 async def root():
     """Root service banner."""
     return {"message": "OWLBAN GROUP AI API Server", "status": "running"}
 
 
 @fastapi_app.get("/health")
-
-
 async def health_check():
     """Liveness probe endpoint."""
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @fastapi_app.get("/status", response_model=SystemStatus)
-
-
 async def get_system_status():
     """Full system status across all services."""
     services = {
@@ -738,8 +725,6 @@ async def get_system_status():
 
 
 @fastapi_app.get("/catalog/summary")
-
-
 async def get_catalog_summary():
     """Summarize the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
@@ -752,8 +737,6 @@ async def get_catalog_summary():
 
 
 @fastapi_app.get("/catalog/search")
-
-
 async def search_catalog(query: str):
     """Search the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
@@ -769,8 +752,6 @@ async def search_catalog(query: str):
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def optimize_revenue(request: RevenueOptimizationRequest,
                            background_tasks: BackgroundTasks):
     """Start a revenue optimization run in the background."""
@@ -798,8 +779,6 @@ async def optimize_revenue(request: RevenueOptimizationRequest,
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_current_profit():
     """Return the current optimized profit."""
     if not fastapi_app.state.revenue_optimizer:
@@ -819,8 +798,6 @@ async def get_current_profit():
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def run_inference(request: InferenceRequest):
     """Run combined-system inference."""
     if not fastapi_app.state.combined_system:
@@ -840,8 +817,6 @@ async def run_inference(request: InferenceRequest):
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def rl_learn(state: List[float], action: str, reward: float,
                    next_state: List[float]):
     """Train the reinforcement learning agent on one transition."""
@@ -862,8 +837,6 @@ async def rl_learn(state: List[float], action: str, reward: float,
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_rl_action(state: List[float]):
     """Select the next RL action for a state."""
     if not fastapi_app.state.rl_agent:
@@ -884,8 +857,6 @@ async def get_rl_action(state: List[float]):
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_gpu_status():
     """Return GPU resource status."""
     if not fastapi_app.state.nim_manager:
@@ -905,8 +876,6 @@ async def get_gpu_status():
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_quantum_portfolio():
     """Run quantum portfolio optimization."""
     if not fastapi_app.state.revenue_optimizer:
@@ -928,8 +897,6 @@ async def get_quantum_portfolio():
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_quantum_risk():
     """Run quantum risk analysis."""
     if not fastapi_app.state.revenue_optimizer:
@@ -950,8 +917,6 @@ async def get_quantum_risk():
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def predict_market(symbol: str):
     """Predict market movement for a symbol."""
     if not fastapi_app.state.revenue_optimizer:
@@ -968,8 +933,6 @@ async def predict_market(symbol: str):
 
 
 @fastapi_app.get("/logs")
-
-
 def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int = 100):
     """Get recent log entries (admin only)"""
     logger.info("Logs requested by %s", username)
@@ -986,16 +949,14 @@ def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int =
 
 
 @fastapi_app.post("/logs")
-
-
 async def add_log_entry(
         entry: LogEntry,
         username: Annotated[str, Depends(verify_credentials)]):
     """Add a log entry"""
     logger.info("Log entry added by %s: %s", username, entry.message)
 
-    log_level = getattr(logging, entry.level.upper(), logging.INFO)
-    logger.log(log_level, "[%s] %s", entry.source, entry.message)
+    entry_log_level = getattr(logging, entry.level.upper(), logging.INFO)
+    logger.log(entry_log_level, "[%s] %s", entry.source, entry.message)
 
     return {"message": "Log entry added", "user": username}
 
@@ -1006,8 +967,6 @@ async def add_log_entry(
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
     """Get system metrics"""
     logger.info("Metrics requested by %s", username)
@@ -1029,8 +988,6 @@ async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
         503: {"description": "Service unavailable"},
         500: {"description": "Internal server error"},
     })
-
-
 async def save_metric(metric_name: str, value: float,
                       username: Annotated[str, Depends(verify_credentials)],
                       tags: Optional[Dict] = None):

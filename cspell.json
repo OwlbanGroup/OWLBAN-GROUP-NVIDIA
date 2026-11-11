@@ -12,6 +12,7 @@
     "hotp",
     "otpauth",
     "preauthorize",
+    "setex",
     "totp",
     "owlban"
   ]

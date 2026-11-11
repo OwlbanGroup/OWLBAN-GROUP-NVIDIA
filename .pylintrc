@@ -2,7 +2,7 @@
 init-hook="import sys; sys.path.append('quantum_financial_ai')"
 
 [FORMAT]
-max-module-lines=1200
+max-module-lines=1500
 
 [DESIGN]
 max-attributes=15

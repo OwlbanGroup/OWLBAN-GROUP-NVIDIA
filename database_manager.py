@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 # Optional database drivers (import dynamically to avoid static-type issues)
-MongoClient = None
+MongoClient = None  # pylint: disable=invalid-name
 psycopg2 = None
 redis = None
 try:
@@ -54,14 +54,18 @@ class DatabaseManager:
     def _default_config(self) -> Dict[str, Any]:
         return {
             "sqlite": {"path": "owlban_ai.db"},
-            "mongodb": {"host": "localhost", "port": 27017, "database": "owlban_ai"},
+            "mongodb": {
+                "host": "localhost",
+                "port": 27017,
+                "database": "owlban_ai",
+            },
             "postgresql": {
                 "host": "localhost",
                 "port": 5432,
                 "database": "owlban_ai",
                 # Credentials should be set via environment variables:
                 #   PG_USER, PG_PASSWORD, PG_DATABASE
-                # Defaults below are for local dev only and should be overridden
+                # Defaults below are for local dev only.
                 "user": os.getenv("PG_USER", "owlban"),
                 "password": os.getenv("PG_PASSWORD", "password"),
             },
@@ -132,6 +136,9 @@ class DatabaseManager:
 
     def _init_mongodb(self):
         """Initialize MongoDB connection"""
+        if MongoClient is None:
+            self.logger.error("MongoDB driver not available")
+            return
         try:
             config = self.config["mongodb"]
             client = MongoClient(config["host"], config["port"])
@@ -142,14 +149,15 @@ class DatabaseManager:
 
     def _init_postgresql(self):
         """Initialize PostgreSQL connection"""
+        if psycopg2 is None:
+            self.logger.error("PostgreSQL driver not available")
+            return
         try:
             config = self.config["postgresql"]
-            conn_string = "host=%s port=%s dbname=%s user=%s password=%s" % (
-                config["host"],
-                config["port"],
-                config["database"],
-                config["user"],
-                config["password"],
+            conn_string = (
+                f"host={config['host']} port={config['port']} "
+                f"dbname={config['database']} user={config['user']} "
+                f"password={config['password']}"
             )
             self.connections["postgresql"] = psycopg2.connect(conn_string)
             self._create_postgresql_tables()
@@ -205,6 +213,9 @@ class DatabaseManager:
 
     def _init_redis(self):
         """Initialize Redis connection"""
+        if redis is None:
+            self.logger.error("Redis driver not available")
+            return
         try:
             config = self.config["redis"]
             self.connections["redis"] = redis.Redis(
@@ -216,7 +227,11 @@ class DatabaseManager:
 
     # SQLite operations
     def save_prediction_sqlite(
-        self, model_name: str, input_data: Dict, prediction: Any, confidence: float
+        self,
+        model_name: str,
+        input_data: Dict,
+        prediction: Any,
+        confidence: float,
     ):
         """Save prediction to SQLite"""
         if "sqlite" not in self.connections:
@@ -225,7 +240,9 @@ class DatabaseManager:
         try:
             cursor = self.connections["sqlite"].cursor()
             cursor.execute(
-                "INSERT INTO predictions (model_name, input_data, prediction, confidence) VALUES (?, ?, ?, ?)",
+                "INSERT INTO predictions "
+                "(model_name, input_data, prediction, confidence) "
+                "VALUES (?, ?, ?, ?)",
                 (
                     model_name,
                     json.dumps(input_data),
@@ -250,12 +267,16 @@ class DatabaseManager:
             cursor = self.connections["sqlite"].cursor()
             if model_name:
                 cursor.execute(
-                    "SELECT * FROM predictions WHERE model_name = ? ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM predictions "
+                    "WHERE model_name = ? "
+                    "ORDER BY timestamp DESC "
+                    "LIMIT ?",
                     (model_name, limit),
                 )
             else:
                 cursor.execute(
-                    "SELECT * FROM predictions ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM predictions "
+                    "ORDER BY timestamp DESC LIMIT ?",
                     (limit,),
                 )
 
@@ -277,7 +298,11 @@ class DatabaseManager:
 
     # MongoDB operations
     def save_prediction_mongodb(
-        self, model_name: str, input_data: Dict, prediction: Any, confidence: float
+        self,
+        model_name: str,
+        input_data: Dict,
+        prediction: Any,
+        confidence: float,
     ):
         """Save prediction to MongoDB"""
         if "mongodb" not in self.connections:
@@ -299,7 +324,9 @@ class DatabaseManager:
             return False
 
     # Redis operations
-    def cache_prediction_redis(self, key: str, prediction: Dict, ttl: int = 3600):
+    def cache_prediction_redis(
+        self, key: str, prediction: Dict, ttl: int = 3600
+    ):
         """Cache prediction in Redis"""
         if "redis" not in self.connections:
             return False
@@ -327,7 +354,11 @@ class DatabaseManager:
 
     # Unified interface
     def save_prediction(
-        self, model_name: str, input_data: Dict, prediction: Any, confidence: float
+        self,
+        model_name: str,
+        input_data: Dict,
+        prediction: Any,
+        confidence: float,
     ):
         """Save prediction to all available databases"""
         results = []
@@ -355,7 +386,7 @@ class DatabaseManager:
 
         # Cache in Redis if available
         if REDIS_AVAILABLE:
-            cache_key = "prediction:%s:%s" % (model_name, hash(str(input_data)))
+            cache_key = f"prediction:{model_name}:{hash(str(input_data))}"
             cache_data = {
                 "model_name": model_name,
                 "input_data": input_data,
@@ -375,7 +406,9 @@ class DatabaseManager:
         """Get predictions from primary database (SQLite)"""
         return self.get_predictions_sqlite(model_name, limit)
 
-    def save_revenue_result(self, strategy: str, profit: float, parameters: Dict):
+    def save_revenue_result(
+        self, strategy: str, profit: float, parameters: Dict
+    ):
         """Save revenue optimization result"""
         if "sqlite" not in self.connections:
             return False
@@ -383,7 +416,8 @@ class DatabaseManager:
         try:
             cursor = self.connections["sqlite"].cursor()
             cursor.execute(
-                "INSERT INTO revenue_optimization (strategy, profit, parameters) VALUES (?, ?, ?)",
+                "INSERT INTO revenue_optimization "
+                "(strategy, profit, parameters) VALUES (?, ?, ?)",
                 (strategy, profit, json.dumps(parameters)),
             )
             self.connections["sqlite"].commit()
@@ -402,7 +436,8 @@ class DatabaseManager:
         try:
             cursor = self.connections["sqlite"].cursor()
             cursor.execute(
-                "INSERT INTO system_metrics (metric_name, value, tags) VALUES (?, ?, ?)",
+                "INSERT INTO system_metrics "
+                "(metric_name, value, tags) VALUES (?, ?, ?)",
                 (metric_name, value, json.dumps(tags or {})),
             )
             self.connections["sqlite"].commit()
@@ -412,7 +447,11 @@ class DatabaseManager:
             return False
 
     def save_quantum_computation(
-        self, algorithm: str, input_parameters: Dict, result: Any, execution_time: float
+        self,
+        algorithm: str,
+        input_parameters: Dict,
+        result: Any,
+        execution_time: float,
     ):
         """Save quantum computation result"""
         if "sqlite" not in self.connections:
@@ -421,7 +460,9 @@ class DatabaseManager:
         try:
             cursor = self.connections["sqlite"].cursor()
             cursor.execute(
-                "INSERT INTO quantum_computations (algorithm, input_parameters, result, execution_time) VALUES (?, ?, ?, ?)",
+                "INSERT INTO quantum_computations "
+                "(algorithm, input_parameters, result, execution_time) "
+                "VALUES (?, ?, ?, ?)",
                 (
                     algorithm,
                     json.dumps(input_parameters),
@@ -444,7 +485,10 @@ class DatabaseManager:
                     cursor = connection.cursor()
                     cursor.execute("SELECT COUNT(*) FROM predictions")
                     count = cursor.fetchone()[0]
-                    status[db_type] = {"connected": True, "predictions_count": count}
+                    status[db_type] = {
+                        "connected": True,
+                        "predictions_count": count,
+                    }
                 elif db_type == "mongodb":
                     status[db_type] = {
                         "connected": True,
@@ -454,12 +498,16 @@ class DatabaseManager:
                     cursor = connection.cursor()
                     cursor.execute("SELECT COUNT(*) FROM predictions")
                     count = cursor.fetchone()[0]
-                    status[db_type] = {"connected": True, "predictions_count": count}
+                    status[db_type] = {
+                        "connected": True,
+                        "predictions_count": count,
+                    }
                     cursor.close()
                 elif db_type == "redis":
+                    redis_connection = getattr(connection, "connection", {})
                     status[db_type] = {
                         "connected": connection.ping(),
-                        "db": getattr(connection, "connection", {}).get("db", None),
+                        "db": redis_connection.get("db", None),
                     }
             except Exception as e:  # pylint: disable=broad-exception-caught
                 status[db_type] = {"connected": False, "error": str(e)}
