@@ -5,8 +5,9 @@ OWLBAN GROUP - Enterprise Financial Services Integration
 """
 
 import logging
+import os
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import uuid
 from datetime import datetime, timezone
 import requests
@@ -21,11 +22,11 @@ logger = logging.getLogger("JPMorganAPIIntegration")
 @dataclass
 class JPMorganCredentials:
     """JPMorgan API credentials"""
-    client_id: str = "owlban_client_12345"
-    client_secret: str = "quantum_secure_secret_2024"
-    api_key: str = "JPM_API_KEY_ABC123"
-    sandbox_url: str = "https://sandbox.api.jpmorgan.com"
-    production_url: str = "https://api.jpmorgan.com"
+    client_id: str = field(default_factory=lambda: __import__("os").getenv("JPMORGAN_CLIENT_ID", "owlban_client_12345"))
+    client_secret: str = field(default_factory=lambda: __import__("os").getenv("JPMORGAN_CLIENT_SECRET", "quantum_secure_secret_2024"))
+    api_key: str = field(default_factory=lambda: __import__("os").getenv("JPMORGAN_API_KEY", "JPM_API_KEY_ABC123"))
+    sandbox_url: str = field(default_factory=lambda: __import__("os").getenv("JPMORGAN_SANDBOX_URL", "https://sandbox.api.jpmorgan.com"))
+    production_url: str = field(default_factory=lambda: __import__("os").getenv("JPMORGAN_PRODUCTION_URL", "https://api.jpmorgan.com"))
 
 @dataclass
 class PaymentRequest:
@@ -114,7 +115,7 @@ class JPMorganAPIIntegration:
                     "unstructured": payment_request.description
                 },
                 "paymentType": payment_request.payment_type,
-                "requestedExecutionDate": datetime.utcnow().isoformat()
+                "requestedExecutionDate": datetime.now(timezone.utc).isoformat()
             }
 
             # Simulate API call
@@ -128,7 +129,7 @@ class JPMorganAPIIntegration:
                 "amount": payment_request.amount,
                 "currency": payment_request.currency,
                 "exchange_rate": 1.0,  # Mock exchange rate
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "fee": payment_request.amount * 0.0025,  # 0.25% fee
                 "processing_time_ms": 150
             }
@@ -141,7 +142,7 @@ class JPMorganAPIIntegration:
             return {
                 "error": str(e),
                 "status": "failed",
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
     def get_account_balance(self, account_id: str) -> Dict[str, Any]:
@@ -165,7 +166,7 @@ class JPMorganAPIIntegration:
                     "amount": 145000.00,
                     "currency": "USD"
                 },
-                "lastUpdated": datetime.utcnow().isoformat(),
+                "lastUpdated": datetime.now(timezone.utc).isoformat(),
                 "status": "active"
             }
 
@@ -200,7 +201,7 @@ class JPMorganAPIIntegration:
                     "currency": currency
                 },
                 "transferType": "internal",
-                "requestedExecutionDate": datetime.utcnow().isoformat()
+                "requestedExecutionDate": datetime.now(timezone.utc).isoformat()
             }
 
             # Simulate API call
@@ -214,7 +215,7 @@ class JPMorganAPIIntegration:
                 "currency": currency,
                 "fromAccount": from_account,
                 "toAccount": to_account,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "fee": amount * 0.001  # 0.1% fee
             }
 
@@ -245,14 +246,14 @@ class JPMorganAPIIntegration:
                     "price": 150.00 + (hash(symbol) % 100),  # Simulated price
                     "change": (hash(symbol) % 20) - 10,  # Simulated change
                     "volume": 1000000 + (hash(symbol) % 500000),
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "currency": "USD"
                 }
 
             self.logger.info(f"Market data retrieved for {len(symbols)} symbols")
             return {
                 "marketData": market_data,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "status": "success"
             }
 
@@ -279,7 +280,7 @@ class JPMorganAPIIntegration:
                 "maxDrawdown": 0.12,
                 "volatility": 0.18,
                 "beta": 0.85,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
             self.logger.info("Risk metrics calculated successfully")
@@ -305,7 +306,7 @@ class JPMorganAPIIntegration:
 # JPMorgan API Integration Report
 ## OWLBAN GROUP - Enterprise Financial Services
 
-**Integration Date:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+**Integration Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 **Environment:** {self.environment.upper()}
 **API Version:** v2.1
 

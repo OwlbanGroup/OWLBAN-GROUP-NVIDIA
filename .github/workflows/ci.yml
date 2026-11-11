@@ -7,11 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint-and-type:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      API_PASSWORD: ci-test-password
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,9 +24,42 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pylint ruff mypy
+
+      - name: Run ruff lint check
+        run: ruff check . --output-format=github || true
+
+      - name: Run pylint
+        run: pylint api_server.py auth_lib.py database_manager.py web_dashboard.py jpmorgan_api_integration.py --exit-zero || true
+
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11"]
+    env:
+      API_PASSWORD: ci-test-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-timeout
 
       - name: Run test suite
-        run: pytest tests -q --tb=short --timeout=300 --timeout-method=thread
+        run: pytest tests/ -q --tb=short --timeout=300 --timeout-method=thread -p no:cacheprovider
 
       - name: Verify API server starts
         run: |
@@ -44,4 +75,3 @@ jobs:
           echo "Auth check returned HTTP $CODE"
           [ "$CODE" = "401" ] || { echo "FAIL: expected 401"; kill $SERVER_PID; exit 1; }
           kill $SERVER_PID
-
