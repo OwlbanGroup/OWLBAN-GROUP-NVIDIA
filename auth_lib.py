@@ -42,7 +42,8 @@ class TOTP:
     @staticmethod
     def generate_secret(byte_length: int = 20) -> str:
         """Return a base32-encoded random secret suitable for OTP."""
-        return base64.b32encode(secrets.token_bytes(byte_length)).decode().rstrip('=')
+        encoded = base64.b32encode(secrets.token_bytes(byte_length))
+        return encoded.decode().rstrip('=')
 
     @staticmethod
     def _hotp(secret: bytes, counter: int) -> str:
@@ -59,7 +60,9 @@ class TOTP:
         return base64.b32decode(padded)
 
     @classmethod
-    def code_for_time(cls, secret: str, at_time: Optional[float] = None) -> str:
+    def code_for_time(
+        cls, secret: str, at_time: Optional[float] = None
+    ) -> str:
         """Generate the current (or given epoch) TOTP code for a secret."""
         now = at_time if at_time is not None else time.time()
         counter = int(now // cls.PERIOD)
@@ -71,7 +74,9 @@ class TOTP:
         if not code or not code.isdigit():
             return False
         current_counter = int(time.time() // cls.PERIOD)
-        for counter in range(current_counter - window, current_counter + window + 1):
+        start = current_counter - window
+        end = current_counter + window + 1
+        for counter in range(start, end):
             expected = cls._hotp(cls._secret_to_bytes(secret), counter)
             if hmac.compare_digest(expected, code):
                 return True
@@ -81,8 +86,12 @@ class TOTP:
     def provisioning_uri(cls, secret: str, email: str,
                          issuer: str = "OWLBAN GROUP") -> str:
         """Return an otpauth:// provisioning URI for authenticator apps."""
-        otpauth = f"otpauth://totp/{quote(issuer)}:{quote(email)}?secret={secret}"
-        otpauth += f"&issuer={quote(issuer)}&period={cls.PERIOD}&digits={cls.DIGITS}"
+        otpauth = (
+            f"otpauth://totp/{quote(issuer)}:{quote(email)}?secret={secret}"
+        )
+        otpauth += (
+            f"&issuer={quote(issuer)}&period={cls.PERIOD}&digits={cls.DIGITS}"
+        )
         return otpauth
 
 
@@ -206,7 +215,9 @@ class AuthConfig:
     MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', '5'))
     LOCKOUT_DURATION_MINUTES = int(os.getenv('LOCKOUT_DURATION_MINUTES', '15'))
 
-    COMPANIES = ['OWLBAN_GROUP', 'OSCAR_BROOME', 'BLACKBOX_AI', 'NVIDIA_INTEGRATION']
+    COMPANIES = [
+        'OWLBAN_GROUP', 'OSCAR_BROOME', 'BLACKBOX_AI', 'NVIDIA_INTEGRATION'
+    ]
     ROLES = ['admin', 'user', 'executive', 'developer', 'analyst']
 
 
@@ -249,15 +260,20 @@ class AuthManager:
                 with open(self.session_store_file, 'r', encoding='utf-8') as f:
                     session_data = json.load(f)
                     self.sessions = {
-                        sid: Session(**data) for sid, data in session_data.items()
+                        sid: Session(**data)
+                        for sid, data in session_data.items()
                     }
         except (OSError, ValueError, TypeError) as e:
             logger.error("Failed to load session data: %s", e)
 
+        self._load_api_keys()
+
     def _save_data(self):
         """Save users and sessions to storage"""
         try:
-            user_data = {email: user.to_dict() for email, user in self.users.items()}
+            user_data = {
+                email: user.to_dict() for email, user in self.users.items()
+            }
             with open(self.user_store_file, 'w', encoding='utf-8') as f:
                 json.dump(user_data, f, indent=2)
         except (OSError, TypeError, ValueError) as e:
@@ -315,7 +331,9 @@ class AuthManager:
         if (self.config.PASSWORD_REQUIRE_SPECIAL
                 and not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?'
                             for c in password)):
-            return False, "Password must contain at least one special character"
+            return False, (
+                "Password must contain at least one special character"
+            )
 
         return True, "Password is valid"
 
@@ -327,9 +345,11 @@ class AuthManager:
         """Verify a password against its hash"""
         return bcrypt.checkpw(password.encode(), password_hash.encode())
 
-    def create_user(self, email: str, username: str, password: str, role: str = 'user',
-                    company: str = 'OWLBAN_GROUP',
-                    permissions: Optional[List[str]] = None) -> Tuple[bool, str]:
+    def create_user(
+        self, email: str, username: str, password: str, role: str = 'user',
+        company: str = 'OWLBAN_GROUP',
+        permissions: Optional[List[str]] = None,
+    ) -> Tuple[bool, str]:
         """Create a new user"""
         if email in self.users:
             return False, "User already exists"
@@ -339,7 +359,8 @@ class AuthManager:
 
         if role not in self.config.ROLES:
             return False, (
-                f"Invalid role. Must be one of: {', '.join(self.config.ROLES)}")
+                f"Invalid role. Must be one of: {', '.join(self.config.ROLES)}"
+                )
 
         if company not in self.config.COMPANIES:
             return False, (
@@ -355,7 +376,8 @@ class AuthManager:
             permissions = ['read']
 
         user = User(
-            # 64-bit random ID namespace: supports up to ~18 quintillion unique IDs,
+            # 64-bit random ID namespace: supports up to ~18 quintillion unique
+            # IDs,
             # scaling comfortably beyond the 10B-user target.
             id=f"{company.lower()}-{secrets.token_hex(8)}",
             email=email,
@@ -387,7 +409,10 @@ class AuthManager:
             return False, "Account is deactivated", None
 
         # Check if account is locked
-        if user.locked_until and datetime.now(timezone.utc) < user.locked_until:
+        if (
+            user.locked_until
+            and datetime.now(timezone.utc) < user.locked_until
+        ):
             return False, "Account is temporarily locked", None
 
         # Verify password
@@ -417,8 +442,10 @@ class AuthManager:
         now = datetime.now(timezone.utc)
 
         access_token_payload = {
-            # jti (JWT ID) guarantees per-token uniqueness even within the same
-            # second, and provides a revocation index for scale-out deployments.
+            # jti (JWT ID) guarantees per-token uniqueness even within
+            # the same
+            # second, and provides a revocation index for
+            # scale-out deployments.
             'jti': secrets.token_hex(8),
             'user_id': user.id,
             'email': user.email,
@@ -428,8 +455,11 @@ class AuthManager:
             'permissions': user.permissions,
             'type': 'access',
             'iat': int(now.timestamp()),
-            'exp': int((now + timedelta(
-                minutes=self.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
+            'exp': int(
+                (now + timedelta(
+                    minutes=self.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+                )).timestamp()
+            ),
         }
 
         refresh_token_payload = {
@@ -453,14 +483,18 @@ class AuthManager:
     def verify_access_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Verify an access token"""
         try:
-            payload = jwt.decode(token, self.config.JWT_SECRET, algorithms=['HS256'])
+            payload = jwt.decode(
+                token, self.config.JWT_SECRET, algorithms=['HS256']
+            )
             return payload
         except jwt.ExpiredSignatureError:
             return None
         except jwt.InvalidTokenError:
             return None
 
-    def refresh_access_token(self, refresh_token: str) -> Optional[Tuple[str, str]]:
+    def refresh_access_token(
+        self, refresh_token: str
+    ) -> Optional[Tuple[str, str]]:
         """Refresh an access token using a refresh token"""
         try:
             payload = jwt.decode(
@@ -550,7 +584,9 @@ class AuthManager:
             return True
         return False
 
-    def list_users(self, company: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_users(
+        self, company: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """List all users, optionally filtered by company"""
         users = []
         for user in self.users.values():
@@ -575,10 +611,17 @@ class AuthManager:
 
         if expired_sessions:
             self._save_data()
-            logger.info("Cleaned up %s expired sessions", len(expired_sessions))
+            logger.info(
+                "Cleaned up %s expired sessions", len(expired_sessions)
+            )
 
-    def create_password_reset_token(self, email: str) -> Optional[str]:
-        """Create a password reset token for a user. Returns the token or None."""
+    def create_password_reset_token(
+        self, email: str
+    ) -> Optional[str]:
+        """Create a password reset token for a user.
+
+        Returns the token or None.
+        """
         user = self.users.get(email)
         if not user:
             return None
@@ -594,7 +637,10 @@ class AuthManager:
         return reset_token
 
     def verify_password_reset_token(self, reset_token: str) -> Optional[str]:
-        """Verify a reset token. Returns the associated email if valid, else None."""
+        """Verify a reset token.
+
+        Returns the associated email if valid, else None.
+        """
         tokens = getattr(self, '_password_reset_tokens', {})
         record = tokens.get(reset_token)
         if not record or record['used']:
@@ -603,7 +649,9 @@ class AuthManager:
             return None
         return record['email']
 
-    def reset_password(self, reset_token: str, new_password: str) -> Tuple[bool, str]:
+    def reset_password(
+        self, reset_token: str, new_password: str
+    ) -> Tuple[bool, str]:
         """Reset a user's password using a valid reset token."""
         email = self.verify_password_reset_token(reset_token)
         if not email:
@@ -624,8 +672,11 @@ class AuthManager:
         logger.info("Password reset successful for %s", email)
         return True, "Password reset successful"
 
-    def log_audit_event(self, event_type: str, user_email: str, details: Dict[str, Any],
-                        ip_address: Optional[str] = None, severity: str = "info"):
+    def log_audit_event(
+        self, event_type: str, user_email: str, details: Dict[str, Any],
+        ip_address: Optional[str] = None,
+        severity: str = "info",
+    ):
         """Log an audit event for security tracking."""
         if not hasattr(self, '_audit_log'):
             self._audit_log = []
@@ -654,7 +705,9 @@ class AuthManager:
         log = getattr(self, '_audit_log', [])
         return log[-limit:]
 
-    def generate_api_key(self, email: str, name: str = "default") -> Optional[str]:
+    def generate_api_key(
+        self, email: str, name: str = "default"
+    ) -> Optional[str]:
         """Generate a new API key for a user."""
         user = self.users.get(email)
         if not user:
@@ -720,7 +773,7 @@ class AuthManager:
         except OSError:
             logger.warning("Failed to save API keys")
 
-    # -------------------- Multi-Factor Authentication (TOTP) --------------------
+    # ---- Multi-Factor Authentication (TOTP) ----
 
     def setup_mfa(self, email: str) -> Optional[Dict[str, Any]]:
         """Generate and store a TOTP secret for a user.
@@ -748,7 +801,9 @@ class AuthManager:
         if not user.mfa_secret:
             return False, "MFA not initialized. Call setup_mfa first."
         if not TOTP.verify(user.mfa_secret, code):
-            self.log_audit_event("mfa_enable_failed", email, {}, severity="warning")
+            self.log_audit_event(
+                "mfa_enable_failed", email, {}, severity="warning"
+            )
             return False, "Invalid TOTP code"
         user.mfa_enabled = True
         self._save_data()
@@ -764,7 +819,9 @@ class AuthManager:
         if not user.mfa_enabled:
             return False, "MFA not enabled"
         if not user.mfa_secret or not TOTP.verify(user.mfa_secret, code):
-            self.log_audit_event("mfa_disable_failed", email, {}, severity="warning")
+            self.log_audit_event(
+                "mfa_disable_failed", email, {}, severity="warning"
+            )
             return False, "Invalid TOTP code"
         user.mfa_enabled = False
         user.mfa_secret = None
@@ -780,7 +837,9 @@ class AuthManager:
             return False
         ok = TOTP.verify(user.mfa_secret, code)
         if not ok:
-            self.log_audit_event("mfa_login_failed", email, {}, severity="warning")
+            self.log_audit_event(
+                "mfa_login_failed", email, {}, severity="warning"
+            )
         return ok
 
     def mfa_required(self, email: str) -> bool:
@@ -799,9 +858,10 @@ class AuthManager:
 
     # -------------------- OAuth2 Authorization Server --------------------
 
-    def register_oauth_client(self, name: str, redirect_uris: List[str],
-                              scopes: List[str],
-                              confidential: bool = True) -> Dict[str, Optional[str]]:
+    def register_oauth_client(
+        self, name: str, redirect_uris: List[str], scopes: List[str],
+        confidential: bool = True,
+    ) -> Dict[str, Optional[str]]:
         """Register a new OAuth2 client. Returns client_id/client_secret."""
         client_id = f"oac_{secrets.token_urlsafe(24)}"
         client_secret = secrets.token_urlsafe(48) if confidential else None
@@ -842,17 +902,21 @@ class AuthManager:
                 "name": c.name,
                 "redirect_uris": c.redirect_uris,
                 "scopes": c.scopes,
-                "created_at": c.created_at.isoformat(),
+                "created_at": (
+                    c.created_at.isoformat() if c.created_at else None
+                ),
                 "active": c.active,
             }
             for c in self._oauth_clients.values()
         ]
 
-    def preauthorize_code(self, client_id: str, user_email: str, redirect_uri: str,
-                          code_challenge: Optional[str] = None,
-                          code_challenge_method: str = "S256",
-                          scope: Optional[List[str]] = None,
-                          expires_seconds: int = 600) -> Optional[str]:
+    def preauthorize_code(
+        self, client_id: str, user_email: str, redirect_uri: str,
+        code_challenge: Optional[str] = None,
+        code_challenge_method: str = "S256",
+        scope: Optional[List[str]] = None,
+        expires_seconds: int = 600,
+    ) -> Optional[str]:
         """Create a short-lived, single-use authorization code for a user.
 
         Called after the resource owner authenticates and grants consent.
@@ -862,7 +926,9 @@ class AuthManager:
         if not client:
             return None
         if redirect_uri not in client.redirect_uris:
-            logger.warning("OAuth redirect_uri not registered: %s", redirect_uri)
+            logger.warning(
+                "OAuth redirect_uri not registered: %s", redirect_uri
+            )
             return None
         if code_challenge_method not in ("S256", "plain"):
             return None
@@ -892,8 +958,8 @@ class AuthManager:
         """Exchange an authorization code for JWT tokens (RFC 6749 §4.1.3).
 
         Enforces single-use, expiry, redirect_uri match, and PKCE verification.
-        Returns a dict with access_token/refresh_token/token_type/expires_in and
-        user context, or None on any validation failure.
+        Returns a dict with access_token/refresh_token/token_type/expires_in
+        and user context, or None on validation failure.
         """
         record = self._oauth_codes.get(code)
         if not record or record["used"]:
@@ -906,10 +972,13 @@ class AuthManager:
 
         if record.get("code_challenge"):
             if not code_verifier:
-                logger.warning("OAuth token exchange missing PKCE code_verifier")
+                logger.warning(
+                    "OAuth token exchange missing PKCE code_verifier"
+                )
                 return None
             if record["code_challenge_method"] == "S256":
-                if pkce_s256_challenge(code_verifier) != record["code_challenge"]:
+                challenge = pkce_s256_challenge(code_verifier)
+                if challenge != record["code_challenge"]:
                     logger.warning("OAuth PKCE S256 verification failed")
                     return None
             else:  # plain
@@ -926,8 +995,10 @@ class AuthManager:
 
         access_token, refresh_token = self.generate_tokens(user)
         granted = record["scope"] or user.permissions
-        self.log_audit_event("oauth_token_exchange", user.email,
-                             {"client_id": record["client_id"], "scope": granted})
+        self.log_audit_event(
+            "oauth_token_exchange", user.email,
+            {"client_id": record["client_id"], "scope": granted},
+        )
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -972,11 +1043,13 @@ class AuthManager:
                         self._oauth_codes_store = raw
             except (OSError, ValueError):
                 self._oauth_codes_store = {}
-        return self._oauth_codes_store
+        return self._oauth_codes_store or {}
 
     def _save_oauth_clients(self):
         try:
-            fname = self.user_store_file.replace('.json', '_oauth_clients.json')
+            fname = self.user_store_file.replace(
+                '.json', '_oauth_clients.json'
+            )
             data = {cid: c.to_dict() for cid, c in self._oauth_clients.items()}
             with open(fname, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
@@ -997,14 +1070,19 @@ class AuthManager:
         except OSError:
             logger.warning("Failed to save OAuth authorization codes")
 
+
 auth_manager = AuthManager()
 
 
 # Convenience functions
-def authenticate_user(email: str, password: str, ip_address: Optional[str] = None,
-                      user_agent: Optional[str] = None):
+def authenticate_user(
+    email: str, password: str, ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+):
     """Authenticate a user via the global auth manager."""
-    return auth_manager.authenticate_user(email, password, ip_address, user_agent)
+    return auth_manager.authenticate_user(
+        email, password, ip_address, user_agent
+    )
 
 
 def verify_token(token: str):
@@ -1070,8 +1148,10 @@ def mfa_required(email: str):
     return auth_manager.mfa_required(email)
 
 
-def register_oauth_client(name: str, redirect_uris: List[str], scopes: List[str],
-                          confidential: bool = True):
+def register_oauth_client(
+    name: str, redirect_uris: List[str], scopes: List[str],
+    confidential: bool = True,
+):
     """Register an OAuth2 client via the global auth manager."""
     return auth_manager.register_oauth_client(name, redirect_uris, scopes,
                                               confidential)
@@ -1098,9 +1178,11 @@ def preauthorize_code(client_id: str, user_email: str, redirect_uri: str,
                       scope: Optional[List[str]] = None,
                       expires_seconds: int = 600):
     """Create an OAuth2 authorization code via the global auth manager."""
-    return auth_manager.preauthorize_code(client_id, user_email, redirect_uri,
-                                          code_challenge, code_challenge_method,
-                                          scope, expires_seconds)
+    return auth_manager.preauthorize_code(
+        client_id, user_email, redirect_uri,
+        code_challenge, code_challenge_method,
+        scope, expires_seconds,
+    )
 
 
 def exchange_code_for_tokens(code: str, redirect_uri: str,
