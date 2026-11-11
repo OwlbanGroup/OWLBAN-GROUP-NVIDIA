@@ -302,7 +302,9 @@ async def lifespan(app: FastAPI):
             app.state.ngc_catalog_manager.initialize()
             logger.info("Standalone NGC catalog manager initialized")
         except Exception:  # pylint: disable=broad-exception-caught
-            logger.exception("Failed to initialize standalone NGC catalog manager")
+            logger.exception(
+                "Failed to initialize standalone NGC catalog manager"
+            )
 
     yield
 
@@ -332,12 +334,19 @@ if MIDDLEWARE_AVAILABLE:
     # because they use stateless bearer tokens (no CSRF cookie dependency).
     fastapi_app.add_middleware(CSRFProtectionMiddleware)
 # CORS hardening (security):
-# - The insecure combo allow_origins=["*"] + allow_credentials=True is avoided by
+# - The insecure combo allow_origins=["*"] +
+#   allow_credentials=True is avoided by
 #   default. When CORS_ALLOWED_ORIGINS is unset/empty the API stays publicly
 #   open (allow_credentials=False, safe for stateless Basic/bearer auth).
-# - Set CORS_ALLOWED_ORIGINS="https://dashboard.example.com,https://app.example.com"
-#   to enable credentialed cross-origin access for the logged-in web dashboard.
-_cors_origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+# - Set CORS_ALLOWED_ORIGINS="https://dashboard.example.com,
+#   https://app.example.com"
+#   to enable credentialed cross-origin
+#   access for the logged-in web dashboard.
+_cors_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
 fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins or ["*"],
@@ -442,10 +451,15 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-        credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)):
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+            bearer_scheme
+        ),
+):
     """Extract and verify JWT token from Authorization header."""
     if credentials is None:
-        raise HTTPException(status_code=401, detail="Authorization header missing")
+        raise HTTPException(
+            status_code=401, detail="Authorization header missing"
+        )
     payload = verify_token(credentials.credentials)
     if payload is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -458,12 +472,16 @@ def get_current_user(
 async def register(req: RegisterRequest):
     """Register a new user account."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success, message = create_user(
         req.email, req.username, req.password, req.role, req.company)
     if not success:
         raise HTTPException(status_code=400, detail=message)
-    auth_manager.log_audit_event("user_registered", req.email, {"company": req.company})
+    auth_manager.log_audit_event(
+        "user_registered", req.email, {"company": req.company}
+    )
     if AUTH_METRICS_AVAILABLE:
         auth_metrics.record_audit_event("user_registered", "info")
     return {"message": message}
@@ -473,7 +491,9 @@ async def register(req: RegisterRequest):
 async def login(req: LoginRequest):
     """Authenticate user and return JWT tokens."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success, message, user = authenticate_user(req.email, req.password)
     if not success or user is None:
         # Record the failed/login outcome for observability (get the user to
@@ -482,7 +502,9 @@ async def login(req: LoginRequest):
         source = auth_manager.get_user_by_email(req.email)
         if source is not None:
             company = source.company
-        outcome = "locked" if "locked" in (message or "") else "invalid_credentials"
+        outcome = (
+            "locked" if "locked" in (message or "") else "invalid_credentials"
+        )
         if AUTH_METRICS_AVAILABLE:
             auth_metrics.record_login(outcome, company)
         raise HTTPException(status_code=401, detail=message)
@@ -490,7 +512,9 @@ async def login(req: LoginRequest):
     if mfa_required(req.email):
         if not req.mfa_code:
             if AUTH_METRICS_AVAILABLE:
-                auth_metrics.record_audit_event("mfa_challenge_required", req.email)
+                auth_metrics.record_audit_event(
+                    "mfa_challenge_required", req.email
+                )
             raise HTTPException(
                 status_code=428,  # Precondition Required
                 detail="MFA code required",
@@ -512,7 +536,9 @@ async def login(req: LoginRequest):
 async def refresh_tokens(token: str):
     """Refresh an access token using a valid refresh token."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     new_access = auth_manager.refresh_access_token(token)
     if not new_access:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
@@ -526,11 +552,14 @@ async def refresh_tokens(token: str):
 async def reset_request(req: ResetRequest):
     """Request a password reset token."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     token = request_password_reset(req.email)
     response = {"message": "If the email exists, a reset link has been sent"}
     if token:
-        response["reset_token"] = token  # Demo only; production sends via email
+        response["reset_token"] = token
+        # Demo only; production sends via email
     return response
 
 
@@ -538,7 +567,9 @@ async def reset_request(req: ResetRequest):
 async def reset_password_endpoint(req: ResetPasswordRequest):
     """Reset password using a valid reset token."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success, message = reset_password(req.token, req.new_password)
     if not success:
         raise HTTPException(status_code=400, detail=message)
@@ -549,7 +580,9 @@ async def reset_password_endpoint(req: ResetPasswordRequest):
 async def get_profile(user=Depends(get_current_user)):
     """Get current user profile."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     db_user = auth_manager.get_user_by_email(user["email"])
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -566,10 +599,14 @@ async def get_profile(user=Depends(get_current_user)):
 async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
     """Generate a new API key for the authenticated user."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     key = generate_api_key(user["email"], req.name)
     if not key:
-        raise HTTPException(status_code=400, detail="Failed to generate API key")
+        raise HTTPException(
+            status_code=400, detail="Failed to generate API key"
+        )
     if AUTH_METRICS_AVAILABLE:
         db_user = auth_manager.get_user_by_email(user["email"])
         company = db_user.company if db_user else "OWLBAN_GROUP"
@@ -581,7 +618,9 @@ async def create_api_key(req: APIKeyRequest, user=Depends(get_current_user)):
 async def list_api_keys(user=Depends(get_current_user)):
     """List all API keys for the authenticated user."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     keys = auth_manager.list_api_keys(user["email"])
     return {"api_keys": keys}
 
@@ -590,7 +629,9 @@ async def list_api_keys(user=Depends(get_current_user)):
 async def delete_api_key(api_key: str, user=Depends(get_current_user)):
     """Revoke an API key."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success = auth_manager.revoke_api_key(user["email"], api_key)
     if not success:
         raise HTTPException(status_code=400, detail="Failed to revoke key")
@@ -601,7 +642,9 @@ async def delete_api_key(api_key: str, user=Depends(get_current_user)):
 async def get_audit(user=Depends(get_current_user)):
     """Get audit log (admin only)."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     db_user = auth_manager.get_user_by_email(user["email"])
     if not db_user or db_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -612,7 +655,9 @@ async def get_audit(user=Depends(get_current_user)):
 async def mfa_setup(user=Depends(get_current_user)):
     """Generate a TOTP secret and provisioning URI for the current user."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     result = setup_mfa(user["email"])
     if not result:
         raise HTTPException(
@@ -620,14 +665,19 @@ async def mfa_setup(user=Depends(get_current_user)):
             detail="MFA is already enabled or user not found")
     if AUTH_METRICS_AVAILABLE:
         auth_metrics.record_audit_event("mfa_setup", user["email"])
-    return {"secret": result["secret"], "provisioning_uri": result["provisioning_uri"]}
+    return {
+        "secret": result["secret"],
+        "provisioning_uri": result["provisioning_uri"],
+    }
 
 
 @fastapi_app.post("/auth/mfa/enable", response_model=dict)
 async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Verify a TOTP code and enable MFA for the current user."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success, message = enable_mfa(user["email"], req.code)
     if not success:
         raise HTTPException(status_code=400, detail=message)
@@ -638,7 +688,9 @@ async def mfa_enable(req: MFACodeRequest, user=Depends(get_current_user)):
 async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
     """Disable MFA for the current user after verifying a TOTP code."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     success, message = disable_mfa(user["email"], req.code)
     if not success:
         raise HTTPException(status_code=400, detail=message)
@@ -649,7 +701,9 @@ async def mfa_disable(req: MFACodeRequest, user=Depends(get_current_user)):
 async def mfa_status(user=Depends(get_current_user)):
     """Return whether MFA is enabled for the current user."""
     if not AUTH_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Auth system not available")
+        raise HTTPException(
+            status_code=503, detail="Auth system not available"
+        )
     return {"mfa_required": mfa_required(user["email"])}
 
 
@@ -683,7 +737,10 @@ async def root():
 @fastapi_app.get("/health")
 async def health_check():
     """Liveness probe endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @fastapi_app.get("/status", response_model=SystemStatus)
@@ -705,7 +762,9 @@ async def get_system_status():
     if fastapi_app.state.db_manager:
         database_status = fastapi_app.state.db_manager.get_database_status()
 
-    uptime = time.time() - getattr(fastapi_app.state, 'start_time', time.time())
+    uptime = time.time() - getattr(
+        fastapi_app.state, 'start_time', time.time()
+    )
     monitoring_stats = _get_monitoring_stats()
     response_times = monitoring_stats.get("response_times", [])
     avg_response_time = sum(response_times) / max(len(response_times), 1)
@@ -729,7 +788,9 @@ async def get_catalog_summary():
     """Summarize the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
     if manager is None:
-        raise HTTPException(status_code=503, detail="NGC catalog manager not available")
+        raise HTTPException(
+            status_code=503, detail="NGC catalog manager not available"
+        )
 
     if hasattr(manager, "get_catalog_summary"):
         return manager.get_catalog_summary()
@@ -741,7 +802,9 @@ async def search_catalog(query: str):
     """Search the NGC model catalog."""
     manager = fastapi_app.state.ngc_catalog_manager
     if manager is None:
-        raise HTTPException(status_code=503, detail="NGC catalog manager not available")
+        raise HTTPException(
+            status_code=503, detail="NGC catalog manager not available"
+        )
 
     return manager.search(query) if hasattr(manager, "search") else []
 
@@ -756,7 +819,9 @@ async def optimize_revenue(request: RevenueOptimizationRequest,
                            background_tasks: BackgroundTasks):
     """Start a revenue optimization run in the background."""
     if not fastapi_app.state.revenue_optimizer:
-        raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
+        raise HTTPException(
+            status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE
+        )
 
     try:
         background_tasks.add_task(
@@ -764,7 +829,8 @@ async def optimize_revenue(request: RevenueOptimizationRequest,
             request.iterations)
         return {
             "message":
-            f"Revenue optimization started with {request.iterations} iterations",
+            f"Revenue optimization started with "
+            f"{request.iterations} iterations",
             "status": "running"
         }
     except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -782,14 +848,18 @@ async def optimize_revenue(request: RevenueOptimizationRequest,
 async def get_current_profit():
     """Return the current optimized profit."""
     if not fastapi_app.state.revenue_optimizer:
-        raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
+        raise HTTPException(
+            status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE
+        )
 
     try:
         profit = fastapi_app.state.revenue_optimizer.get_current_profit()
         return {"current_profit": profit}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to get profit")
-        raise HTTPException(status_code=500, detail="Failed to get profit") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to get profit"
+        ) from exc
 
 
 @fastapi_app.post(
@@ -801,14 +871,18 @@ async def get_current_profit():
 async def run_inference(request: InferenceRequest):
     """Run combined-system inference."""
     if not fastapi_app.state.combined_system:
-        raise HTTPException(status_code=503, detail="Combined system not available")
+        raise HTTPException(
+            status_code=503, detail="Combined system not available"
+        )
 
     try:
         result = fastapi_app.state.combined_system.run_inference(request.data)
         return {"result": result}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Inference failed")
-        raise HTTPException(status_code=500, detail="Inference failed") from exc
+        raise HTTPException(
+            status_code=500, detail="Inference failed"
+        ) from exc
 
 
 @fastapi_app.post(
@@ -828,7 +902,9 @@ async def rl_learn(state: List[float], action: str, reward: float,
         return {"message": "RL learning completed"}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("RL learning failed")
-        raise HTTPException(status_code=500, detail="RL learning failed") from exc
+        raise HTTPException(
+            status_code=500, detail="RL learning failed"
+        ) from exc
 
 
 @fastapi_app.post(
@@ -860,14 +936,18 @@ async def get_rl_action(state: List[float]):
 async def get_gpu_status():
     """Return GPU resource status."""
     if not fastapi_app.state.nim_manager:
-        raise HTTPException(status_code=503, detail="NIM manager not available")
+        raise HTTPException(
+            status_code=503, detail="NIM manager not available"
+        )
 
     try:
         gpu_status = fastapi_app.state.nim_manager.get_resource_status()
         return {"gpu_status": gpu_status}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("GPU status check failed")
-        raise HTTPException(status_code=500, detail="GPU status check failed") from exc
+        raise HTTPException(
+            status_code=500, detail="GPU status check failed"
+        ) from exc
 
 
 @fastapi_app.get(
@@ -879,10 +959,14 @@ async def get_gpu_status():
 async def get_quantum_portfolio():
     """Run quantum portfolio optimization."""
     if not fastapi_app.state.revenue_optimizer:
-        raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
+        raise HTTPException(
+            status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE
+        )
 
     try:
-        result = fastapi_app.state.revenue_optimizer.optimize_quantum_portfolio()
+        result = (
+            fastapi_app.state.revenue_optimizer.optimize_quantum_portfolio()
+        )
         return {"portfolio": _jsonable(result.__dict__)}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum portfolio optimization failed")
@@ -900,7 +984,9 @@ async def get_quantum_portfolio():
 async def get_quantum_risk():
     """Run quantum risk analysis."""
     if not fastapi_app.state.revenue_optimizer:
-        raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
+        raise HTTPException(
+            status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE
+        )
 
     try:
         result = fastapi_app.state.revenue_optimizer.analyze_quantum_risk()
@@ -920,7 +1006,9 @@ async def get_quantum_risk():
 async def predict_market(symbol: str):
     """Predict market movement for a symbol."""
     if not fastapi_app.state.revenue_optimizer:
-        raise HTTPException(status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE)
+        raise HTTPException(
+            status_code=503, detail=REVENUE_OPTIMIZER_NOT_AVAILABLE
+        )
 
     try:
         optimizer = fastapi_app.state.revenue_optimizer
@@ -929,11 +1017,14 @@ async def predict_market(symbol: str):
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Quantum market prediction failed")
         raise HTTPException(
-            status_code=500, detail="Quantum market prediction failed") from exc
+            status_code=500, detail="Quantum market prediction failed"
+        ) from exc
 
 
 @fastapi_app.get("/logs")
-def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int = 100):
+def get_logs(
+    username: Annotated[str, Depends(verify_credentials)], lines: int = 100
+):
     """Get recent log entries (admin only)"""
     logger.info("Logs requested by %s", username)
 
@@ -945,7 +1036,9 @@ def get_logs(username: Annotated[str, Depends(verify_credentials)], lines: int =
         return {"logs": ["No log file found"], "user": username}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to read logs")
-        raise HTTPException(status_code=500, detail="Failed to read logs") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to read logs"
+        ) from exc
 
 
 @fastapi_app.post("/logs")
@@ -972,14 +1065,18 @@ async def get_metrics(username: Annotated[str, Depends(verify_credentials)]):
     logger.info("Metrics requested by %s", username)
 
     if not fastapi_app.state.db_manager:
-        raise HTTPException(status_code=503, detail="Database manager not available")
+        raise HTTPException(
+            status_code=503, detail="Database manager not available"
+        )
 
     try:
         metrics = fastapi_app.state.db_manager.get_predictions(limit=50)
         return {"metrics": metrics, "user": username}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to get metrics")
-        raise HTTPException(status_code=500, detail="Failed to get metrics") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to get metrics"
+        ) from exc
 
 
 @fastapi_app.post(
@@ -995,14 +1092,20 @@ async def save_metric(metric_name: str, value: float,
     logger.info("Metric saved by %s: %s = %f", username, metric_name, value)
 
     if not fastapi_app.state.db_manager:
-        raise HTTPException(status_code=503, detail="Database manager not available")
+        raise HTTPException(
+            status_code=503, detail="Database manager not available"
+        )
 
     try:
-        fastapi_app.state.db_manager.save_system_metric(metric_name, value, tags)
+        fastapi_app.state.db_manager.save_system_metric(
+            metric_name, value, tags
+        )
         return {"message": "Metric saved", "user": username}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to save metric")
-        raise HTTPException(status_code=500, detail="Failed to save metric") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to save metric"
+        ) from exc
 
 if __name__ == "__main__":
     fastapi_app.state.start_time = time.time()
