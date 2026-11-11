@@ -1,0 +1,18 @@
+{
+  "$schema": "https://cspell.org/schemas/cspell.json",
+  "version": "2",
+  "words": [
+    "BLACKBOX",
+    "BROOME",
+    "OWLBAN",
+    "TOTP",
+    "checkpw",
+    "gensalt",
+    "hashpw",
+    "hotp",
+    "otpauth",
+    "preauthorize",
+    "totp",
+    "owlban"
+  ]
+}
