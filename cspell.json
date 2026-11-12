@@ -1,15 +1,21 @@
 {
-  "$schema": "https://cspell.org/schemas/cspell.json",
+  // $schema is used by editors (VS Code) for autocompletion and validation.
+  // We have removed the external $schema reference because cspell.org is
+  // often blocked by firewalls/proxies, causing schema-loading errors.
+  // cSpell works fine without it.
   "version": "2",
   "words": [
     "BLACKBOX",
     "BROOME",
+    "NGCATALOG",
     "OWLBAN",
+    "QISKIT",
     "TOTP",
     "checkpw",
     "gensalt",
     "hashpw",
     "hotp",
+    "jsonable",
     "otpauth",
     "preauthorize",
     "setex",

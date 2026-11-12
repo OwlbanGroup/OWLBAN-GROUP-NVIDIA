@@ -24,8 +24,8 @@
 ## Registration Status
 
 - **Status:** submitted_successfully
-- **Confirmation Number:** NVIDIA-PARTNER-1794378091
-- **Submission Time:** 2026-11-11 06:21:31
+- **Confirmation Number:** NVIDIA-PARTNER-1794506292
+- **Submission Time:** 2026-11-12 17:58:12
 - **Review Time:** 2-4 weeks
 
 ## Next Steps
