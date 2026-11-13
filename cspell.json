@@ -3,7 +3,7 @@
   // We have removed the external $schema reference because cspell.org is
   // often blocked by firewalls/proxies, causing schema-loading errors.
   // cSpell works fine without it.
-  "version": "2",
+  "version": "0.2",
   "words": [
     "BLACKBOX",
     "BROOME",
@@ -11,15 +11,53 @@
     "OWLBAN",
     "QISKIT",
     "TOTP",
+    "asyncio",
+    "cacheprovider",
     "checkpw",
+    "cuml",
+    "fastapi",
+    "flake8",
     "gensalt",
+    "getattr",
+    "hashlib",
     "hashpw",
     "hotp",
     "jsonable",
+    "modernisation",
+    "mypy",
+    "narrowed",
+    "narrowing",
+    "numpy",
+    "optim",
     "otpauth",
+    "owlban",
+    "plotly",
     "preauthorize",
+    "pydantic",
+    "pyflakes",
+    "pyjwt",
+    "pylint",
+    "pylintrc",
+    "pytest",
+    "refinitiv",
+    "ruff",
+    "scikit",
     "setex",
+    "streamlit",
+    "telehealth",
+    "timedelta",
     "totp",
-    "owlban"
+    "uvicorn",
+    "venv",
+    "wrongpass"
+  ],
+  // Generated files: lint baselines and dependency lock output are
+  // machine-written, so their contents are not spell-checked.
+  "ignorePaths": [
+    ".ruff-baseline.txt",
+    "*.lock",
+    "package-lock.json",
+    ".venv/**",
+    "node_modules/**"
   ]
 }

@@ -51,14 +51,14 @@ class TestBankingApplications:
             "sender_account": "ACC123",
             "recipient_account": "ACC456"
         }
-        assert payment_app.validate_payment(valid_payment) == True
+        assert payment_app.validate_payment(valid_payment) is True
 
         # Test invalid payment
         invalid_payment = {
             "amount": -100.00,
             "currency": "USD"
         }
-        assert payment_app.validate_payment(invalid_payment) == False
+        assert payment_app.validate_payment(invalid_payment) is False
 
     @patch('requests.get')
     def test_treasury_operations(self, mock_get):

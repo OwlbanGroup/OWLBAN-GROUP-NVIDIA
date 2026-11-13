@@ -8,8 +8,6 @@ import base64
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import pytest
-
 from auth_lib import TOTP, AuthManager
 from middleware.csrf import (
     generate_csrf_token,

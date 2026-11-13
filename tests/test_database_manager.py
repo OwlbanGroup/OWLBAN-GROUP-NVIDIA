@@ -84,7 +84,7 @@ class TestPredictionOperations:
 
     def test_get_predictions_limit(self, temp_db):
         """Should respect the limit parameter."""
-        for i in range(10):
+        for _ in range(10):
             temp_db.save_prediction(
                 model_name="model",
                 input_data='{}',

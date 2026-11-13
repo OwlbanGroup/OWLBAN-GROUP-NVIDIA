@@ -19,13 +19,11 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
-
 # Silence auth_lib logging so benchmarks reflect pure operation time
 logging.disable(logging.CRITICAL)
 
 import auth_lib  # noqa: E402
-from auth_lib import AuthManager, AuthConfig, Session, User  # noqa: E402
+from auth_lib import AuthManager, User  # noqa: E402
 from middleware.rate_limiter import TokenBucket  # noqa: E402
 
 # Synthetic user-store scale. Default 1000 for fast CI; override for larger runs.

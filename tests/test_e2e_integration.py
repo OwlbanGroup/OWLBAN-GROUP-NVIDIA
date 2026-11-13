@@ -6,8 +6,6 @@ the FastAPI server, and the Streamlit dashboard.
 
 import sys
 import os
-import json
-import time
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from auth_lib import (
     AuthManager, authenticate_user, verify_token, create_user,
     request_password_reset, reset_password, generate_api_key, verify_api_key,
-    auth_manager, AuthConfig
+    AuthConfig
 )
 
 
@@ -252,7 +250,7 @@ class TestSecurityCompliance:
         create_user('cleanup@owlban.com', 'cleanupuser', 'SecurePass1!')
         _, _, user = authenticate_user('cleanup@owlban.com', 'SecurePass1!')
         temp_auth_store.generate_tokens(user)
-        for sid, session in temp_auth_store.sessions.items():
+        for session in temp_auth_store.sessions.values():
             session.active = False
         temp_auth_store.cleanup_expired_sessions()
         assert len(temp_auth_store.sessions) == 0

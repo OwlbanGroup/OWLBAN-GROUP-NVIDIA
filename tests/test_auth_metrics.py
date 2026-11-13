@@ -76,7 +76,6 @@ def test_counters_increment():
 def test_thread_safe_increments():
     import threading
     m = make_metrics()
-    results = []
 
     def worker():
         for _ in range(100):

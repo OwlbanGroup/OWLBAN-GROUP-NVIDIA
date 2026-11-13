@@ -11,17 +11,6 @@ select = ["E4", "E7", "E9", "F", "B"]
 ignore = [
     "E501",   # line length is not enforced
     "B008",   # FastAPI Depends()/Query() in defaults is idiomatic
-    # Pre-existing backlog, tracked for a follow-up cleanup pass. Remove
-    # these ignores (and fix the findings) to tighten the gate.
-    "F401",   # unused import
-    "F841",   # unused variable
-    "F541",   # f-string without placeholders
-    "B007",   # unused loop control variable
-    "B009",   # getattr with constant
-    "B905",   # zip without explicit strict
-    "E712",   # comparison to True/False
-    "E722",   # bare except
-    "E402",   # import not at top of file (sys.path setup precedes imports)
 ]
 
 [lint.per-file-ignores]
