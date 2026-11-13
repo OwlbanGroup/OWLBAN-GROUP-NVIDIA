@@ -1,0 +1,25 @@
+# Core runtime dependencies required by the test suite.
+# The AI/GPU/quantum stack (torch, qiskit, scikit-learn, GPUtil, ...) and the
+# pinned Pillow build are intentionally omitted: they are only needed to run
+# the application, and tests that import them are skipped when absent.
+streamlit==1.37.0
+plotly==5.17.0
+pandas==2.3.3
+requests==2.31.0
+uvicorn==0.24.0
+fastapi==0.115.0
+pydantic==2.6.0
+
+# Authentication
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+
+# Testing
+pytest
+pytest-timeout
+
+# Lint / type checking
+flake8
+pylint
+ruff
+mypy

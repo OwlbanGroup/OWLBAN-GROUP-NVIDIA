@@ -1,15 +1,11 @@
-"""Test API server status"""
+"""Test API server status."""
 import asyncio
-import os
+
 import api_server
-
-import pytest
-
-if not os.environ.get("API_PASSWORD"):
-    pytest.skip("api_server requires API_PASSWORD environment variable", allow_module_level=True)
 
 
 def test_get_system_status_returns_response_without_crashing():
+    """get_system_status should return a populated status response."""
     result = asyncio.run(api_server.get_system_status())
 
     assert result.timestamp

@@ -7,11 +7,11 @@ energy optimization, monitoring, portfolio optimization, risk analysis, and mark
 import sys
 import os
 import pytest
-import numpy as np
 
-# Optional heavy deps (torch, qiskit). Skip these tests gracefully when they
-# are not installed so the full suite still collects and runs. Guard BEFORE
-# the module-level imports below, which require these dependencies.
+# Optional heavy deps (numpy, torch, qiskit). Skip these tests gracefully when
+# they are not installed so the full suite still collects and runs. Guard
+# BEFORE the module-level imports below, which require these dependencies.
+np = pytest.importorskip("numpy")
 torch = pytest.importorskip("torch")
 pytest.importorskip("qiskit")
 

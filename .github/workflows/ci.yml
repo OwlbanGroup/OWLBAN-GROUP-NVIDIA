@@ -23,14 +23,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pylint ruff mypy
+          pip install -r requirements-test.txt
 
       - name: Run ruff lint check
-        run: ruff check . --output-format=github || true
+        run: ruff check . --output-format=github
 
       - name: Run pylint
-        run: pylint api_server.py auth_lib.py database_manager.py web_dashboard.py jpmorgan_api_integration.py --exit-zero || true
+        # E0401 (import-error) is excluded: the lint job installs the light
+        # test requirements, not the full AI/GPU/quantum stack.
+        # --fail-under gates on the current score; raise it as the backlog
+        # of warnings is paid down.
+        run: |
+          pylint api_server.py auth_lib.py database_manager.py \
+            web_dashboard.py jpmorgan_api_integration.py \
+            --disable=import-error --fail-under=9.5
 
   test:
     runs-on: ${{ matrix.os }}
@@ -55,8 +61,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-timeout
+          pip install -r requirements-test.txt
 
       - name: Run test suite
         run: pytest tests/ -q --tb=short --timeout=300 --timeout-method=thread -p no:cacheprovider

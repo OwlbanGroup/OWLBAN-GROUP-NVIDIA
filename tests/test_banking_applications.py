@@ -4,6 +4,11 @@ Comprehensive tests for banking applications.
 
 import pytest
 from unittest.mock import Mock, patch
+
+# Optional deps: skip these tests gracefully when the banking apps' heavy
+# dependencies (numpy, torch, ...) are unavailable.
+pytest.importorskip("numpy")
+
 from banking_payment_app import BankingPaymentApp
 from banking_treasury_app import BankingTreasuryApp
 from banking_risk_app import BankingRiskApp

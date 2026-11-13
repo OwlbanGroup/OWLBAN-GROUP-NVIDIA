@@ -13,6 +13,7 @@ import time
 import logging
 import json
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
@@ -268,8 +269,25 @@ class AuthManager:
 
         self._load_api_keys()
 
+    @property
+    def _lock(self) -> threading.RLock:
+        """Re-entrant lock guarding users/sessions mutation.
+
+        Created lazily so instances built via ``__new__`` (tests) still work.
+        """
+        lock = self.__dict__.get('_lock_obj')
+        if lock is None:
+            lock = threading.RLock()
+            self.__dict__['_lock_obj'] = lock
+        return lock
+
     def _save_data(self):
         """Save users and sessions to storage"""
+        with self._lock:
+            self._save_data_unlocked()
+
+    def _save_data_unlocked(self):
+        """Write users and sessions to disk; caller must hold self._lock."""
         try:
             user_data = {
                 email: user.to_dict() for email, user in self.users.items()
@@ -351,6 +369,16 @@ class AuthManager:
         permissions: Optional[List[str]] = None,
     ) -> Tuple[bool, str]:
         """Create a new user"""
+        with self._lock:
+            return self._create_user_locked(
+                email, username, password, role, company, permissions
+            )
+
+    def _create_user_locked(
+        self, email: str, username: str, password: str, role: str,
+        company: str, permissions: Optional[List[str]],
+    ) -> Tuple[bool, str]:
+        """Create a user; caller must hold self._lock."""
         if email in self.users:
             return False, "User already exists"
 
@@ -389,7 +417,7 @@ class AuthManager:
         )
 
         self.users[email] = user
-        self._save_data()
+        self._save_data_unlocked()
         logger.info("User created: %s", email)
         return True, "User created successfully"
 
@@ -398,6 +426,17 @@ class AuthManager:
                           user_agent: Optional[str] = None
                           ) -> Tuple[bool, str, Optional[User]]:
         """Authenticate a user"""
+        with self._lock:
+            return self._authenticate_user_locked(
+                email, password, ip_address, user_agent
+            )
+
+    def _authenticate_user_locked(
+        self, email: str, password: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Tuple[bool, str, Optional[User]]:
+        """Authenticate a user; caller must hold self._lock."""
         user = self.users.get(email)
         if not user:
             logger.warning("Login attempt for non-existent user: %s", email)
@@ -422,7 +461,7 @@ class AuthManager:
                 user.locked_until = datetime.now(timezone.utc) + timedelta(
                     minutes=self.config.LOCKOUT_DURATION_MINUTES)
                 logger.warning("Account locked for user: %s", email)
-            self._save_data()
+            self._save_data_unlocked()
             logger.warning("Invalid password for user: %s", email)
             return False, "Invalid credentials", None
 
@@ -430,7 +469,7 @@ class AuthManager:
         user.login_attempts = 0
         user.locked_until = None
         user.last_login = datetime.now(timezone.utc)
-        self._save_data()
+        self._save_data_unlocked()
 
         logger.info("Successful login for user: %s", email)
         self.log_audit_event("login", email, {"user_agent": user_agent},
@@ -516,6 +555,14 @@ class AuthManager:
     def create_session(self, user: User, ip_address: Optional[str] = None,
                        user_agent: Optional[str] = None) -> str:
         """Create a new session"""
+        with self._lock:
+            return self._create_session_locked(user, ip_address, user_agent)
+
+    def _create_session_locked(
+        self, user: User, ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> str:
+        """Create a session; caller must hold self._lock."""
         session_id = secrets.token_urlsafe(32)
         now = datetime.now(timezone.utc)
 
@@ -533,29 +580,31 @@ class AuthManager:
         )
 
         self.sessions[session_id] = session
-        self._save_data()
+        self._save_data_unlocked()
         logger.info("Session created for user: %s", user.email)
         return session_id
 
     def verify_session(self, session_id: str) -> Optional[Session]:
         """Verify a session"""
-        session = self.sessions.get(session_id)
-        if not session or not session.active:
-            return None
+        with self._lock:
+            session = self.sessions.get(session_id)
+            if not session or not session.active:
+                return None
 
-        if datetime.now(timezone.utc) > session.expires_at:
-            session.active = False
-            self._save_data()
-            return None
+            if datetime.now(timezone.utc) > session.expires_at:
+                session.active = False
+                self._save_data_unlocked()
+                return None
 
-        return session
+            return session
 
     def destroy_session(self, session_id: str):
         """Destroy a session"""
-        if session_id in self.sessions:
-            self.sessions[session_id].active = False
-            self._save_data()
-            logger.info("Session destroyed: %s", session_id)
+        with self._lock:
+            if session_id in self.sessions:
+                self.sessions[session_id].active = False
+                self._save_data_unlocked()
+                logger.info("Session destroyed: %s", session_id)
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
@@ -563,57 +612,61 @@ class AuthManager:
 
     def update_user(self, email: str, updates: Dict[str, Any]) -> bool:
         """Update user information"""
-        user = self.users.get(email)
-        if not user:
-            return False
+        with self._lock:
+            user = self.users.get(email)
+            if not user:
+                return False
 
-        for key, value in updates.items():
-            if hasattr(user, key):
-                setattr(user, key, value)
+            for key, value in updates.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
 
-        self._save_data()
-        logger.info("User updated: %s", email)
-        return True
+            self._save_data_unlocked()
+            logger.info("User updated: %s", email)
+            return True
 
     def delete_user(self, email: str) -> bool:
         """Delete a user"""
-        if email in self.users:
-            del self.users[email]
-            self._save_data()
-            logger.info("User deleted: %s", email)
-            return True
-        return False
+        with self._lock:
+            if email in self.users:
+                del self.users[email]
+                self._save_data_unlocked()
+                logger.info("User deleted: %s", email)
+                return True
+            return False
 
     def list_users(
         self, company: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """List all users, optionally filtered by company"""
-        users = []
-        for user in self.users.values():
-            if company is None or user.company == company:
-                user_dict = user.to_dict()
-                # Remove sensitive information
-                user_dict.pop('password_hash', None)
-                users.append(user_dict)
-        return users
+        with self._lock:
+            users = []
+            for user in self.users.values():
+                if company is None or user.company == company:
+                    user_dict = user.to_dict()
+                    # Remove sensitive information
+                    user_dict.pop('password_hash', None)
+                    users.append(user_dict)
+            return users
 
     def cleanup_expired_sessions(self):
         """Clean up expired sessions"""
-        now = datetime.now(timezone.utc)
-        expired_sessions = []
+        with self._lock:
+            now = datetime.now(timezone.utc)
+            expired_sessions = []
 
-        for session_id, session in self.sessions.items():
-            if not session.active or now > session.expires_at:
-                expired_sessions.append(session_id)
+            for session_id, session in self.sessions.items():
+                if not session.active or now > session.expires_at:
+                    expired_sessions.append(session_id)
 
-        for session_id in expired_sessions:
-            del self.sessions[session_id]
+            for session_id in expired_sessions:
+                del self.sessions[session_id]
 
-        if expired_sessions:
-            self._save_data()
-            logger.info(
-                "Cleaned up %s expired sessions", len(expired_sessions)
-            )
+            if expired_sessions:
+                self._save_data_unlocked()
+                logger.info(
+                    "Cleaned up %s expired sessions", len(expired_sessions)
+                )
 
     def create_password_reset_token(
         self, email: str
@@ -653,6 +706,13 @@ class AuthManager:
         self, reset_token: str, new_password: str
     ) -> Tuple[bool, str]:
         """Reset a user's password using a valid reset token."""
+        with self._lock:
+            return self._reset_password_locked(reset_token, new_password)
+
+    def _reset_password_locked(
+        self, reset_token: str, new_password: str
+    ) -> Tuple[bool, str]:
+        """Reset a password; caller must hold self._lock."""
         email = self.verify_password_reset_token(reset_token)
         if not email:
             return False, "Invalid or expired reset token"
@@ -668,7 +728,7 @@ class AuthManager:
         for session in self.sessions.values():
             if session.user_id == user.id:
                 session.active = False
-        self._save_data()
+        self._save_data_unlocked()
         logger.info("Password reset successful for %s", email)
         return True, "Password reset successful"
 
@@ -781,54 +841,57 @@ class AuthManager:
         Returns dict with 'secret' and 'provisioning_uri', or None if the user
         does not exist or MFA is already enabled.
         """
-        user = self.users.get(email)
-        if not user:
-            return None
-        if user.mfa_enabled:
-            return None
-        secret = TOTP.generate_secret()
-        user.mfa_secret = secret
-        uri = TOTP.provisioning_uri(secret, email)
-        self._save_data()
-        logger.info("MFA setup initiated for %s", email)
-        return {"secret": secret, "provisioning_uri": uri}
+        with self._lock:
+            user = self.users.get(email)
+            if not user:
+                return None
+            if user.mfa_enabled:
+                return None
+            secret = TOTP.generate_secret()
+            user.mfa_secret = secret
+            uri = TOTP.provisioning_uri(secret, email)
+            self._save_data_unlocked()
+            logger.info("MFA setup initiated for %s", email)
+            return {"secret": secret, "provisioning_uri": uri}
 
     def enable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
         """Verify a TOTP code and enable MFA for the user."""
-        user = self.users.get(email)
-        if not user:
-            return False, "User not found"
-        if not user.mfa_secret:
-            return False, "MFA not initialized. Call setup_mfa first."
-        if not TOTP.verify(user.mfa_secret, code):
-            self.log_audit_event(
-                "mfa_enable_failed", email, {}, severity="warning"
-            )
-            return False, "Invalid TOTP code"
-        user.mfa_enabled = True
-        self._save_data()
-        self.log_audit_event("mfa_enabled", email, {})
-        logger.info("MFA enabled for %s", email)
-        return True, "MFA enabled"
+        with self._lock:
+            user = self.users.get(email)
+            if not user:
+                return False, "User not found"
+            if not user.mfa_secret:
+                return False, "MFA not initialized. Call setup_mfa first."
+            if not TOTP.verify(user.mfa_secret, code):
+                self.log_audit_event(
+                    "mfa_enable_failed", email, {}, severity="warning"
+                )
+                return False, "Invalid TOTP code"
+            user.mfa_enabled = True
+            self._save_data_unlocked()
+            self.log_audit_event("mfa_enabled", email, {})
+            logger.info("MFA enabled for %s", email)
+            return True, "MFA enabled"
 
     def disable_mfa(self, email: str, code: str) -> Tuple[bool, str]:
         """Disable MFA for a user after verifying a valid TOTP code."""
-        user = self.users.get(email)
-        if not user:
-            return False, "User not found"
-        if not user.mfa_enabled:
-            return False, "MFA not enabled"
-        if not user.mfa_secret or not TOTP.verify(user.mfa_secret, code):
-            self.log_audit_event(
-                "mfa_disable_failed", email, {}, severity="warning"
-            )
-            return False, "Invalid TOTP code"
-        user.mfa_enabled = False
-        user.mfa_secret = None
-        self._save_data()
-        self.log_audit_event("mfa_disabled", email, {})
-        logger.info("MFA disabled for %s", email)
-        return True, "MFA disabled"
+        with self._lock:
+            user = self.users.get(email)
+            if not user:
+                return False, "User not found"
+            if not user.mfa_enabled:
+                return False, "MFA not enabled"
+            if not user.mfa_secret or not TOTP.verify(user.mfa_secret, code):
+                self.log_audit_event(
+                    "mfa_disable_failed", email, {}, severity="warning"
+                )
+                return False, "Invalid TOTP code"
+            user.mfa_enabled = False
+            user.mfa_secret = None
+            self._save_data_unlocked()
+            self.log_audit_event("mfa_disabled", email, {})
+            logger.info("MFA disabled for %s", email)
+            return True, "MFA disabled"
 
     def verify_mfa_code(self, email: str, code: str) -> bool:
         """Verify a TOTP code for a user (used during MFA login step)."""

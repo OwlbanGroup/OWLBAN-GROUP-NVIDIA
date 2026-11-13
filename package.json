@@ -7,7 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": ".venv/bin/python -m pytest tests/ -q --tb=short -p no:cacheprovider",
+    "lint": "python -m ruff check . && python -m pylint --rcfile=.pylintrc auth_lib.py --disable=import-error --fail-under=9.5"
   },
   "repository": {
     "type": "git",
