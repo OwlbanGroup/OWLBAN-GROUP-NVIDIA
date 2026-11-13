@@ -6,12 +6,7 @@ Perfect market prediction and wealth optimization using quantum algorithms
 import logging
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timedelta
-import threading
-import time
+from typing import Dict, List, Any
 
 class QuantumFinancialOmniscientSystem:
     """Perfect market prediction and wealth optimization system"""
@@ -196,7 +191,7 @@ class QuantumFinancialOmniscientSystem:
         try:
             # Analyze volatility across all markets
             volatilities = []
-            for market_type, data in self.market_data.items():
+            for _market_type, data in self.market_data.items():
                 if isinstance(data, dict) and 'volatility' in data:
                     volatilities.append(data['volatility'])
 
@@ -208,7 +203,7 @@ class QuantumFinancialOmniscientSystem:
 
             return 0.5  # Default neutral stability
 
-        except Exception as e:
+        except Exception:
             return 0.5
 
     def _track_poverty_elimination(self) -> Dict[str, Any]:
@@ -259,7 +254,7 @@ class QuantumFinancialOmniscientSystem:
 
             return correlations
 
-        except Exception as e:
+        except Exception:
             return {}
 
     def _identify_systemic_risks(self, correlations: Dict[str, float]) -> List[Dict[str, Any]]:

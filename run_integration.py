@@ -2,6 +2,8 @@ import subprocess
 import time
 import sys
 import os
+import urllib.request
+import json
 
 # Set the API password environment variable
 os.environ["API_PASSWORD"] = "testpassword123"
@@ -18,9 +20,6 @@ server_process = subprocess.Popen(
 time.sleep(5)
 
 # Test if server is running
-import urllib.request
-import json
-
 try:
     url = "http://127.0.0.1:8000/gpu/status"
     r = urllib.request.urlopen(url, timeout=5)
@@ -35,8 +34,8 @@ except Exception as e:
 print("\n" + "=" * 60)
 print("REINFORCEMENT LEARNING API TEST SUITE")
 print("=" * 60)
-print(f"Server: http://127.0.0.1:8000")
-print(f"Credentials: owlban_admin / testpassword123")
+print("Server: http://127.0.0.1:8000")
+print("Credentials: owlban_admin / testpassword123")
 print()
 
 results = []
@@ -70,7 +69,7 @@ try:
     r = urllib.request.urlopen(url, timeout=10)
     result = json.loads(r.read().decode())
     action = result.get("action")
-    print(f"✅ State: 0.5,-1.2,0.8,0.1")
+    print("✅ State: 0.5,-1.2,0.8,0.1")
     print(f"✅ Action: {action}")
     print()
     results.append(("Get RL Action", True))
@@ -87,7 +86,7 @@ try:
     url = "http://127.0.0.1:8000/rl/learn?state=0.5,-1.2,0.8,0.1&action=optimize&reward=1.5&next_state=0.3,-0.8,0.6,0.2"
     r = urllib.request.urlopen(url, timeout=10)
     result = r.read().decode()
-    print(f"✅ Input: state=0.5,-1.2,0.8,0.1, action=optimize, reward=1.5, next_state=0.3,-0.8,0.6,0.2")
+    print("✅ Input: state=0.5,-1.2,0.8,0.1, action=optimize, reward=1.5, next_state=0.3,-0.8,0.6,0.2")
     print(f"✅ Result: {result}")
     print()
     results.append(("Learn Transition", True))

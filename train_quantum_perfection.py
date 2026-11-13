@@ -5,9 +5,7 @@ Trains quantum circuit optimization and error correction systems
 """
 
 import sys
-import os
 import logging
-import numpy as np
 import time
 from combined_nim_owlban_ai.quantum_ai_perfection import QuantumAIPerfection
 

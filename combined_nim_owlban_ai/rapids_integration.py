@@ -6,14 +6,11 @@ GPU-accelerated data processing and ETL operations
 import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Union, Any, Tuple
-import time
-
+from typing import Dict, Union, Any, Tuple
 # RAPIDS imports
 try:
     import cudf
     import cuml
-    from cuml.ensemble import RandomForestClassifier
     from cuml.cluster import KMeans
     from cuml.preprocessing import StandardScaler
     import cupy as cp
@@ -247,7 +244,7 @@ class RAPIDSDataProcessor:
 
                 return (hr_score + temp_score + bp_score) / 3
             return 0.5
-        except:
+        except (TypeError, ValueError):
             return 0.5
 
     def get_gpu_memory_usage(self) -> Dict[str, Any]:

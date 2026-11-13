@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Union
 
 # NVIDIA-specific imports
 try:
@@ -101,7 +101,6 @@ class ReinforcementLearningAgent:
             self.state_size = new_size
             self.logger.info("Updating DQN state size to %d", self.state_size)
             # Reinitialize networks with new state size, preserving weights
-            import copy
             old_dqn_state = self.dqn.state_dict()
             old_target_dqn_state = self.target_dqn.state_dict()
             old_optimizer_state = self.optimizer.state_dict()
@@ -189,7 +188,7 @@ class ReinforcementLearningAgent:
         """Train DQN using NVIDIA GPU acceleration"""
         # Sample batch from memory
         batch = random.sample(self.memory, self.batch_size)
-        states, actions, rewards, next_states = zip(*batch)
+        states, actions, rewards, next_states = zip(*batch, strict=True)
 
         # Convert to tensors
         states = torch.tensor(states, dtype=torch.float32).to(self.device)

@@ -5,7 +5,6 @@ OWLBAN GROUP - Enterprise Financial Services Integration
 """
 
 import logging
-import os
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 import uuid
@@ -69,15 +68,16 @@ class JPMorganAPIIntegration:
 
         try:
             # Simulate OAuth 2.0 authentication
-            auth_url = f"{self.base_url}/oauth/token"
-            auth_data = {
-                'grant_type': 'client_credentials',
-                'client_id': self.credentials.client_id,
-                'client_secret': self.credentials.client_secret
-            }
-
-            # In real implementation, this would make actual API call
-            # response = self.session.post(auth_url, data=auth_data)
+            # In a real implementation this would post credentials to the
+            # token endpoint, e.g.:
+            #   self.session.post(
+            #       f"{self.base_url}/oauth/token",
+            #       data={
+            #           'grant_type': 'client_credentials',
+            #           'client_id': self.credentials.client_id,
+            #           'client_secret': self.credentials.client_secret,
+            #       },
+            #   )
 
             # Simulate successful authentication
             self.access_token = f"access_token_{uuid.uuid4().hex}"
@@ -97,29 +97,22 @@ class JPMorganAPIIntegration:
         self.logger.info(f"Processing payment: ${payment_request.amount} {payment_request.currency}")
 
         try:
-            payment_url = f"{self.base_url}/payments"
-
-            payment_data = {
-                "paymentId": str(uuid.uuid4()),
-                "amount": {
-                    "value": payment_request.amount,
-                    "currency": payment_request.currency
-                },
-                "debtorAccount": {
-                    "identification": payment_request.sender_account
-                },
-                "creditorAccount": {
-                    "identification": payment_request.recipient_account
-                },
-                "remittanceInformation": {
-                    "unstructured": payment_request.description
-                },
-                "paymentType": payment_request.payment_type,
-                "requestedExecutionDate": datetime.now(timezone.utc).isoformat()
-            }
-
-            # Simulate API call
-            # response = self.session.post(payment_url, json=payment_data)
+            # Simulate API call. In a real implementation this would post the
+            # payload below to f"{self.base_url}/payments":
+            # {
+            #     "paymentId": str(uuid.uuid4()),
+            #     "amount": {"value": payment_request.amount,
+            #                "currency": payment_request.currency},
+            #     "debtorAccount": {
+            #         "identification": payment_request.sender_account},
+            #     "creditorAccount": {
+            #         "identification": payment_request.recipient_account},
+            #     "remittanceInformation": {
+            #         "unstructured": payment_request.description},
+            #     "paymentType": payment_request.payment_type,
+            #     "requestedExecutionDate":
+            #         datetime.now(timezone.utc).isoformat(),
+            # }
 
             # Simulate successful payment processing
             transaction_id = f"JPM_TXN_{uuid.uuid4().hex[:12].upper()}"
@@ -150,10 +143,8 @@ class JPMorganAPIIntegration:
         self.logger.info(f"Retrieving balance for account: {account_id}")
 
         try:
-            balance_url = f"{self.base_url}/accounts/{account_id}/balances"
-
-            # Simulate API call
-            # response = self.session.get(balance_url)
+            # Simulate API call to
+            # f"{self.base_url}/accounts/{account_id}/balances"
 
             # Simulate account balance response
             balance_data = {
@@ -186,30 +177,22 @@ class JPMorganAPIIntegration:
         self.logger.info(f"Transferring ${amount} {currency} from {from_account} to {to_account}")
 
         try:
-            transfer_url = f"{self.base_url}/transfers"
-
-            transfer_data = {
-                "transferId": str(uuid.uuid4()),
-                "debtorAccount": {
-                    "identification": from_account
-                },
-                "creditorAccount": {
-                    "identification": to_account
-                },
-                "amount": {
-                    "value": amount,
-                    "currency": currency
-                },
-                "transferType": "internal",
-                "requestedExecutionDate": datetime.now(timezone.utc).isoformat()
-            }
-
-            # Simulate API call
-            # response = self.session.post(transfer_url, json=transfer_data)
+            # Simulate API call to f"{self.base_url}/transfers" with the
+            # payload below:
+            # {
+            #     "transferId": str(uuid.uuid4()),
+            #     "debtorAccount": {"identification": from_account},
+            #     "creditorAccount": {"identification": to_account},
+            #     "amount": {"value": amount, "currency": currency},
+            #     "transferType": "internal",
+            #     "requestedExecutionDate":
+            #         datetime.now(timezone.utc).isoformat(),
+            # }
 
             # Simulate successful transfer
+            transfer_id = str(uuid.uuid4())
             transfer_result = {
-                "transferId": transfer_data["transferId"],
+                "transferId": transfer_id,
                 "status": "completed",
                 "amount": amount,
                 "currency": currency,
@@ -219,7 +202,7 @@ class JPMorganAPIIntegration:
                 "fee": amount * 0.001  # 0.1% fee
             }
 
-            self.logger.info(f"Transfer completed: {transfer_data['transferId']}")
+            self.logger.info(f"Transfer completed: {transfer_id}")
             return transfer_result
 
         except Exception as e:
@@ -237,9 +220,8 @@ class JPMorganAPIIntegration:
         self.logger.info(f"Retrieving market data for symbols: {symbols}")
 
         try:
-            market_url = f"{self.base_url}/marketdata/quotes"
-
-            # Simulate market data response
+            # Simulate market data response from
+            # f"{self.base_url}/marketdata/quotes"
             market_data = {}
             for symbol in symbols:
                 market_data[symbol] = {
@@ -270,9 +252,8 @@ class JPMorganAPIIntegration:
         self.logger.info("Calculating portfolio risk metrics")
 
         try:
-            risk_url = f"{self.base_url}/risk/portfolio/analysis"
-
-            # Simulate risk analysis
+            # Simulate risk analysis from
+            # f"{self.base_url}/risk/portfolio/analysis"
             risk_metrics = {
                 "valueAtRisk": portfolio.get("totalValue", 1000000) * 0.05,  # 5% VaR
                 "expectedShortfall": portfolio.get("totalValue", 1000000) * 0.075,  # 7.5% ES

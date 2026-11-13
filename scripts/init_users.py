@@ -7,17 +7,17 @@ Run this after starting the database but before starting auth services.
 
 import sys
 import os
-import json
 import logging
 
 # Suppress auth_lib INFO logging to stderr so scripts exit cleanly.
 # This keeps PowerShell/Docker from treating normal output as an error.
 logging.disable(logging.CRITICAL)
 
-# Add parent directory to path
+# Add parent directory to path so auth_lib resolves when run from anywhere
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from auth_lib import create_user, auth_manager
+# Import after sys.path setup above.
+from auth_lib import create_user, auth_manager  # noqa: E402
 
 
 def init_users():

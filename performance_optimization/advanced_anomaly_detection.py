@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import logging
-from typing import Dict, List, Optional, Tuple
 
 # NVIDIA-specific imports
 try:
@@ -71,12 +70,12 @@ class AdvancedAnomalyDetection:
                 if "Usage" in key and "%" in str(value):
                     try:
                         features.append(float(str(value).strip('%')) / 100.0)
-                    except:
+                    except ValueError:
                         features.append(0.5)
                 elif "Memory" in key and "GB" in str(value):
                     try:
                         features.append(float(str(value).replace('GB', '').strip()) / 80.0)
-                    except:
+                    except ValueError:
                         features.append(0.5)
                 else:
                     # Hash string values to numerical

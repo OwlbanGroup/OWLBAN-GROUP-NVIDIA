@@ -229,7 +229,7 @@ class BankingTreasuryApp:
         for account in account_details:
             report += f"| {account['account_id']} | ${account['available_balance']:,.2f} | ${account['current_balance']:,.2f} | {account['status']} |\n"
 
-        report += f"""
+        report += """
 
 ## Cash Flow Forecast (7 Days)
 

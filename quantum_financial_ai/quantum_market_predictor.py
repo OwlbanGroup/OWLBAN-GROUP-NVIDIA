@@ -396,7 +396,7 @@ class QuantumMarketPredictor:
         else:
             if len(weights) != len(symbols):
                 raise ValueError("Length of weights must match length of symbols")
-            symbol_weights = dict(zip(symbols, weights))
+            symbol_weights = dict(zip(symbols, weights, strict=True))
 
         # Apply quantum correlation adjustments (simplified)
         for symbol, pred in predictions.items():

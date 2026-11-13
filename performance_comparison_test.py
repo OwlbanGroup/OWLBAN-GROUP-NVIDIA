@@ -247,7 +247,7 @@ def main():
     logger.info("Starting Quantum AI Performance Comparison Test")
 
     test = PerformanceComparisonTest()
-    results = test.run_comparison_test(n_samples=10000)
+    test.run_comparison_test(n_samples=10000)
 
     report = test.generate_report()
     print(report)

@@ -1,9 +1,7 @@
 import torch
-import torch.nn as nn
 import logging
 import time
 from typing import Dict, List, Optional
-import subprocess
 
 # Optional Docker support. The Docker SDK is only used for NVIDIA container
 # deployment features; the manager degrades gracefully when it is unavailable
@@ -172,7 +170,7 @@ class NVIDIADeploymentManager:
                 }
             }
 
-            container = self.docker_client.containers.run(**container_config)
+            self.docker_client.containers.run(**container_config)
             self.logger.info("NVIDIA container for %s deployed successfully", model_name)
             return True
 

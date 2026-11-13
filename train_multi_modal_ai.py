@@ -5,13 +5,8 @@ Trains multi-modal AI system for unified processing
 """
 
 import sys
-import os
 import logging
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
 import time
 from combined_nim_owlban_ai.multi_modal_ai import MultiModalAI, MultiModalInput
 
@@ -32,7 +27,7 @@ def generate_sample_inputs(n_samples=100):
 
     inputs = []
 
-    for i in range(n_samples):
+    for _i in range(n_samples):
         # Create sample input
         sample_input = MultiModalInput(
             text=f"Financial analysis shows {np.random.choice(['bullish', 'bearish', 'neutral'])} market sentiment with {np.random.uniform(60, 90):.1f}% confidence",

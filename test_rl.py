@@ -98,7 +98,7 @@ def main():
     print("REINFORCEMENT LEARNING API TEST SUITE")
     print("=" * 60)
     print(f"Server: {BASE_URL}")
-    print(f"Credentials: owlban_admin / testpassword123")
+    print("Credentials: owlban_admin / testpassword123")
     print()
     
     results = []

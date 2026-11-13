@@ -457,7 +457,7 @@ class QuantumSecureAggregation:
             aggregated += masked_update
 
         # Remove masks
-        for client_id, key in self.client_keys.items():
+        for _client_id, key in self.client_keys.items():
             mask = key % 1000
             aggregated -= mask
 

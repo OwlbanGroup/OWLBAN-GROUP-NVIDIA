@@ -283,7 +283,7 @@ class DatabaseManager:
             columns = [desc[0] for desc in cursor.description]
             results = []
             for row in cursor.fetchall():
-                result = dict(zip(columns, row))
+                result = dict(zip(columns, row, strict=True))
                 # Parse JSON fields
                 if result.get("input_data"):
                     result["input_data"] = json.loads(result["input_data"])

@@ -5,7 +5,6 @@ Trains NVIDIA GPU-accelerated RL agents for optimization tasks
 """
 
 import sys
-import os
 import logging
 import numpy as np
 import time
@@ -96,7 +95,7 @@ def train_rl_agent():
         episode_reward = 0
         episode_length = 0
 
-        for step in range(max_steps_per_episode):
+        for _step in range(max_steps_per_episode):
             # Agent chooses action
             action = agent.choose_action(state)
 

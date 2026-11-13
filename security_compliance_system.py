@@ -416,7 +416,7 @@ class ComplianceMonitoringSystem:
         """Monitor compliance across all frameworks"""
         violations = []
 
-        for rule_id, rule in self.rules.items():
+        for _rule_id, rule in self.rules.items():
             if not rule.enabled:
                 continue
 
@@ -469,7 +469,6 @@ class ComplianceMonitoringSystem:
             return 100.0
 
         violations_count = len(self.violations)
-        total_enabled = len(enabled_rules)
 
         # Simple scoring: reduce score by 10% per violation, max 50% reduction
         score = 100.0 - min(violations_count * 10.0, 50.0)

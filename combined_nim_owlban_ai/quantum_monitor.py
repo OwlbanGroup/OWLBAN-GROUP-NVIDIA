@@ -6,7 +6,7 @@ OWLBAN GROUP - Enterprise Real-time Monitoring and Alerting
 import asyncio
 import logging
 import time
-from typing import Dict, List, Optional, Union, Callable
+from typing import Dict, List
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import numpy as np
@@ -22,7 +22,7 @@ except ImportError:
     logging.warning("Slack SDK not available")
 
 try:
-    from O365 import Account, Message
+    from O365 import Account
     TEAMS_AVAILABLE = True
 except ImportError:
     TEAMS_AVAILABLE = False
@@ -82,9 +82,9 @@ class QuantumMonitor:
                     fdconf = FinancialDataConfig(cfg_path)
                     # Build the minimal config dict expected by FinancialDataManager
                     fm_cfg = {
-                        'refinitiv': getattr(fdconf, 'refinitiv').__dict__ if hasattr(fdconf, 'refinitiv') else {},
-                        'bloomberg': getattr(fdconf, 'bloomberg').__dict__ if hasattr(fdconf, 'bloomberg') else {},
-                        'market_data': getattr(fdconf, 'market_data').__dict__ if hasattr(fdconf, 'market_data') else {}
+                        'refinitiv': fdconf.refinitiv.__dict__ if hasattr(fdconf, 'refinitiv') else {},
+                        'bloomberg': fdconf.bloomberg.__dict__ if hasattr(fdconf, 'bloomberg') else {},
+                        'market_data': fdconf.market_data.__dict__ if hasattr(fdconf, 'market_data') else {}
                     }
                     self.financial_manager = FinancialDataManager(fm_cfg)
                 else:

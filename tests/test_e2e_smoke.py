@@ -9,9 +9,10 @@ def test_e2e_registration_smoke(tmp_path):
 
     This is a lightweight smoke test (not a full integration) that runs the
     `NVIDIAPartnerRegistration.run_e2e_registration()` method and asserts the
-    success flag. It writes the report file as a side-effect.
+    success flag. The report is written into tmp_path so test runs never
+    modify the checked-in report file.
     """
-    reg = NVIDIAPartnerRegistration()
+    reg = NVIDIAPartnerRegistration(report_path=str(tmp_path / "report.md"))
     result = reg.run_e2e_registration()
 
     # Minimal sanity checks

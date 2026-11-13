@@ -1,10 +1,8 @@
 import torch
 import logging
 import psutil
-import GPUtil
 from typing import Dict, List, Optional
 import subprocess
-import os
 
 # NVIDIA-specific imports
 try:

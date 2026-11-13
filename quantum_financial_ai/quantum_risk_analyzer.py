@@ -288,7 +288,7 @@ class QuantumRiskAnalyzer:
 
             # Apply scenario shocks to risk factors
             original_values = [rf.current_value for rf in self.risk_factors]
-            for i, rf in enumerate(self.risk_factors):
+            for rf in self.risk_factors:
                 if rf.name in scenario:
                     rf.current_value *= 1 + scenario[rf.name]
 

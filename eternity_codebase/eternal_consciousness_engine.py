@@ -11,11 +11,10 @@ neural networks and consciousness preservation protocols.
 import sys
 import time
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple, Union
+from datetime import datetime
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
-import json
 import hashlib
 import threading
 import asyncio
@@ -24,7 +23,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.optim import Adam
-from torch.utils.data import DataLoader, TensorDataset
 
 # Configure eternal logging
 logging.basicConfig(

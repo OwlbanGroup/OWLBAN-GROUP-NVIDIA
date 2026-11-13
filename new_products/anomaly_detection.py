@@ -2,7 +2,7 @@ import logging
 import time
 import torch
 import torch.nn as nn
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from performance_optimization.advanced_anomaly_detection import AdvancedAnomalyDetection
 
 # NVIDIA-specific imports

@@ -5,9 +5,10 @@ OWL BAN GROUP - Complete Partner Benefits Enrollment
 """
 
 import logging
+import os
 import time
 import json
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
 # Configure logging
@@ -47,7 +48,11 @@ class BenefitsRequested:
 class NVIDIAPartnerRegistration:
     """End-to-End NVIDIA Partner Registration System"""
 
-    def __init__(self):
+    def __init__(self, report_path: Optional[str] = None):
+        self.report_path = report_path or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'nvidia_registration_completion_report.md',
+        )
         self.company = CompanyInfo()
         self.contact = ContactInfo()
         self.benefits = BenefitsRequested()
@@ -143,7 +148,7 @@ class NVIDIAPartnerRegistration:
 
         # Step 4: Simulate data entry
         self.logger.info("Simulating form data entry...")
-        for section, data in registration_data.items():
+        for section, _data in registration_data.items():
             self.logger.info("Submitting %s section...", section)
             time.sleep(0.5)  # Simulate form filling
 
@@ -253,16 +258,16 @@ class NVIDIAPartnerRegistration:
 
                 # Generate and save report
                 report = self.generate_registration_report()
-                with open('nvidia_registration_completion_report.md', 'w', encoding='utf-8') as f:
+                with open(self.report_path, 'w', encoding='utf-8') as f:
                     f.write(report)
 
-                self.logger.info("Registration report saved to 'nvidia_registration_completion_report.md'")
+                self.logger.info("Registration report saved to '%s'", self.report_path)
 
                 return {
                     "success": True,
                     "message": "End-to-End NVIDIA Partner Registration completed successfully",
                     "confirmation_number": result.get('confirmation_number'),
-                    "report_file": "nvidia_registration_completion_report.md"
+                    "report_file": self.report_path
                 }
             else:
                 return {

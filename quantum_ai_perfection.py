@@ -4,11 +4,10 @@ OWLBAN GROUP QUANTUM AI PERFECTION SCRIPT
 Demonstrates the complete quantum AI integration and perfection capabilities
 """
 
-import sys
 import time
 import logging
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 import json
 
 # Configure logging
@@ -239,7 +238,7 @@ class QuantumAIPerfection:
 
             # Train RL agent with sample data
             training_episodes = 100
-            for episode in range(training_episodes):
+            for _episode in range(training_episodes):
                 state = [0.5, 0.3, 0.7]  # Sample state
                 action = self.systems['rl_agent'].choose_action(state)
                 reward = 1.0 if action == 'optimize' else 0.5  # Simple reward
@@ -303,7 +302,7 @@ class QuantumAIPerfection:
             if traditional_return > 0:
                 return (quantum_return - traditional_return) / traditional_return
             return 0.0
-        except:
+        except (TypeError, ValueError, ZeroDivisionError):
             return 0.0
 
     def generate_perfection_report(self) -> Dict[str, Any]:
@@ -396,7 +395,7 @@ def main():
     print(f"\n🏆 QUANTUM AI PERFECTION SCORE: {report['perfection_score']:.3f}")
     print(f"⏱️  Total Execution Time: {report['execution_time']:.2f}s")
     print(f"📊 Systems Initialized: {len(report['systems_status'])}")
-    print(f"📋 Report saved to: quantum_ai_perfection_report.json")
+    print("📋 Report saved to: quantum_ai_perfection_report.json")
 
     print("\n📈 Test Results Summary:")
     for test_name, result in report['test_results'].items():

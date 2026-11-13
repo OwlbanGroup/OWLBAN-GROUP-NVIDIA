@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import logging
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer, PortfolioAsset
 from quantum_financial_ai.quantum_risk_analyzer import QuantumRiskAnalyzer, RiskFactor
@@ -158,13 +158,13 @@ class NVIDIARevenueOptimizer:
                 try:
                     usage = float(str(value).strip('%')) / 100.0
                     state_values.append(usage)
-                except:
+                except ValueError:
                     state_values.append(0.5)
             elif "Memory" in key and "GB" in str(value):
                 try:
                     memory = float(str(value).replace('GB', '').strip()) / 80.0  # Normalize
                     state_values.append(memory)
-                except:
+                except ValueError:
                     state_values.append(0.5)
             else:
                 # Convert other metrics
@@ -195,7 +195,7 @@ class NVIDIARevenueOptimizer:
             if "Usage" in key and "%" in str(value):
                 try:
                     gpu_usage = max(gpu_usage, float(str(value).strip('%')))
-                except:
+                except ValueError:
                     pass
         cost = 500 + (gpu_usage / 100) * 300  # Base cost + GPU usage cost
 

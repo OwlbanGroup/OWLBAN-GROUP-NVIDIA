@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 import logging
-import numpy as np
-from typing import Dict, List, Optional
+from typing import Dict, List
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 
 # NVIDIA-specific imports

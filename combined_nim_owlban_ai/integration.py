@@ -3,11 +3,11 @@ Advanced Quantum Financial Integration System
 OWLBAN GROUP - Enterprise Quantum Infrastructure with Multi-Vendor Integration
 """
 
+import importlib.util
 import logging
 import threading
 import time
-from typing import Dict, List, Optional, Any
-from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, List, Any
 
 # Core ML & Quantum
 import numpy as np
@@ -82,31 +82,8 @@ except ImportError:
 
 from torch import nn
 import torch.distributed as dist
-import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-# NVIDIA Collective Communications Library for multi-GPU sync
-try:
-    import torch.distributed.nccl as nccl
-    nccl_available = True
-except ImportError:
-    nccl_available = False
-
-# Financial Integration
-try:
-    import bloombergl  # type: ignore
-    import refinitiv.data as rd  # type: ignore
-    from jpmorgan.quorum import QuantumBridge  # type: ignore
-    from stripe.quantum import SecureProcessor  # type: ignore
-    financial_integrations_available = True
-except ImportError:
-    logging.warning("Some financial integration packages not available")
-    financial_integrations_available = False
-
-# Numba / CUDA availability - Disabled due to compatibility issues
-numba_available = False
-cuda = None
-logging.warning("Numba CUDA disabled due to compatibility issues")
 from new_products.infrastructure_optimizer import InfrastructureOptimizer
 from new_products.telehealth_analytics import NVIDIATelehealthAnalytics
 from new_products.model_deployment_manager import ModelDeploymentManager
@@ -121,11 +98,42 @@ from combined_nim_owlban_ai.azure_integration_manager import AzureQuantumIntegra
 from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
 
 # Advanced NVIDIA integrations
-from combined_nim_owlban_ai.triton_inference_server import TritonInferenceServer, TritonModelManager
+from combined_nim_owlban_ai.triton_inference_server import TritonInferenceServer
 from combined_nim_owlban_ai.rapids_integration import RAPIDSDataProcessor
 from combined_nim_owlban_ai.dcgm_monitor import DCGMMonitor
 from combined_nim_owlban_ai.energy_optimizer import EnergyOptimizer
-from combined_nim_owlban_ai.gemini_integration import GeminiIntegration
+
+# --- Optional-integration availability probes -------------------------------
+# Kept below the imports so this module satisfies E402 (all imports at top).
+# Probes use find_spec, which has no import side effects.
+
+# NVIDIA Collective Communications Library for multi-GPU sync
+try:
+    nccl_available = importlib.util.find_spec("torch.distributed.nccl") is not None
+except (ImportError, ValueError):
+    nccl_available = False
+
+# Financial Integration
+_FINANCIAL_MODULES = (
+    "bloombergl",
+    "refinitiv.data",
+    "jpmorgan.quorum",
+    "stripe.quantum",
+)
+try:
+    financial_integrations_available = all(
+        importlib.util.find_spec(module) is not None
+        for module in _FINANCIAL_MODULES
+    )
+except (ImportError, ValueError):
+    financial_integrations_available = False
+if not financial_integrations_available:
+    logging.warning("Some financial integration packages not available")
+
+# Numba / CUDA availability - Disabled due to compatibility issues
+numba_available = False
+cuda = None
+logging.warning("Numba CUDA disabled due to compatibility issues")
 
 
 class QuantumIntegratedSystem:
@@ -265,7 +273,9 @@ class QuantumIntegratedSystem:
             # Process on GPU
             processed_data = process_fn(tensor_data)
             # Convert back to dict
-            return dict(zip(data_dict.keys(), processed_data.cpu().numpy()))
+            return dict(
+                zip(data_dict.keys(), processed_data.cpu().numpy(), strict=True)
+            )
         except Exception as e:
             self.logger.error("GPU tensor processing error: %s", e)
             return data_dict

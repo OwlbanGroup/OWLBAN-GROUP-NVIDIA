@@ -270,8 +270,8 @@ class QuantumAIGlobalDeployment:
             report += f"- **Qubits:** {center.qubits:,}\n"
             report += f"- **Technology:** {center.technology}\n"
             report += f"- **Status:** ✅ {center.status}\n"
-            report += f"- **Coherence Time:** 100ms\n"
-            report += f"- **Gate Fidelity:** 99.99%\n\n"
+            report += "- **Coherence Time:** 100ms\n"
+            report += "- **Gate Fidelity:** 99.99%\n\n"
 
         report += """
 ## AI Infrastructure

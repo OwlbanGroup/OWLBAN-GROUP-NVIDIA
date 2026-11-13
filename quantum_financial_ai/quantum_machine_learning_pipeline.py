@@ -8,7 +8,7 @@ OWLBAN GROUP - Advanced Quantum ML for Financial Applications
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 # Third-party imports
 import numpy as np  # type: ignore[import-untyped]

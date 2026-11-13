@@ -115,7 +115,6 @@ class BankingRiskApp:
         """Generate risk management recommendations"""
         recommendations = []
 
-        var = risk_metrics.get("riskMetrics", {}).get("valueAtRisk", 0)
         volatility = risk_metrics.get("riskMetrics", {}).get("volatility", 0)
         sharpe = risk_metrics.get("riskMetrics", {}).get("sharpeRatio", 0)
 
@@ -314,7 +313,7 @@ class BankingRiskApp:
         for i, rec in enumerate(assessment["recommendations"], 1):
             report += f"{i}. {rec}\n"
 
-        report += f"""
+        report += """
 
 ## Stress Test Results
 

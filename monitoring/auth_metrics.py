@@ -128,7 +128,10 @@ class AuthMetrics:
             names = family.labels()
             for label_tuple, value in sorted(family._values.items()):
                 if names:
-                    pairs = ",".join(f'{n}="{v}"' for n, v in zip(names, label_tuple))
+                    pairs = ",".join(
+                        f'{n}="{v}"'
+                        for n, v in zip(names, label_tuple, strict=True)
+                    )
                     suffix = "{" + pairs + "}"
                 else:
                     suffix = ""

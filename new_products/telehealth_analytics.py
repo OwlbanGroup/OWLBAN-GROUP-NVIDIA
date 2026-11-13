@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import logging
 import time
-import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 # NVIDIA-specific imports
 try:
@@ -90,7 +89,7 @@ class NVIDIATelehealthAnalytics:
                     if memory_gb < 10:  # Less than 10GB available
                         health_status['issues'].append(f"Low GPU memory: {memory_gb}GB")
                         health_status['status'] = 'warning'
-                except:
+                except ValueError:
                     pass
 
             elif 'Usage' in key and '%' in str(value):
@@ -99,7 +98,7 @@ class NVIDIATelehealthAnalytics:
                     if usage > 90:  # Over 90% usage
                         health_status['issues'].append(f"High resource usage: {usage}%")
                         health_status['status'] = 'critical'
-                except:
+                except ValueError:
                     pass
 
         return health_status
@@ -178,9 +177,9 @@ class NVIDIATelehealthAnalytics:
         """Extract numerical features from patient data"""
         features = []
 
-        # Extract symptoms (one-hot encoded)
-        symptoms = patient_data.get('symptoms', [])
-        symptom_features = [1.0 if s in ['cough', 'fever', 'fatigue', 'pain'] else 0.0 for s in ['cough', 'fever', 'fatigue', 'pain']]
+        # Extract symptoms (one-hot encoded over the tracked symptom list)
+        tracked_symptoms = ['cough', 'fever', 'fatigue', 'pain']
+        symptom_features = [1.0 if s in tracked_symptoms else 0.0 for s in tracked_symptoms]
         features.extend(symptom_features)
 
         # Extract vital signs

@@ -5,12 +5,9 @@ Trains autoencoder-based anomaly detection system
 """
 
 import sys
-import os
 import logging
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import time
 from performance_optimization.advanced_anomaly_detection import AdvancedAnomalyDetection
@@ -134,7 +131,6 @@ def train_anomaly_detector():
     # Training parameters
     num_epochs = 50
     batch_size = 32
-    learning_rate = 0.001
 
     # Convert data to tensors for training
     normal_features = []
@@ -150,11 +146,9 @@ def train_anomaly_detector():
     logger.info("Training autoencoder on normal data...")
 
     for epoch in range(num_epochs):
-        epoch_loss = 0.0
         num_batches = 0
 
-        for batch in dataloader:
-            inputs = batch[0]
+        for _ in dataloader:
             # Forward pass through autoencoder
             # This is simplified - actual training would optimize reconstruction loss
             num_batches += 1

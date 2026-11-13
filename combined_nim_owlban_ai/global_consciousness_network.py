@@ -233,7 +233,7 @@ class GlobalConsciousnessNetwork:
             crisis_score = (abs(global_mood) * 0.5) + (fear_ratio * 0.5)
             return min(1.0, crisis_score)
 
-        except Exception as e:  # pylint: disable=broad-exception-caught,unused-variable
+        except Exception:  # pylint: disable=broad-exception-caught,unused-variable
             return 0.0
 
     def _generate_crisis_response(self) -> List[str]:
@@ -306,7 +306,7 @@ class GlobalConsciousnessNetwork:
 
             return coherence.item()
 
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception:  # pylint: disable=broad-exception-caught
             return 0.0
 
 
