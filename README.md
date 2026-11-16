@@ -8,6 +8,28 @@
 
 ## 🚀 Quick Start
 
+### Production app layer
+
+```bash
+# Start the production-ready app layer
+python main.py
+
+# Or run the app module directly
+python -m app.main
+```
+
+Then open the health endpoint:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+The application exposes a clean service layer under `app/` with endpoints for health, optimization, risk evaluation, and quantum demos.
+
+For the TLS-terminating Docker Compose deployment, environment template, and operational instructions, see [docs/PRODUCTION_APP_LAYER.md](docs/PRODUCTION_APP_LAYER.md). Configure `.env.production` and TLS certificate files before starting the production stack.
+
+### Legacy API server
+
 ```bash
 # Clone the repository
 git clone https://github.com/OwlbanGroup/OWLBAN-GROUP-NVIDIA.git
@@ -44,8 +66,16 @@ The API server generates a random `API_PASSWORD` on first run if none is set —
 
 ```
 OWLBAN-GROUP-NVIDIA/
+├── app/                   # production-ready application service layer
+│   ├── app_factory.py     # FastAPI factory and route registration
+│   ├── config.py          # environment-driven runtime configuration
+│   ├── schemas.py        # typed API request/response models
+│   ├── services/          # AI and quantum service layer
+│   └── main.py            # app runtime entrypoint
+├── examples/              # end-to-end examples and API usage scripts
+├── docs/                  # production application guides and runbooks
 ├── api_server.py          # FastAPI REST API server
-├── main.py                # Application entrypoint (loads .env, starts uvicorn)
+├── main.py                # compatibility entrypoint for running the app layer
 ├── web_dashboard.py       # Streamlit dashboard
 ├── auth_lib.py            # Authentication library (JWT, bcrypt, TOTP, OAuth2)
 ├── database_manager.py    # Multi-database manager (SQLite/PG/Mongo/Redis)
@@ -104,6 +134,9 @@ docker compose up dashboard
 
 ## 📖 Documentation
 
+- `docs/PRODUCTION_APP_LAYER.md` — production-ready application guide and endpoints
+- `examples/quantum_ai_workflow.py` — end-to-end local workflow example
+- `examples/api_client_demo.py` — sample API client against the app layer
 - `.env.example` — Full environment variable reference
 - `RUN.md` — Operational runbook
 - `PRODUCTION_DEPLOYMENT_PLAN.md` — Production deployment guide

@@ -42,3 +42,7 @@ users_audit.json
 
 # SQLite databases (runtime state, regenerated on startup)
 *.db
+
+# Production app secrets and deployment certificates
+.env.production
+deploy/tls/*.pem

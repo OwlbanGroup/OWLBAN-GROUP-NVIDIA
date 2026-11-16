@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    env_file:
+      - .env.production
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      API_HOST: 0.0.0.0
+      APP_DB_PATH: /data/owlban_app.db
+    volumes:
+      - owlban_app_data:/data
+    expose:
+      - "8000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - internal
+
+  proxy:
+    image: nginx:1.27-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/production.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/tls:/etc/nginx/tls:ro
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - public
+      - internal
+
+volumes:
+  owlban_app_data:
+
+networks:
+  public:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true

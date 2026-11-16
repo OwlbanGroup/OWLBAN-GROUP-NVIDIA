@@ -1,0 +1,17 @@
+.git
+.venv
+venv
+node_modules
+__pycache__
+**/__pycache__
+*.py[cod]
+*.log
+*.db
+.env
+.env.*
+!.env.app.example
+tests
+examples
+docs
+.auxly
+deploy/tls/*.pem
