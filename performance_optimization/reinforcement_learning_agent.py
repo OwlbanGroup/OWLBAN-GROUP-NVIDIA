@@ -1,10 +1,17 @@
-import random
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import logging
+import random
 from typing import Union
+
+import numpy as np
+
+try:  # pragma: no cover - optional dependency path
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except Exception:  # pragma: no cover
+    torch = None
+    nn = None
+    optim = None
 
 # NVIDIA-specific imports
 try:
@@ -21,22 +28,34 @@ except ImportError:
     trt = None
     tensorrt_available = False
 
-class OptimizedDQNNetwork(nn.Module):
-    """NVIDIA-optimized Deep Q-Network with cuDNN acceleration"""
-    def __init__(self, state_size, action_size, hidden_size=128):
-        super(OptimizedDQNNetwork, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(state_size, hidden_size),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(hidden_size, hidden_size),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(hidden_size, action_size)
-        )
+if nn is not None:
+    class OptimizedDQNNetwork(nn.Module):
+        """NVIDIA-optimized Deep Q-Network with cuDNN acceleration."""
 
-    def forward(self, x):
-        return self.layers(x)
+        def __init__(self, state_size, action_size, hidden_size=128):
+            super(OptimizedDQNNetwork, self).__init__()
+            self.layers = nn.Sequential(
+                nn.Linear(state_size, hidden_size),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(hidden_size, hidden_size),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(hidden_size, action_size)
+            )
+
+        def forward(self, x):
+            return self.layers(x)
+else:
+    class OptimizedDQNNetwork:
+        """Fallback network stub used when torch is unavailable."""
+
+        def __init__(self, *args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+
+        def __call__(self, x):
+            return x
 
 class ReinforcementLearningAgent:
     def __init__(self, actions, learning_rate=0.001, discount_factor=0.99, epsilon=0.2,
@@ -50,32 +69,33 @@ class ReinforcementLearningAgent:
         self.epsilon_min = epsilon_min
 
         self.logger = logging.getLogger("RLAgent")
-        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+        self.device = "cuda" if torch is not None and torch.cuda.is_available() and use_gpu else "cpu"
         self.logger.info("NVIDIA GPU-accelerated RL using device: %s", self.device)
 
-        # Initialize traditional Q-table as fallback
         self.q_table = {}
-
-        # Initialize Deep Q-Network for GPU acceleration
-        self.state_size = 10  # Default, will be updated dynamically
-        self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
-        self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
-        self.target_dqn.load_state_dict(self.dqn.state_dict())
-
-        # Enable cuDNN optimization
-        if torch.cuda.is_available():
-            torch.backends.cudnn.benchmark = True
-
-        self.optimizer = optim.Adam(self.dqn.parameters(), lr=learning_rate)
-        self.criterion = nn.MSELoss()
-
-        # Experience replay buffer
+        self.state_size = 10
         self.memory = []
         self.memory_size = 10000
         self.batch_size = 64
-
         self.update_target_every = 100
         self.step_count = 0
+
+        if torch is not None:
+            self.device = torch.device(self.device)
+            self.dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
+            self.target_dqn = OptimizedDQNNetwork(self.state_size, self.action_size).to(self.device)
+            self.target_dqn.load_state_dict(self.dqn.state_dict())
+
+            if torch.cuda.is_available():
+                torch.backends.cudnn.benchmark = True
+
+            self.optimizer = optim.Adam(self.dqn.parameters(), lr=learning_rate)
+            self.criterion = nn.MSELoss()
+        else:
+            self.dqn = None
+            self.target_dqn = None
+            self.optimizer = None
+            self.criterion = None
 
     def get_state_key(self, state):
         """Convert state to string key for Q-table"""
@@ -114,15 +134,14 @@ class ReinforcementLearningAgent:
             self.optimizer.load_state_dict(old_optimizer_state)
 
     def choose_action(self, state):
-        """Choose action using NVIDIA GPU-accelerated DQN"""
-        # Convert state to numeric if necessary
+        """Choose action using NVIDIA GPU-accelerated DQN."""
         if isinstance(state, (list, tuple)):
             numeric_state = []
             for s in state:
                 if isinstance(s, (int, float)):
                     numeric_state.append(float(s))
                 elif isinstance(s, str):
-                    numeric_state.append(hash(s) % 1000 / 1000.0)  # Simple hash to float
+                    numeric_state.append(hash(s) % 1000 / 1000.0)
                 elif isinstance(s, bool):
                     numeric_state.append(1.0 if s else 0.0)
                 else:
@@ -131,14 +150,13 @@ class ReinforcementLearningAgent:
 
         self.update_state_size(state)
 
-        # Epsilon-greedy exploration
         if random.random() < self.epsilon:
             return random.choice(self.actions)
 
-        # Convert state to tensor
-        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
+        if self.dqn is None or torch is None:
+            return random.choice(self.actions)
 
-        # Get Q-values from DQN
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
         with torch.no_grad():
             q_values = self.dqn(state_tensor)
             action_idx = torch.argmax(q_values).item()
@@ -146,27 +164,21 @@ class ReinforcementLearningAgent:
         return self.actions[action_idx]
 
     def learn(self, state, action, reward, next_state):
-        """Learn using NVIDIA GPU-accelerated experience replay"""
+        """Learn using NVIDIA GPU-accelerated experience replay."""
         self.update_state_size(state)
-
-        # Store experience in replay buffer
         self.memory.append((state, self.actions.index(action), reward, next_state))
         if len(self.memory) > self.memory_size:
             self.memory.pop(0)
 
-        # Update traditional Q-table as fallback
         self._update_q_table(state, action, reward, next_state)
 
-        # Train DQN if enough experiences
-        if len(self.memory) >= self.batch_size:
+        if self.dqn is not None and self.target_dqn is not None and len(self.memory) >= self.batch_size:
             self._train_dqn()
 
-        # Update target network periodically
         self.step_count += 1
-        if self.step_count % self.update_target_every == 0:
+        if self.dqn is not None and self.target_dqn is not None and self.step_count % self.update_target_every == 0:
             self.target_dqn.load_state_dict(self.dqn.state_dict())
 
-        # Decay epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -185,26 +197,24 @@ class ReinforcementLearningAgent:
         self.q_table[state_key][action] += self.learning_rate * (target - predict)
 
     def _train_dqn(self):
-        """Train DQN using NVIDIA GPU acceleration"""
-        # Sample batch from memory
+        """Train DQN using NVIDIA GPU acceleration."""
+        if self.dqn is None or self.target_dqn is None or torch is None or self.optimizer is None:
+            return
+
         batch = random.sample(self.memory, self.batch_size)
         states, actions, rewards, next_states = zip(*batch, strict=True)
 
-        # Convert to tensors
         states = torch.tensor(states, dtype=torch.float32).to(self.device)
         actions = torch.tensor(actions, dtype=torch.long).to(self.device)
         rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
         next_states = torch.tensor(next_states, dtype=torch.float32).to(self.device)
 
-        # Current Q values
         current_q = self.dqn(states).gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        # Target Q values
         with torch.no_grad():
             next_q = self.target_dqn(next_states).max(1)[0]
             target_q = rewards + self.discount_factor * next_q
 
-        # Compute loss and update
         loss = self.criterion(current_q, target_q)
         self.optimizer.zero_grad()
         loss.backward()

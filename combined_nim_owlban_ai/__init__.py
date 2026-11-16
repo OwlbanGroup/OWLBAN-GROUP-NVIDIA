@@ -1,84 +1,103 @@
-"""
-OWLBAN GROUP - NVIDIA NIM Integration Package.
-Quantum-accelerated AI systems with enterprise monitoring.
-"""
+"""Public interface for the OWLBAN NIM + AI integration package."""
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
-from typing import Any
+from typing import Any, Dict
 
-__version__ = "1.0.0"
-__author__ = "Owlban Group"
-__description__ = "NVIDIA NIM and OWLBAN AI integration with quantum acceleration"
+from .nim import NimManager
+from .owlban_ai import OwlbanAI
+from .dcgm_monitor import DCGMMonitor
+from .energy_optimizer import EnergyOptimizer
+from .quantum_financial_omniscient_system import QuantumFinancialOmniscientSystem
 
-_REQUIRED_EXPORTS = {
-    "QuantumIntegratedSystem": (".integration", "QuantumIntegratedSystem"),
-    "CombinedSystem": (".integration", "QuantumIntegratedSystem"),
-    "NimManager": (".nim", "NimManager"),
-    "OwlbanAI": (".owlban_ai", "OwlbanAI"),
-    "NGCatalogManager": (".ngc_catalog", "NGCatalogManager"),
-    "QuantumFinancialOmniscientSystem": (
-        ".quantum_financial_omniscient_system",
-        "QuantumFinancialOmniscientSystem",
-    ),
-    "AzureQuantumIntegrationManager": (
-        ".azure_integration_manager",
-        "AzureQuantumIntegrationManager",
-    ),
-    "TritonInferenceServer": (".triton_inference_server", "TritonInferenceServer"),
-    "TritonModelManager": (".triton_inference_server", "TritonModelManager"),
-    "RAPIDSDataProcessor": (".rapids_integration", "RAPIDSDataProcessor"),
-    "DCGMMonitor": (".dcgm_monitor", "DCGMMonitor"),
-    "EnergyOptimizer": (".energy_optimizer", "EnergyOptimizer"),
-}
+# Keep optional high-end AI modules importable even when heavyweight dependencies
+# are not installed in a CPU-only environment.
+try:
+    from .multi_modal_ai import MultiModalFusion, MultiModalInput, MultiModalEmbedding
+except Exception:  # pragma: no cover - optional dependency safety
+    MultiModalFusion = None  # type: ignore[assignment]
+    MultiModalInput = None  # type: ignore[assignment]
+    MultiModalEmbedding = None  # type: ignore[assignment]
 
-_OPTIONAL_EXPORTS = {
-    "MultiModalAI": (".multi_modal_ai", "MultiModalAI"),
-    "MultiModalInput": (".multi_modal_ai", "MultiModalInput"),
-    "MultiModalEmbedding": (".multi_modal_ai", "MultiModalEmbedding"),
-    "QuantumAIPerfection": (".quantum_ai_perfection", "QuantumAIPerfection"),
-    "QuantumCircuitOptimizer": (
-        ".quantum_ai_perfection",
-        "QuantumCircuitOptimizer",
-    ),
-    "QuantumErrorCorrectionSystem": (
-        ".quantum_ai_perfection",
-        "QuantumErrorCorrectionSystem",
-    ),
-}
+try:
+    from .predictive_medicine_oracle import PredictiveMedicineOracle
+except Exception:  # pragma: no cover - optional dependency safety
+    PredictiveMedicineOracle = None  # type: ignore[assignment]
+
+try:
+    from .quantum_monitor import QuantumMonitor
+except Exception:  # pragma: no cover - optional dependency safety
+    QuantumMonitor = None  # type: ignore[assignment]
 
 
-def _module_available(module_name: str) -> bool:
-    """Return True when a submodule can be located without importing it."""
-    full_name = f"{__name__}{module_name}" if module_name.startswith(".") else module_name
-    return importlib.util.find_spec(full_name) is not None
+class CombinedSystem:
+    """Compatibility wrapper exposing the expected public API for the app."""
+
+    def __init__(self, *args, **kwargs):
+        from .dcgm_monitor import DCGMMonitor
+        from .energy_optimizer import EnergyOptimizer
+        from .owlban_ai import OwlbanAI
+        from .rapids_integration import RAPIDSDataProcessor
+        from .triton_inference_server import TritonInferenceServer
+
+        self.nim_manager = NimManager()
+        self.owlban_ai = OwlbanAI()
+        self.dcgm_monitor = DCGMMonitor()
+        self.energy_optimizer = EnergyOptimizer(self.dcgm_monitor)
+        self.rapids_processor = RAPIDSDataProcessor()
+        self.triton_inference_server = TritonInferenceServer()
+        self.quantum_system = QuantumFinancialOmniscientSystem(
+            self.rapids_processor,
+            self.triton_inference_server,
+            self.energy_optimizer,
+        )
+        self.initialized = False
+        self.initialize()
+
+    def initialize(self):
+        self.nim_manager.initialize()
+        self.owlban_ai.load_models()
+        self.initialized = True
+        return True
+
+    def run_inference(self, data):
+        if not self.initialized:
+            self.initialize()
+
+        if isinstance(data, dict):
+            payload = data
+        else:
+            payload = {"input": data}
+
+        result = self.owlban_ai.run_inference(payload)
+        if isinstance(result, dict):
+            return {
+                "prediction": result.get("prediction", result),
+                "confidence": result.get("confidence", 0.85),
+                "source": "combined_system",
+            }
+        return {"prediction": result, "confidence": 0.85, "source": "combined_system"}
+
+    def get_ai_summary(self) -> Dict[str, Any]:
+        return {
+            "initialized": self.initialized,
+            "nim_manager": self.nim_manager.get_resource_status() if hasattr(self.nim_manager, "get_resource_status") else {},
+            "owlban_ai_ready": self.owlban_ai._loaded if hasattr(self.owlban_ai, "_loaded") else True,
+            "energy_optimizer": self.energy_optimizer.get_efficiency_metrics(),
+            "dcgm_metrics": self.dcgm_monitor.collect_metrics(),
+        }
 
 
-__all__ = list(_REQUIRED_EXPORTS)
-for name, (module_name, _) in _OPTIONAL_EXPORTS.items():
-    if _module_available(module_name):
-        __all__.append(name)
-
-
-def __getattr__(name: str) -> Any:
-    """Lazily load exports to avoid import-time failures during analysis."""
-    if name in _REQUIRED_EXPORTS:
-        module_name, attribute_name = _REQUIRED_EXPORTS[name]
-    elif name in _OPTIONAL_EXPORTS:
-        module_name, attribute_name = _OPTIONAL_EXPORTS[name]
-        if not _module_available(module_name):
-            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    else:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-    module = importlib.import_module(module_name, __name__)
-    value = getattr(module, attribute_name)
-    globals()[name] = value
-    return value
-
-
-def __dir__() -> list[str]:
-    """Expose the available public names for introspection."""
-    return sorted(set(globals()) | set(__all__))
+__all__ = [
+    "CombinedSystem",
+    "NimManager",
+    "OwlbanAI",
+    "DCGMMonitor",
+    "EnergyOptimizer",
+    "QuantumFinancialOmniscientSystem",
+    "QuantumMonitor",
+    "PredictiveMedicineOracle",
+    "MultiModalFusion",
+    "MultiModalInput",
+    "MultiModalEmbedding",
+]

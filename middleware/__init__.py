@@ -1,1 +1,0 @@
-# OWLBAN GROUP Security Middleware

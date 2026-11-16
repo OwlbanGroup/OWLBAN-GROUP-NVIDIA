@@ -1,17 +1,35 @@
 """
 OWLBAN GROUP - Multi-Modal AI Integration System
-Combines text, image, financial data, and sensor modalities for unified AI processing
+Combines text, image, financial data, and sensor modalities for unified AI processing.
+
+The module intentionally degrades gracefully when heavyweight optional dependencies
+such as ``transformers`` or ``opencv`` are not installed so the broader AI stack
+remains usable in CPU-only environments.
 """
 
-import numpy as np
-import torch
-import torch.nn as nn
-from typing import Dict, List, Any, Optional
 import logging
 from dataclasses import dataclass
-from transformers import CLIPProcessor, CLIPModel, BertTokenizer, BertModel
-import cv2
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+try:  # pragma: no cover - optional dependency path
+    import cv2
+except Exception:  # pragma: no cover
+    cv2 = None
+
+try:  # pragma: no cover - optional dependency path
+    import torch
+    import torch.nn as nn
+except Exception:  # pragma: no cover
+    torch = None
+    nn = None
+
+try:  # pragma: no cover - optional dependency path
+    from transformers import CLIPProcessor, CLIPModel, BertTokenizer, BertModel
+except Exception:  # pragma: no cover
+    CLIPProcessor = CLIPModel = BertTokenizer = BertModel = None
 
 @dataclass
 class MultiModalInput:
@@ -31,16 +49,30 @@ class MultiModalEmbedding:
     quantum_enhanced: bool = False
 
 class TextProcessor:
-    """Advanced text processing with BERT and domain-specific understanding"""
+    """Advanced text processing with BERT and domain-specific understanding."""
 
     def __init__(self, model_name: str = "bert-base-uncased"):
+        self.model_name = model_name
+        self.logger = logging.getLogger("TextProcessor")
+        if BertTokenizer is None or BertModel is None:
+            self.logger.warning("transformers is not available; using lightweight deterministic fallback embeddings.")
+            self.tokenizer = None
+            self.model = None
+            return
+
         self.tokenizer = BertTokenizer.from_pretrained(model_name)
         self.model = BertModel.from_pretrained(model_name)
         self.model.eval()
-        self.logger = logging.getLogger("TextProcessor")
 
     def process(self, text: str) -> np.ndarray:
-        """Process text into embeddings"""
+        """Process text into embeddings."""
+        if self.model is None or self.tokenizer is None or torch is None:
+            tokens = [ord(ch) for ch in (text or "")]
+            features = np.asarray(tokens, dtype=np.float32)
+            if features.size == 0:
+                return np.zeros(16, dtype=np.float32)
+            return np.pad(features[:16], (0, max(0, 16 - features.size)), constant_values=0.0)
+
         inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
         with torch.no_grad():
             outputs = self.model(**inputs)
@@ -48,17 +80,30 @@ class TextProcessor:
         return embeddings
 
 class ImageProcessor:
-    """CLIP-based image processing for financial and general imagery"""
+    """CLIP-based image processing for financial and general imagery."""
 
     def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
+        self.model_name = model_name
+        self.logger = logging.getLogger("ImageProcessor")
+        if CLIPProcessor is None or CLIPModel is None or cv2 is None:
+            self.logger.warning("transformers/opencv is not available; using deterministic image embeddings.")
+            self.processor = None
+            self.model = None
+            return
+
         self.processor = CLIPProcessor.from_pretrained(model_name)
         self.model = CLIPModel.from_pretrained(model_name)
         self.model.eval()
-        self.logger = logging.getLogger("ImageProcessor")
 
     def process(self, image: np.ndarray) -> np.ndarray:
-        """Process image into embeddings"""
-        # Ensure image is in RGB format
+        """Process image into embeddings."""
+        if self.model is None or self.processor is None or torch is None:
+            flat = np.asarray(image, dtype=np.float32).reshape(-1)
+            if flat.size == 0:
+                return np.zeros(16, dtype=np.float32)
+            out = np.pad(flat[:16], (0, max(0, 16 - flat.size)), constant_values=0.0)
+            return out.astype(np.float32)
+
         if len(image.shape) == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         elif image.shape[2] == 4:
@@ -152,70 +197,80 @@ class SensorDataProcessor:
 
         return np.array(features, dtype=np.float32)
 
-class MultiModalFusion(nn.Module):
-    """Neural network for fusing multi-modal embeddings"""
+if nn is not None:
+    class MultiModalFusion(nn.Module):
+        """Neural network for fusing multi-modal embeddings."""
 
-    def __init__(self, input_dim: int = 768, hidden_dim: int = 512, output_dim: int = 768):
-        super().__init__()
-        self.fusion_network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(hidden_dim, output_dim),
-            nn.LayerNorm(output_dim)
-        )
+        def __init__(self, input_dim: int = 768, hidden_dim: int = 512, output_dim: int = 768):
+            super().__init__()
+            self.fusion_network = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(hidden_dim, output_dim),
+                nn.LayerNorm(output_dim)
+            )
 
-        # Attention mechanism for modality weighting
-        self.attention = nn.MultiheadAttention(embed_dim=output_dim, num_heads=8, batch_first=True)
+            self.attention = nn.MultiheadAttention(embed_dim=output_dim, num_heads=8, batch_first=True)
+            self.text_adapter = nn.Linear(output_dim, output_dim)
+            self.image_adapter = nn.Linear(output_dim, output_dim)
+            self.financial_adapter = nn.Linear(output_dim, output_dim)
+            self.sensor_adapter = nn.Linear(output_dim, output_dim)
 
-        # Modality-specific adapters
-        self.text_adapter = nn.Linear(output_dim, output_dim)
-        self.image_adapter = nn.Linear(output_dim, output_dim)
-        self.financial_adapter = nn.Linear(output_dim, output_dim)
-        self.sensor_adapter = nn.Linear(output_dim, output_dim)
+        def forward(self, embeddings: Dict[str, torch.Tensor]) -> torch.Tensor:
+            adapted_embeddings = []
 
-    def forward(self, embeddings: Dict[str, torch.Tensor]) -> torch.Tensor:
-        """Fuse multiple modality embeddings"""
-        adapted_embeddings = []
+            if 'text' in embeddings:
+                text_emb = self.text_adapter(embeddings['text'])
+                adapted_embeddings.append(text_emb)
 
-        if 'text' in embeddings:
-            text_emb = self.text_adapter(embeddings['text'])
-            adapted_embeddings.append(text_emb)
+            if 'image' in embeddings:
+                image_emb = self.image_adapter(embeddings['image'])
+                adapted_embeddings.append(image_emb)
 
-        if 'image' in embeddings:
-            image_emb = self.image_adapter(embeddings['image'])
-            adapted_embeddings.append(image_emb)
+            if 'financial' in embeddings:
+                financial_emb = self.financial_adapter(embeddings['financial'])
+                adapted_embeddings.append(financial_emb)
 
-        if 'financial' in embeddings:
-            financial_emb = self.financial_adapter(embeddings['financial'])
-            adapted_embeddings.append(financial_emb)
+            if 'sensor' in embeddings:
+                sensor_emb = self.sensor_adapter(embeddings['sensor'])
+                adapted_embeddings.append(sensor_emb)
 
-        if 'sensor' in embeddings:
-            sensor_emb = self.sensor_adapter(embeddings['sensor'])
-            adapted_embeddings.append(sensor_emb)
+            if not adapted_embeddings:
+                return torch.zeros(1, self.fusion_network[0].out_features)
 
-        if not adapted_embeddings:
-            return torch.zeros(1, self.fusion_network[0].out_features)
+            stacked = torch.stack(adapted_embeddings, dim=0).unsqueeze(0)
+            attended, _ = self.attention(stacked, stacked, stacked)
+            fused = attended.mean(dim=1)
+            output = self.fusion_network(fused)
+            return output.squeeze(0)
+else:
+    class MultiModalFusion:
+        """Fallback fusion implementation when torch is unavailable."""
 
-        # Stack embeddings
-        stacked = torch.stack(adapted_embeddings, dim=0).unsqueeze(0)  # [1, num_modalities, dim]
+        def __init__(self, input_dim: int = 768, hidden_dim: int = 512, output_dim: int = 768):
+            self.input_dim = input_dim
+            self.hidden_dim = hidden_dim
+            self.output_dim = output_dim
 
-        # Apply attention
-        attended, _ = self.attention(stacked, stacked, stacked)
-
-        # Average across modalities
-        fused = attended.mean(dim=1)  # [1, dim]
-
-        # Final fusion
-        output = self.fusion_network(fused)
-
-        return output.squeeze(0)
+        def __call__(self, embeddings: Dict[str, np.ndarray]) -> np.ndarray:
+            if not embeddings:
+                return np.zeros(self.output_dim, dtype=np.float32)
+            fused = np.zeros(self.output_dim, dtype=np.float32)
+            for key, value in embeddings.items():
+                vector = np.asarray(value, dtype=np.float32).reshape(-1)
+                if vector.size < self.output_dim:
+                    vector = np.pad(vector, (0, self.output_dim - vector.size), constant_values=0.0)
+                else:
+                    vector = vector[:self.output_dim]
+                fused += vector * (1.0 / len(embeddings))
+            return fused
 
 class QuantumEnhancedFusion:
-    """Quantum-enhanced multi-modal fusion using quantum interference"""
+    """Quantum-enhanced multi-modal fusion using quantum interference."""
 
     def __init__(self, embedding_dim: int = 768):
         self.embedding_dim = embedding_dim
@@ -223,39 +278,39 @@ class QuantumEnhancedFusion:
         self.logger = logging.getLogger("QuantumEnhancedFusion")
 
     def quantum_interference_fusion(self, embeddings: Dict[str, np.ndarray]) -> np.ndarray:
-        """Apply quantum interference patterns to fuse embeddings"""
+        """Apply quantum interference patterns to fuse embeddings."""
         if not embeddings:
-            return np.zeros(self.embedding_dim)
+            return np.zeros(self.embedding_dim, dtype=np.float32)
 
-        # Convert to quantum amplitudes (normalize)
         quantum_amplitudes = {}
         for modality, emb in embeddings.items():
-            # Normalize to create quantum state
             norm = np.linalg.norm(emb)
             if norm > 0:
-                quantum_amplitudes[modality] = emb / norm
+                quantum_amplitudes[modality] = np.asarray(emb, dtype=np.float32) / norm
             else:
-                quantum_amplitudes[modality] = np.zeros_like(emb)
+                quantum_amplitudes[modality] = np.zeros_like(np.asarray(emb, dtype=np.float32), dtype=np.float32)
 
-        # Quantum superposition - weighted combination
         weights = self._compute_quantum_weights(list(embeddings.keys()))
-        fused_embedding = np.zeros(self.embedding_dim)
+        fused_embedding = np.zeros(self.embedding_dim, dtype=np.float32)
 
         for modality, amplitude in quantum_amplitudes.items():
             weight = weights.get(modality, 1.0 / len(quantum_amplitudes))
-            fused_embedding += weight * amplitude
+            vector = np.asarray(amplitude, dtype=np.float32).reshape(-1)
+            if vector.size < self.embedding_dim:
+                vector = np.pad(vector, (0, self.embedding_dim - vector.size), constant_values=0.0)
+            else:
+                vector = vector[:self.embedding_dim]
+            fused_embedding += weight * vector
 
-        # Apply quantum phase (complex interference)
-        phase_factor = np.exp(1j * np.random.uniform(0, 2*np.pi, self.embedding_dim))
+        phase_factor = np.exp(1j * np.random.uniform(0, 2 * np.pi, self.embedding_dim))
         complex_fused = fused_embedding * phase_factor
-        final_embedding = np.real(complex_fused)  # Take real part
+        final_embedding = np.real(complex_fused)
 
-        # Normalize final result
         norm = np.linalg.norm(final_embedding)
         if norm > 0:
             final_embedding = final_embedding / norm
 
-        return final_embedding
+        return final_embedding.astype(np.float32)
 
     def _compute_quantum_weights(self, modalities: List[str]) -> Dict[str, float]:
         """Compute quantum-inspired weights for modalities"""

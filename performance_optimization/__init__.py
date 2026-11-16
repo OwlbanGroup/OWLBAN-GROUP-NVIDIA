@@ -1,7 +1,10 @@
-"""
-OWLBAN GROUP Performance Optimization
-GPU-accelerated AI optimization systems
-"""
+"""Performance optimization AI modules."""
 
-__version__ = "1.0.0"
-__author__ = "Owlban Group"
+from .advanced_anomaly_detection import AdvancedAnomalyDetection
+from .reinforcement_learning_agent import ReinforcementLearningAgent, OptimizedDQNNetwork
+
+__all__ = [
+    "AdvancedAnomalyDetection",
+    "ReinforcementLearningAgent",
+    "OptimizedDQNNetwork",
+]

@@ -152,18 +152,17 @@ security = HTTPBasic()
 API_USERNAME = os.getenv("API_USERNAME", "owlban_admin")
 
 
-API_PASSWORD = os.getenv("API_PASSWORD", "")
-
+API_PASSWORD = os.getenv("API_PASSWORD")
+if not API_PASSWORD:
+    API_PASSWORD = secrets.token_urlsafe(24)
+    os.environ["API_PASSWORD"] = API_PASSWORD
+    logger.warning(
+        "API_PASSWORD not set; generated a temporary password for this session. "
+        "Set API_PASSWORD in the environment or .env for a stable credential."
+    )
 
 API_HOST = os.getenv("API_HOST", "127.0.0.1")
-
-
 API_PORT = int(os.getenv("API_PORT", "8000"))
-
-if not API_PASSWORD:
-    raise RuntimeError(
-        "API_PASSWORD environment variable must be set "
-        "for API server authentication")
 
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):

@@ -242,6 +242,18 @@ class PerformanceComparisonTest:
 
         return report
 
+
+def test_performance_comparison_smoke():
+    """Lightweight smoke test to keep pytest collection healthy."""
+    test = PerformanceComparisonTest()
+    results = test.run_comparison_test(n_samples=10000)
+
+    assert isinstance(results, dict)
+    assert "classical_performance" in results
+    assert "quantum_performance" in results
+    assert "quantum_advantage" in results
+
+
 def main():
     """Main execution function"""
     logger.info("Starting Quantum AI Performance Comparison Test")

@@ -1,27 +1,33 @@
-"""Test API server functionality on CPU"""
+"""Test API server functionality on CPU."""
+
 import asyncio
 import os
-import api_server
-os.environ["API_PASSWORD"] = "test"
 
-from combined_nim_owlban_ai import CombinedSystem
+import pytest
 
-# Test get_system_status
-result = asyncio.run(api_server.get_system_status())
-print("System status OK:")
-print("  timestamp:", result.timestamp)
-print("  services type:", type(result.services))
-if isinstance(result.services, dict):
-    print("  services keys:", list(result.services.keys())[:5])
-print("  monitoring type:", type(result.monitoring))
 
-# Test inference via CombinedSystem (correct import)
-cs = CombinedSystem()
-cs.initialize()
-print("\nCombinedSystem initialized successfully")
+@pytest.mark.parametrize("password", ["test"])
+def test_api_server_smoke(password):
+    os.environ["API_PASSWORD"] = password
 
-# Test inference
-prediction = cs.run_inference({"test": "data"})
-print("Inference OK:", prediction)
+    import api_server
+    from combined_nim_owlban_ai import CombinedSystem
 
-print("\n✅ All API server functions verified successfully on CPU!")
+    result = asyncio.run(api_server.get_system_status())
+    assert result.timestamp
+    assert isinstance(result.services, dict)
+    assert "combined_system" in result.services
+
+    cs = CombinedSystem()
+    cs.initialize()
+    prediction = cs.run_inference({"test": "data"})
+    assert isinstance(prediction, dict)
+    assert "prediction" in prediction
+
+
+def main():
+    test_api_server_smoke()
+
+
+if __name__ == "__main__":
+    main()

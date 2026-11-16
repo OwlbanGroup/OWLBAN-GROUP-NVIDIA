@@ -1,12 +1,31 @@
-import torch
-import torch.nn as nn
 import logging
-import numpy as np
 from typing import Dict, List
-from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
-from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer, PortfolioAsset
-from quantum_financial_ai.quantum_risk_analyzer import QuantumRiskAnalyzer, RiskFactor
-from quantum_financial_ai.quantum_market_predictor import QuantumMarketPredictor, MarketData
+
+import numpy as np
+
+try:  # pragma: no cover - optional dependency path
+    import torch
+    import torch.nn as nn
+except Exception:  # pragma: no cover
+    torch = None
+    nn = None
+
+try:
+    from performance_optimization.reinforcement_learning_agent import ReinforcementLearningAgent
+except Exception:  # pragma: no cover
+    ReinforcementLearningAgent = None
+
+try:
+    from quantum_financial_ai.quantum_portfolio_optimizer import QuantumPortfolioOptimizer, PortfolioAsset
+    from quantum_financial_ai.quantum_risk_analyzer import QuantumRiskAnalyzer, RiskFactor
+    from quantum_financial_ai.quantum_market_predictor import QuantumMarketPredictor, MarketData
+except Exception:  # pragma: no cover
+    QuantumPortfolioOptimizer = None
+    PortfolioAsset = None
+    QuantumRiskAnalyzer = None
+    RiskFactor = None
+    QuantumMarketPredictor = None
+    MarketData = None
 
 # NVIDIA-specific imports
 try:
@@ -37,50 +56,63 @@ class MarketDataProvider:
         }
 
 class NVIDIARevenueOptimizer:
-    """NVIDIA-optimized revenue optimizer with GPU acceleration"""
+    """NVIDIA-optimized revenue optimizer with GPU acceleration."""
 
     def __init__(self, nim_manager, market_data_provider=None):
         self.nim_manager = nim_manager
         self.market_data_provider = market_data_provider or MarketDataProvider()
-        self.rl_agent = ReinforcementLearningAgent(
-            actions=[
-                "increase_price",
-                "decrease_price",
-                "maintain_price",
-                "optimize_inventory",
-                "expand_market"
-            ],
-            learning_rate=0.001,  # Optimized for GPU training
-            discount_factor=0.99,
-            epsilon=0.2,
-            use_gpu=True  # NVIDIA GPU acceleration
-        )
         self.logger = logging.getLogger("NVIDIARevenueOptimizer")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.cuda_available = torch.cuda.is_available()
+        self.device = torch.device("cuda" if torch is not None and torch.cuda.is_available() else "cpu") if torch is not None else "cpu"
+        self.cuda_available = bool(torch is not None and torch.cuda.is_available())
         self.gpu_count = torch.cuda.device_count() if self.cuda_available else 0
 
-        # NVIDIA optimization components
-        self.revenue_prediction_model = self._create_revenue_model()
+        self.rl_agent = None
+        if ReinforcementLearningAgent is not None:
+            self.rl_agent = ReinforcementLearningAgent(
+                actions=[
+                    "increase_price",
+                    "decrease_price",
+                    "maintain_price",
+                    "optimize_inventory",
+                    "expand_market"
+                ],
+                learning_rate=0.001,
+                discount_factor=0.99,
+                epsilon=0.2,
+                use_gpu=self.cuda_available,
+            )
 
-        # Enable cuDNN optimization
-        if self.cuda_available:
+        if torch is not None and self.cuda_available:
             torch.backends.cudnn.benchmark = True
 
-        # Initialize quantum financial AI components
-        self.quantum_optimizer = QuantumPortfolioOptimizer(use_gpu=self.cuda_available)
-        self.quantum_risk_analyzer = QuantumRiskAnalyzer(use_gpu=self.cuda_available)
-        self.quantum_predictor = QuantumMarketPredictor(use_gpu=self.cuda_available)
+        self.quantum_optimizer = None
+        self.quantum_risk_analyzer = None
+        self.quantum_predictor = None
+        self.revenue_prediction_model = None
 
-        # Initialize with sample portfolio assets
-        self._initialize_quantum_portfolio()
-        self._initialize_quantum_risk_factors()
+        if QuantumPortfolioOptimizer is not None:
+            self.quantum_optimizer = QuantumPortfolioOptimizer(use_gpu=self.cuda_available)
+        if QuantumRiskAnalyzer is not None:
+            self.quantum_risk_analyzer = QuantumRiskAnalyzer(use_gpu=self.cuda_available)
+        if QuantumMarketPredictor is not None:
+            self.quantum_predictor = QuantumMarketPredictor(use_gpu=self.cuda_available)
+
+        if self.revenue_prediction_model is None and nn is not None:
+            self.revenue_prediction_model = self._create_revenue_model()
+
+        if self.quantum_optimizer is not None:
+            self._initialize_quantum_portfolio()
+        if self.quantum_risk_analyzer is not None:
+            self._initialize_quantum_risk_factors()
 
     def _create_revenue_model(self):
-        """Create NVIDIA-optimized revenue prediction model"""
+        """Create NVIDIA-optimized revenue prediction model."""
+        if nn is None or torch is None:
+            return None
+
         model = nn.Sequential(
             nn.Linear(15, 128),
-            nn.BatchNorm1d(128),  # cuDNN optimized
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(128, 64),
@@ -89,7 +121,7 @@ class NVIDIARevenueOptimizer:
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Linear(32, 1)  # Revenue prediction
+            nn.Linear(32, 1),
         ).to(self.device)
 
         return model
@@ -228,8 +260,8 @@ class NVIDIARevenueOptimizer:
         profit = adjusted_revenue - adjusted_cost
 
         # Apply NVIDIA GPU efficiency bonus
-        if torch.cuda.is_available():
-            profit *= 1.1  # 10% bonus for GPU acceleration
+        if self.cuda_available:
+            profit *= 1.1
 
         # Penalize if competitor price is lower and price is increased
         if competitor_price < price_factor and action == "increase_price":

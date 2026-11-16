@@ -1,0 +1,30 @@
+C:\Users\bsean\AppData\Local\Programs\Python\Python310\lib\site-packages\torch\cuda\__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+WARNING:root:Qiskit not available, quantum features disabled
+WARNING:root:Cirq not available
+WARNING:root:Azure Quantum not available
+WARNING:root:Braket not available
+WARNING:root:Q# not available
+WARNING:root:TensorRT not available
+WARNING:root:CUDA runtime not available
+WARNING:root:Some financial integration packages not available
+WARNING:root:Numba CUDA disabled due to compatibility issues
+WARNING:root:Azure Quantum packages not available, quantum features disabled
+WARNING:root:Triton client not available, using fallback mode
+INFO:     Started server process [29376]
+INFO:     Waiting for application startup.
+WARNING:NVIDIADeploymentManager:Docker client initialization failed: 'NoneType' object has no attribute 'from_env'
+WARNING:new_products.stripe_integration:Using dummy Stripe API key for development. Set STRIPE_API_KEY environment variable for production.
+WARNING:TritonInferenceServer:Triton client not available, using mock mode
+WARNING:RAPIDSDataProcessor:RAPIDS not available, falling back to CPU processing
+WARNING:DCGMMonitor:DCGM not available, GPU monitoring disabled
+WARNING:NimManager:CUDA not available, falling back to CPU mode
+ERROR:DatabaseManager:PostgreSQL initialization failed: connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+INFO:     Application startup complete.
+ERROR:    [Errno 11001] getaddrinfo failed
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.

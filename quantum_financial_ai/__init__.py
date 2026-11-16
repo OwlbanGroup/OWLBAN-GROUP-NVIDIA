@@ -1,7 +1,17 @@
-"""
-OWLBAN GROUP Quantum Financial AI
-Quantum-enhanced financial modeling and optimization
-"""
+"""Quantum financial AI package exports."""
 
-__version__ = "1.0.0"
-__author__ = "Owlban Group"
+from .quantum_market_predictor import MarketData, QuantumMarketPredictor, QuantumPredictionResult
+from .quantum_risk_analyzer import QuantumRiskAnalyzer, RiskFactor, QuantumRiskResult
+from .quantum_portfolio_optimizer import PortfolioAsset, QuantumPortfolioOptimizer, PortfolioOptimizationResult
+
+__all__ = [
+    "MarketData",
+    "QuantumMarketPredictor",
+    "QuantumPredictionResult",
+    "QuantumRiskAnalyzer",
+    "RiskFactor",
+    "QuantumRiskResult",
+    "PortfolioAsset",
+    "QuantumPortfolioOptimizer",
+    "PortfolioOptimizationResult",
+]

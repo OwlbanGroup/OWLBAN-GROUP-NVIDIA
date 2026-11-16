@@ -1,0 +1,22 @@
+WARNING:root:Qiskit not available, quantum features disabled
+WARNING:root:Cirq not available
+WARNING:root:Azure Quantum not available
+WARNING:root:Braket not available
+WARNING:root:Q# not available
+WARNING:root:CuPy not available, GPU acceleration disabled
+WARNING:root:TensorRT not available
+WARNING:root:CUDA runtime not available
+WARNING:root:Some financial integration packages not available
+WARNING:root:Numba CUDA disabled due to compatibility issues
+WARNING:root:Azure Quantum packages not available, quantum features disabled
+WARNING:root:Triton client not available, using fallback mode
+INFO:     Started server process [26256]
+INFO:     Waiting for application startup.
+WARNING:NVIDIADeploymentManager:Docker client initialization failed: Error while fetching server API version: (2, 'CreateFile', 'The system cannot find the file specified.')
+WARNING:new_products.stripe_integration:Using dummy Stripe API key for development. Set STRIPE_API_KEY environment variable for production.
+WARNING:TritonInferenceServer:Triton client not available, using mock mode
+WARNING:RAPIDSDataProcessor:RAPIDS not available, falling back to CPU processing
+WARNING:DCGMMonitor:DCGM not available, GPU monitoring disabled
+WARNING:NimManager:CUDA not available, falling back to CPU mode
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

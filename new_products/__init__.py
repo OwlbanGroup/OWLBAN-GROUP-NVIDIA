@@ -1,7 +1,11 @@
-"""
-OWLBAN GROUP AI Products
-Enterprise AI solutions with NVIDIA acceleration
-"""
+"""New-product AI modules for revenue optimization, anomaly detection, and deployment."""
 
-__version__ = "1.0.0"
-__author__ = "Owlban Group"
+from .anomaly_detection import NVIDIAAnomalyDetection, AnomalyDetection
+from .revenue_optimizer import MarketDataProvider, NVIDIARevenueOptimizer
+
+__all__ = [
+    "MarketDataProvider",
+    "NVIDIARevenueOptimizer",
+    "NVIDIAAnomalyDetection",
+    "AnomalyDetection",
+]
