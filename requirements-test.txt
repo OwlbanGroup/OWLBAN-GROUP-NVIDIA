@@ -24,3 +24,4 @@ flake8
 pylint
 ruff
 mypy
+pytest-asyncio

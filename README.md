@@ -28,6 +28,14 @@ The application exposes a clean service layer under `app/` with endpoints for he
 
 For the TLS-terminating Docker Compose deployment, environment template, and operational instructions, see [docs/PRODUCTION_APP_LAYER.md](docs/PRODUCTION_APP_LAYER.md). Configure `.env.production` and TLS certificate files before starting the production stack.
 
+On Windows, generate a local `.env.production` and optional self-signed TLS certificate with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-production.ps1
+docker compose -f docker-compose.production.yml config
+docker compose -f docker-compose.production.yml up --build -d
+```
+
 ### Legacy API server
 
 ```bash

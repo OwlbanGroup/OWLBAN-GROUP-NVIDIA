@@ -1,6 +1,6 @@
 """Compatibility entrypoint for running the production OWLBAN app."""
 
-from app.main import app
+from app.main import app as app
 
 
 if __name__ == "__main__":

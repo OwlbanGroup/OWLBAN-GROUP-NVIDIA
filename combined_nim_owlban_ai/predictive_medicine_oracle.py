@@ -5,7 +5,7 @@ that remains usable in CPU-only environments.
 """
 
 import logging
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Dict, Mapping
 
 
 class PredictiveMedicineOracle:

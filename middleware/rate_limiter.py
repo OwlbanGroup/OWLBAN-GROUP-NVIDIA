@@ -21,7 +21,7 @@ class TokenBucket:
         elapsed = now - self.updated_at
         self.tokens = min(float(self.capacity), self.tokens + elapsed * self.rate)
         self.updated_at = now
-        if self.tokens < 1:
+        if self.tokens < 1.0 - 1e-9:
             return False
         self.tokens -= 1
         return True

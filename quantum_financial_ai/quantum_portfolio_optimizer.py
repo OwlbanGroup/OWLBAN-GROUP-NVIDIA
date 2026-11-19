@@ -51,7 +51,7 @@ class QuantumPortfolioOptimizer:
 
         score = [max(asset.expected_return / max(asset.volatility, 1e-6), 0.0) for asset in self.assets]
         total = sum(score) if sum(score) else float(len(score))
-        weights = {asset.symbol: (s / total) for asset, s in zip(self.assets, score)}
+        weights = {asset.symbol: (s / total) for asset, s in zip(self.assets, score, strict=False)}
 
         expected_return = sum(weights[a.symbol] * a.expected_return for a in self.assets)
         expected_risk = 0.0

@@ -8,9 +8,17 @@
 # The baseline mechanism was removed on purpose: a frozen list of violations
 # is only as good as its upkeep, and it silently ratchets in dead code.
 # When this gate fails, fix the finding.
-set -uo pipefail
+set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
-PY="${PYTHON:-.venv/bin/python}"
+if [ -n "${PYTHON:-}" ]; then
+    PY="$PYTHON"
+elif [ -x ".venv/Scripts/python.exe" ]; then
+    PY=".venv/Scripts/python.exe"
+elif [ -x ".venv/bin/python" ]; then
+    PY=".venv/bin/python"
+else
+    PY="python"
+fi
 status=0
 
 # --- ruff -------------------------------------------------------------------

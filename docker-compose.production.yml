@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile.production
     env_file:
-      - .env.production
+      - path: .env.production
+        required: false
     environment:
       APP_ENV: production
       DEBUG: "false"

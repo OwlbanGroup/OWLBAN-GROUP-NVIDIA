@@ -9,8 +9,8 @@ application needs: circuits, state evolution, measurement, and optimization.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -71,7 +71,7 @@ class QuantumCircuit:
     def _apply_single_qubit_gate(self, gate: str, target: int) -> None:
         bit_mask = 1 << target
         new_state = np.zeros_like(self.state)
-        for idx, amplitude in enumerate(self.state):
+        for idx, _amplitude in enumerate(self.state):
             if idx & bit_mask:
                 continue
             paired = idx | bit_mask

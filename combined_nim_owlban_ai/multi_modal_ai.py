@@ -260,7 +260,7 @@ else:
             if not embeddings:
                 return np.zeros(self.output_dim, dtype=np.float32)
             fused = np.zeros(self.output_dim, dtype=np.float32)
-            for key, value in embeddings.items():
+            for _key, value in embeddings.items():
                 vector = np.asarray(value, dtype=np.float32).reshape(-1)
                 if vector.size < self.output_dim:
                     vector = np.pad(vector, (0, self.output_dim - vector.size), constant_values=0.0)
