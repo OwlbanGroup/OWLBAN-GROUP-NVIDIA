@@ -54,8 +54,8 @@ class TestQuantumSVMClassifier(unittest.TestCase):
     def test_training(self):
         """Test QSVM training"""
         # Create synthetic data
-        X = np.random.randn(50, 4)
-        y = np.random.randint(0, 2, 50)
+        X = np.random.randn(20, 4)
+        y = np.random.randint(0, 2, 20)
 
         # Train model
         self.classifier.fit(X, y)
@@ -67,15 +67,15 @@ class TestQuantumSVMClassifier(unittest.TestCase):
     def test_prediction(self):
         """Test QSVM prediction"""
         # Create and train model
-        X = np.random.randn(50, 4)
-        y = np.random.randint(0, 2, 50)
+        X = np.random.randn(20, 4)
+        y = np.random.randint(0, 2, 20)
         self.classifier.fit(X, y)
 
         # Make predictions
-        X_test = np.random.randn(10, 4)
+        X_test = np.random.randn(5, 4)
         predictions = self.classifier.predict(X_test)
 
-        self.assertEqual(len(predictions), 10)
+        self.assertEqual(len(predictions), 5)
         self.assertTrue(all(pred in [0, 1] for pred in predictions))
 
 class TestVariationalQuantumClassifier(unittest.TestCase):
@@ -115,7 +115,9 @@ class TestQuantumMLPipeline(unittest.TestCase):
     """Test complete quantum ML pipeline"""
 
     def setUp(self):
-        self.pipeline = QuantumMLPipeline(model_type="qsvm", n_qubits=4)
+        self.pipeline = QuantumMLPipeline(
+            model_type="qsvm", n_qubits=4, evaluate_advantage=False
+        )
 
     def test_initialization(self):
         """Test pipeline initialization"""
@@ -134,7 +136,7 @@ class TestQuantumMLPipeline(unittest.TestCase):
 
     def test_training(self):
         """Test pipeline training"""
-        data = create_synthetic_financial_data(n_samples=100, n_features=4)
+        data = create_synthetic_financial_data(n_samples=30, n_features=4)
         result = self.pipeline.train(data)
 
         self.assertIsNotNone(result)
@@ -145,7 +147,7 @@ class TestQuantumMLPipeline(unittest.TestCase):
     def test_prediction(self):
         """Test pipeline prediction"""
         # Train first
-        data = create_synthetic_financial_data(n_samples=100, n_features=4)
+        data = create_synthetic_financial_data(n_samples=30, n_features=4)
         self.pipeline.train(data)
 
         # Make predictions

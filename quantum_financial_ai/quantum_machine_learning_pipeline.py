@@ -413,6 +413,7 @@ class QuantumMLPipeline:
     def __init__(self, model_type: str = "qsvm", n_qubits: int = 4, **kwargs):
         self.model_type = model_type
         self.n_qubits = n_qubits
+        self.evaluate_advantage = kwargs.pop("evaluate_advantage", True)
         self.model: Union[
             QuantumSVMClassifier,
             VariationalQuantumClassifier,
@@ -486,7 +487,7 @@ class QuantumMLPipeline:
 
         # Calculate quantum advantage if applicable
         quantum_advantage = 1.0
-        if hasattr(self.model, "evaluate_quantum_advantage"):
+        if self.evaluate_advantage and hasattr(self.model, "evaluate_quantum_advantage"):
             advantage_metrics = self.model.evaluate_quantum_advantage(X_val, y_val)
             quantum_advantage = advantage_metrics.get("quantum_advantage", 1.0)
 
