@@ -1,5 +1,17 @@
 # TODO / Runbook — OWLBAN-GROUP-NVIDIA
 
+## Repository status (verified 2026-11-18)
+- The production app layer and its Docker stack are the maintained runtime path.
+- Legacy `api_server.py` remains available, but its middleware and optional
+  modules must be installed or provided for all legacy tests to run.
+- GPU, Triton, NGC, and DCGM integrations gracefully degrade when hardware or
+  SDK dependencies are unavailable; zero metrics or CPU-safe fallbacks do not
+  prove that physical GPU/rack infrastructure is operational.
+- `OSCAR-BROOME-REVENUE` is a nested git repository and must be configured as a
+  submodule. The parent now includes a `.gitmodules` mapping.
+- Generated databases, logs, virtual environments, dependency directories, and
+  `.cursor/` state are excluded from version control.
+
 ## ✅ Completed (system restored; verified live + 112 tests passing)
 - **Optional-dependency fixups** — `new_products/model_deployment_manager.py`
   (hard `import docker`) and `new_products/stripe_integration.py` (hard

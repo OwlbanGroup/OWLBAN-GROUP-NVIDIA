@@ -39,7 +39,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not window:
             self.requests_by_ip.pop(client_ip, None)
             window = self.requests_by_ip[client_ip]
-        if len(window) > self.limit_per_minute:
+        if len(window) >= self.limit_per_minute:
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={"detail": "Rate limit exceeded. Please slow down your requests."},
