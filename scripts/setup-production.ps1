@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$Force,
-    [string]$CorsOrigin = "https://app.example.com",
-    [string]$Domain = "localhost"
+    [string]$CorsOrigin = "https://owlbangroup.com,https://www.owlbangroup.com",
+    [string]$Domain = "owlbangroup.com"
 )
 
 $ErrorActionPreference = "Stop"

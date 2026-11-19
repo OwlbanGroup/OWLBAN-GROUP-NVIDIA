@@ -18,6 +18,10 @@ def generate_certificate(domain: str, output_dir: Path) -> None:
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, domain)])
     san_names: list[x509.GeneralName] = [x509.DNSName(domain)]
+    if domain.startswith("www."):
+        san_names.append(x509.DNSName(domain.removeprefix("www.")))
+    elif "." in domain:
+        san_names.append(x509.DNSName(f"www.{domain}"))
 
     try:
         san_names.append(x509.IPAddress(ipaddress.ip_address(domain)))

@@ -142,6 +142,8 @@ docker compose up dashboard
 
 ## 📖 Documentation
 
+- [docs/BUSINESS_WORKING_VERSION.md](docs/BUSINESS_WORKING_VERSION.md) — release status, local startup, verification, and public deployment requirements
+- [docs/PUBLIC_TLS_DNS.md](docs/PUBLIC_TLS_DNS.md) — GoDaddy DNS and trusted TLS certificate runbook
 - `docs/PRODUCTION_APP_LAYER.md` — production-ready application guide and endpoints
 - `examples/quantum_ai_workflow.py` — end-to-end local workflow example
 - `examples/api_client_demo.py` — sample API client against the app layer
